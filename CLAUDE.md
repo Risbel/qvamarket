@@ -108,7 +108,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Repo created on GitHub, cloned locally, pnpm monorepo
 - [x] Next.js app in `apps/web`
 - [x] shadcn/ui
-- [ ] next-intl (es, en)
+- [x] next-intl (es, en)
 - [ ] PostgreSQL in Docker (`docker-compose.yml`) + Drizzle in `packages/db`
 - [ ] Better Auth with login
 - [ ] Subdomain routing in `proxy.ts`
