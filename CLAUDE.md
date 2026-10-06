@@ -107,7 +107,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 ### Phase 0 — Base
 - [x] Repo created on GitHub, cloned locally, pnpm monorepo
 - [x] Next.js app in `apps/web`
-- [ ] shadcn/ui
+- [x] shadcn/ui
 - [ ] next-intl (es, en)
 - [ ] PostgreSQL in Docker (`docker-compose.yml`) + Drizzle in `packages/db`
 - [ ] Better Auth with login
