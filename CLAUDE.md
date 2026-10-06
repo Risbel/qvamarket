@@ -105,7 +105,7 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 Rule: **don't start a phase until the previous one is done.** New ideas go to the Parking Lot, not into the code.
 
 ### Phase 0 — Base
-- [ ] Repo created on GitHub, cloned locally, pnpm monorepo
+- [x] Repo created on GitHub, cloned locally, pnpm monorepo
 - [ ] Next.js app in `apps/web`
 - [ ] shadcn/ui
 - [ ] next-intl (es, en)
