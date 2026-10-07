@@ -18,5 +18,8 @@
   "Dashboard": {
     "welcome": "Hola, {name}",
     "signOut": "Cerrar sesión"
+  },
+  "Store": {
+    "hello": "Hola, tienda {slug}"
   }
 }

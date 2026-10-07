@@ -18,5 +18,8 @@
   "Dashboard": {
     "welcome": "Hello, {name}",
     "signOut": "Sign out"
+  },
+  "Store": {
+    "hello": "Hello, {slug} store"
   }
 }

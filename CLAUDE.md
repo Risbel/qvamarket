@@ -61,6 +61,8 @@ qvashop/
 
 - `proxy.ts` (Next.js 16; was `middleware.ts` before) reads the `host` header, resolves the store by slug, and rewrites internally. It also handles locale routing via next-intl.
 - **Reserved slugs** that merchants cannot use: `www`, `app`, `admin`, `api`, `mail`, `static`, `assets`, `status`, `help`, `docs`.
+- `ROOT_DOMAIN` env var (hostname only): `localhost` in dev, `qvashop.com` in prod. `src/lib/tenancy.ts` extracts the store slug from the host and holds the reserved slugs.
+- Store hosts are rewritten to the internal route `/[locale]/stores/[slug]/...` (direct access to `/stores/...` on other hosts returns 404). Phase 0 does not look the slug up; Phase 1 resolves it against the `stores` table. `app.` / `admin.` hosts are not routed separately yet.
 - Local development: use `*.localhost` (e.g. `http://mitienda.localhost:3000`), which resolves to 127.0.0.1 in modern browsers without editing the hosts file.
 
 ## Architecture decisions
@@ -116,7 +118,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] next-intl (es, en)
 - [x] PostgreSQL in Docker (`docker-compose.yml`) + Drizzle in `packages/db`
 - [x] Better Auth with login
-- [ ] Subdomain routing in `proxy.ts`
+- [x] Subdomain routing in `proxy.ts`
 - [ ] Deploy to VPS with Dokploy + wildcard `*.qvashop.com`
 
 ✅ Done when: `prueba.qvashop.com` shows "Hola, tienda prueba".
