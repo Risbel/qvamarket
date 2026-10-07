@@ -54,7 +54,7 @@
       "companyName": "Company name",
       "storeName": "Store name",
       "storeSlug": "Subdomain",
-      "storeSlugHelp": "The store will live at <subdomain>.qvashop.com. Lowercase letters, numbers and hyphens only.",
+      "storeSlugHelp": "The store will live at {url}. Lowercase letters, numbers and hyphens only.",
       "userName": "Owner name",
       "userEmail": "Owner email",
       "temporaryPassword": "Temporary password",

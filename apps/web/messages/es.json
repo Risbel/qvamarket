@@ -54,7 +54,7 @@
       "companyName": "Nombre de la empresa",
       "storeName": "Nombre de la tienda",
       "storeSlug": "Subdominio",
-      "storeSlugHelp": "La tienda estará en <subdominio>.qvashop.com. Solo minúsculas, números y guiones.",
+      "storeSlugHelp": "La tienda estará en {url}. Solo minúsculas, números y guiones.",
       "userName": "Nombre del propietario",
       "userEmail": "Correo del propietario",
       "temporaryPassword": "Contraseña temporal",

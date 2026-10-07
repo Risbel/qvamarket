@@ -126,6 +126,7 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 
 ### i18n
 - Never hardcode UI text. All strings go in `apps/web/messages/es.json` and `en.json`, with the same keys in both.
+- Never put raw `<` or `>` in message strings: next-intl (ICU) parses `<name>` as a rich-text tag and throws `INVALID_MESSAGE`. Pass such text as a placeholder value (`{url}`) instead.
 - Use `Link`, `redirect`, `useRouter` from `@/i18n/navigation`, not from `next/link` / `next/navigation`.
 
 ## Roadmap

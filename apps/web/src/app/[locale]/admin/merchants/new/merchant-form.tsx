@@ -63,6 +63,7 @@ export function MerchantForm() {
 
   // Suggest the subdomain from the store name until the superadmin edits it
   const storeName = form.watch("storeName");
+  const storeSlug = form.watch("storeSlug");
   const slugDirty = form.formState.dirtyFields.storeSlug;
   useEffect(() => {
     if (!slugDirty) form.setValue("storeSlug", slugify(storeName));
@@ -102,7 +103,9 @@ export function MerchantForm() {
           control={form.control}
           name="storeSlug"
           label={t("form.storeSlug")}
-          description={t("form.storeSlugHelp")}
+          description={t("form.storeSlugHelp", {
+            url: `${storeSlug || "mitienda"}.qvashop.com`,
+          })}
           autoCapitalize="none"
         />
         <TextField control={form.control} name="userName" label={t("form.userName")} />
