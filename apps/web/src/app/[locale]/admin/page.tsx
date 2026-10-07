@@ -1,4 +1,4 @@
-import { db, desc, eq, and, member, organization, store, user } from "@qvashop/db";
+import { and, db, desc, eq, member, organization, sql, store, user } from "@qvashop/db";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { buildStoreUrl } from "@/lib/tenancy";
@@ -38,9 +38,17 @@ export default async function AdminHomePage({
     })
     .from(store)
     .innerJoin(organization, eq(store.tenantId, organization.id))
+    // Contact of the company = its oldest member (the person created with it). Not matched
+    // by role, so changing someone's company role never hides the row's actions.
     .leftJoin(
       member,
-      and(eq(member.organizationId, organization.id), eq(member.role, "owner")),
+      and(
+        eq(member.organizationId, organization.id),
+        eq(
+          member.id,
+          sql`(select m.id from member m where m.organization_id = ${organization.id} order by m.created_at asc limit 1)`,
+        ),
+      ),
     )
     .leftJoin(user, eq(user.id, member.userId))
     .orderBy(desc(store.createdAt));

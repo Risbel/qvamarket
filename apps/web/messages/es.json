@@ -19,7 +19,12 @@
   "Dashboard": {
     "welcome": "Hola, {name}",
     "signOut": "Cerrar sesión",
-    "admin": "Panel de administración"
+    "admin": "Panel de administración",
+    "store": {
+      "active": "Productos activos",
+      "draft": "Borradores",
+      "manageProducts": "Gestionar productos"
+    }
   },
   "Store": {
     "hello": "Hola, tienda {slug}"
@@ -128,5 +133,28 @@
   "Impersonation": {
     "viewingAs": "Estás viendo la cuenta de {email} como superadministrador.",
     "stop": "Volver al panel de administración"
+  },
+  "Panel": {
+    "nav": {
+      "label": "Navegación",
+      "home": "Inicio",
+      "products": "Productos"
+    }
+  },
+  "Products": {
+    "title": "Productos",
+    "empty": "Aún no hay productos en esta tienda.",
+    "stockUntracked": "Sin control",
+    "columns": {
+      "name": "Nombre",
+      "price": "Precio",
+      "stock": "Stock",
+      "status": "Estado"
+    },
+    "status": {
+      "draft": "Borrador",
+      "active": "Activo",
+      "archived": "Archivado"
+    }
   }
 }

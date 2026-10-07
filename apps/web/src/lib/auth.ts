@@ -3,6 +3,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
 import { admin, organization } from "better-auth/plugins";
 import { db } from "@qvashop/db";
+import { ac, companyRoles } from "./permissions";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -21,7 +22,9 @@ export const auth = betterAuth({
   plugins: [
     // Impersonation sessions are short; every start/stop is logged (impersonation_log)
     admin({ impersonationSessionDuration: 60 * 30 }),
-    organization(), // a company (tenant) is an organization; its stores reference organization.id
+    // A company (tenant) is an organization; its stores reference organization.id.
+    // Company roles and their permissions are defined in permissions.ts
+    organization({ ac, roles: companyRoles }),
     nextCookies(), // must be the last plugin
   ],
 });

@@ -19,7 +19,12 @@
   "Dashboard": {
     "welcome": "Hello, {name}",
     "signOut": "Sign out",
-    "admin": "Admin panel"
+    "admin": "Admin panel",
+    "store": {
+      "active": "Active products",
+      "draft": "Drafts",
+      "manageProducts": "Manage products"
+    }
   },
   "Store": {
     "hello": "Hello, {slug} store"
@@ -128,5 +133,28 @@
   "Impersonation": {
     "viewingAs": "You are viewing {email}'s account as a superadmin.",
     "stop": "Back to the admin panel"
+  },
+  "Panel": {
+    "nav": {
+      "label": "Navigation",
+      "home": "Home",
+      "products": "Products"
+    }
+  },
+  "Products": {
+    "title": "Products",
+    "empty": "There are no products in this store yet.",
+    "stockUntracked": "Not tracked",
+    "columns": {
+      "name": "Name",
+      "price": "Price",
+      "stock": "Stock",
+      "status": "Status"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "archived": "Archived"
+    }
   }
 }
