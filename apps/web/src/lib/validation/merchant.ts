@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { RESERVED_SLUGS, SLUG_PATTERN } from "@/lib/tenancy";
+import { MIN_PASSWORD_LENGTH } from "./auth";
 import type { Translator } from "./types";
-
-export const MIN_PASSWORD_LENGTH = 8;
 
 export function createMerchantSchema(t: Translator) {
   return z.object({

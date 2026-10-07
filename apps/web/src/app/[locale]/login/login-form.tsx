@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useHydrated } from "@/lib/use-hydrated";
 import { authClient } from "@/lib/auth-client";
 import { createLoginSchema, type LoginValues } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export function LoginForm() {
   const t = useTranslations("Login");
   const tv = useTranslations("Validation");
   const router = useRouter();
+  const hydrated = useHydrated();
   const [formError, setFormError] = useState<string | null>(null);
 
   const schema = useMemo(() => createLoginSchema(tv), [tv]);
@@ -27,7 +29,8 @@ export function LoginForm() {
     setFormError(null);
     const { error } = await authClient.signIn.email(values);
     if (error) {
-      setFormError(t("invalidCredentials"));
+      // 429: Better Auth rate-limits sign-in attempts
+      setFormError(error.status === 429 ? t("tooManyAttempts") : t("invalidCredentials"));
       return;
     }
     router.push("/dashboard");
@@ -35,7 +38,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
         <Controller
           name="email"
@@ -72,7 +75,7 @@ export function LoginForm() {
           )}
         />
         {formError && <FieldError>{formError}</FieldError>}
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
           {form.formState.isSubmitting ? t("submitting") : t("submit")}
         </Button>
       </FieldGroup>

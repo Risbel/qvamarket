@@ -10,7 +10,12 @@ import { auth } from "@/lib/auth";
  */
 export async function getAdminSession(requestHeaders: Headers) {
   const session = await auth.api.getSession({ headers: requestHeaders });
-  if (!session || session.user.role !== "admin" || session.user.banned) {
+  if (
+    !session ||
+    session.user.role !== "admin" ||
+    session.user.banned ||
+    session.user.mustChangePassword
+  ) {
     return null;
   }
   return session;
@@ -24,6 +29,9 @@ export async function requireAdminPage(locale: string) {
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) redirect({ href: "/login", locale });
+  if (session!.user.mustChangePassword) {
+    redirect({ href: "/change-password", locale });
+  }
   const admin = await getAdminSession(requestHeaders);
   if (!admin) notFound();
   return admin;

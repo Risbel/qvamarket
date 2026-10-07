@@ -13,7 +13,8 @@
     "password": "Password",
     "submit": "Sign in",
     "submitting": "Signing in...",
-    "invalidCredentials": "Invalid email or password"
+    "invalidCredentials": "Invalid email or password",
+    "tooManyAttempts": "Too many attempts. Wait a few seconds and try again."
   },
   "Dashboard": {
     "welcome": "Hello, {name}",
@@ -30,7 +31,9 @@
     "slugFormat": "Lowercase letters, numbers and hyphens only (not at the start or end)",
     "slugReserved": "This name is reserved",
     "slugTaken": "This subdomain is already in use",
-    "emailTaken": "A user with this email already exists"
+    "emailTaken": "A user with this email already exists",
+    "passwordsDontMatch": "Passwords do not match",
+    "passwordSameAsCurrent": "The new password must be different from the current one"
   },
   "Admin": {
     "title": "Admin panel",
@@ -75,6 +78,21 @@
     "errors": {
       "forbidden": "You are not allowed to do this.",
       "failed": "The merchant could not be created. Please try again."
+    }
+  },
+  "ChangePassword": {
+    "title": "Change password",
+    "forced": "For security, you must change your temporary password before continuing.",
+    "voluntary": "Choose a new password.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Repeat the new password",
+    "submit": "Change password",
+    "submitting": "Saving...",
+    "errors": {
+      "invalidCurrent": "The current password is incorrect",
+      "unauthenticated": "Your session has expired. Please sign in again.",
+      "failed": "The password could not be changed. Please try again."
     }
   }
 }

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { generateTemporaryPassword } from "@/lib/passwords";
+import { useHydrated } from "@/lib/use-hydrated";
 import { slugify } from "@/lib/slug";
 import {
   createMerchantSchema,
@@ -38,6 +39,7 @@ export function MerchantForm() {
   const t = useTranslations("Admin");
   const tv = useTranslations("Validation");
   const locale = useLocale();
+  const hydrated = useHydrated();
   const [created, setCreated] = useState<Created | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -92,7 +94,7 @@ export function MerchantForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
         <TextField control={form.control} name="companyName" label={t("form.companyName")} />
         <TextField control={form.control} name="storeName" label={t("form.storeName")} />
@@ -149,7 +151,7 @@ export function MerchantForm() {
         {formError && <FieldError>{formError}</FieldError>}
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
             {form.formState.isSubmitting ? t("form.creating") : t("form.create")}
           </Button>
           <Link href="/admin" className={buttonVariants({ variant: "outline" })}>

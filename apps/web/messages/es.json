@@ -13,7 +13,8 @@
     "password": "Contraseña",
     "submit": "Entrar",
     "submitting": "Entrando...",
-    "invalidCredentials": "Correo o contraseña incorrectos"
+    "invalidCredentials": "Correo o contraseña incorrectos",
+    "tooManyAttempts": "Demasiados intentos. Espera unos segundos e inténtalo de nuevo."
   },
   "Dashboard": {
     "welcome": "Hola, {name}",
@@ -30,7 +31,9 @@
     "slugFormat": "Solo minúsculas, números y guiones (no al inicio ni al final)",
     "slugReserved": "Este nombre está reservado",
     "slugTaken": "Este subdominio ya está en uso",
-    "emailTaken": "Ya existe un usuario con este correo"
+    "emailTaken": "Ya existe un usuario con este correo",
+    "passwordsDontMatch": "Las contraseñas no coinciden",
+    "passwordSameAsCurrent": "La contraseña nueva debe ser distinta de la actual"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -75,6 +78,21 @@
     "errors": {
       "forbidden": "No tienes permiso para hacer esto.",
       "failed": "No se pudo crear el comercio. Inténtalo de nuevo."
+    }
+  },
+  "ChangePassword": {
+    "title": "Cambiar contraseña",
+    "forced": "Por seguridad, debes cambiar tu contraseña temporal antes de continuar.",
+    "voluntary": "Elige una contraseña nueva.",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Contraseña nueva",
+    "confirmPassword": "Repite la contraseña nueva",
+    "submit": "Cambiar contraseña",
+    "submitting": "Guardando...",
+    "errors": {
+      "invalidCurrent": "La contraseña actual no es correcta",
+      "unauthenticated": "Tu sesión ha expirado. Inicia sesión de nuevo.",
+      "failed": "No se pudo cambiar la contraseña. Inténtalo de nuevo."
     }
   }
 }
