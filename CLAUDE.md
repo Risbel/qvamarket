@@ -24,6 +24,7 @@ QvaShop is a **B2B2C multi-tenant SaaS** for creating online stores.
 | Web app | Next.js (App Router, TypeScript, `src/` dir) — storefront + merchant panel + admin in one app |
 | UI | Tailwind CSS + shadcn/ui |
 | i18n | next-intl — locales `es` (default) and `en` |
+| Forms / validation | react-hook-form + zod, connected with `@hookform/resolvers` (`zodResolver`) |
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | Better Auth (email + password, organizations, admin/impersonation plugins) |
 | File storage | S3-compatible (MinIO on the VPS) |
@@ -110,6 +111,13 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
 - Build uses **placeholder** `DATABASE_URL` / `BETTER_AUTH_SECRET` only so `next build` can import modules; real values are runtime env vars (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ROOT_DOMAIN`).
 - Migrations: separate Dockerfile target `migrator` (`docker build --target migrator -t qvashop-migrate .`), a one-off job that runs `packages/db/src/migrate.ts` against `DATABASE_URL` and exits. Idempotent; run it on every deploy before starting the web app. Locally: `pnpm --filter @qvashop/db migrate:run`.
+
+### Forms and validation
+- All forms use **react-hook-form** with a **zod** schema through `zodResolver`, for field-level feedback and flexible validation (refinements, cross-field rules).
+- Define each schema once and reuse it on the server (Server Actions / route handlers must re-validate with the same schema; never trust client validation).
+- Validation messages are translated: build schemas with a factory that receives the `next-intl` translator, and keep message keys in `es.json` and `en.json`.
+- Use the shadcn `Form`/`Field` components with react-hook-form where available, so errors, labels and `aria-*` stay consistent.
+- Existing forms written with plain state (e.g. login) should be migrated when they are next touched.
 
 ### i18n
 - Never hardcode UI text. All strings go in `apps/web/messages/es.json` and `en.json`, with the same keys in both.
