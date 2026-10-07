@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 
 /**
@@ -11,4 +14,17 @@ export async function getAdminSession(requestHeaders: Headers) {
     return null;
   }
   return session;
+}
+
+/**
+ * For superadmin pages/layouts: not signed in -> login, signed in but not admin -> 404
+ * (do not reveal that the panel exists).
+ */
+export async function requireAdminPage(locale: string) {
+  const requestHeaders = await headers();
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  if (!session) redirect({ href: "/login", locale });
+  const admin = await getAdminSession(requestHeaders);
+  if (!admin) notFound();
+  return admin;
 }

@@ -17,7 +17,8 @@
   },
   "Dashboard": {
     "welcome": "Hola, {name}",
-    "signOut": "Cerrar sesión"
+    "signOut": "Cerrar sesión",
+    "admin": "Panel de administración"
   },
   "Store": {
     "hello": "Hola, tienda {slug}"
@@ -30,5 +31,50 @@
     "slugReserved": "Este nombre está reservado",
     "slugTaken": "Este subdominio ya está en uso",
     "emailTaken": "Ya existe un usuario con este correo"
+  },
+  "Admin": {
+    "title": "Panel de administración",
+    "merchants": "Comercios",
+    "newMerchant": "Nuevo comercio",
+    "empty": "Todavía no hay comercios. Crea el primero.",
+    "columns": {
+      "store": "Tienda",
+      "company": "Empresa",
+      "owner": "Propietario",
+      "status": "Estado"
+    },
+    "status": {
+      "active": "Activa",
+      "inactive": "Inactiva"
+    },
+    "form": {
+      "companyName": "Nombre de la empresa",
+      "storeName": "Nombre de la tienda",
+      "storeSlug": "Subdominio",
+      "storeSlugHelp": "La tienda estará en <subdominio>.qvashop.com. Solo minúsculas, números y guiones.",
+      "userName": "Nombre del propietario",
+      "userEmail": "Correo del propietario",
+      "temporaryPassword": "Contraseña temporal",
+      "temporaryPasswordHelp": "El propietario deberá cambiarla en su primer inicio de sesión.",
+      "generate": "Generar",
+      "create": "Crear comercio",
+      "creating": "Creando...",
+      "cancel": "Cancelar"
+    },
+    "created": {
+      "title": "Comercio creado: {store}",
+      "warning": "Guarda estos datos ahora: la contraseña no se volverá a mostrar.",
+      "store": "Tienda",
+      "email": "Correo",
+      "password": "Contraseña temporal",
+      "copy": "Copiar datos",
+      "copied": "¡Copiado!",
+      "another": "Crear otro",
+      "back": "Volver a la lista"
+    },
+    "errors": {
+      "forbidden": "No tienes permiso para hacer esto.",
+      "failed": "No se pudo crear el comercio. Inténtalo de nuevo."
+    }
   }
 }

@@ -17,7 +17,8 @@
   },
   "Dashboard": {
     "welcome": "Hello, {name}",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "admin": "Admin panel"
   },
   "Store": {
     "hello": "Hello, {slug} store"
@@ -30,5 +31,50 @@
     "slugReserved": "This name is reserved",
     "slugTaken": "This subdomain is already in use",
     "emailTaken": "A user with this email already exists"
+  },
+  "Admin": {
+    "title": "Admin panel",
+    "merchants": "Merchants",
+    "newMerchant": "New merchant",
+    "empty": "No merchants yet. Create the first one.",
+    "columns": {
+      "store": "Store",
+      "company": "Company",
+      "owner": "Owner",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "form": {
+      "companyName": "Company name",
+      "storeName": "Store name",
+      "storeSlug": "Subdomain",
+      "storeSlugHelp": "The store will live at <subdomain>.qvashop.com. Lowercase letters, numbers and hyphens only.",
+      "userName": "Owner name",
+      "userEmail": "Owner email",
+      "temporaryPassword": "Temporary password",
+      "temporaryPasswordHelp": "The owner must change it on first sign-in.",
+      "generate": "Generate",
+      "create": "Create merchant",
+      "creating": "Creating...",
+      "cancel": "Cancel"
+    },
+    "created": {
+      "title": "Merchant created: {store}",
+      "warning": "Save these details now: the password will not be shown again.",
+      "store": "Store",
+      "email": "Email",
+      "password": "Temporary password",
+      "copy": "Copy details",
+      "copied": "Copied!",
+      "another": "Create another",
+      "back": "Back to list"
+    },
+    "errors": {
+      "forbidden": "You are not allowed to do this.",
+      "failed": "The merchant could not be created. Please try again."
+    }
   }
 }

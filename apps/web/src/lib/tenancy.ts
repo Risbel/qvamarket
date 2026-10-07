@@ -34,3 +34,11 @@ export function getStoreSlug(
 
   return slug;
 }
+
+/** Public URL of a store, given the host the admin is currently using (keeps the dev port). */
+export function buildStoreUrl(slug: string, requestHost: string | null): string {
+  const [, port] = (requestHost ?? "").split(":");
+  const isLocal = (process.env.ROOT_DOMAIN ?? "localhost") === "localhost";
+  const root = process.env.ROOT_DOMAIN ?? "localhost";
+  return `${isLocal ? "http" : "https"}://${slug}.${root}${port && isLocal ? `:${port}` : ""}`;
+}

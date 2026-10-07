@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
+import { buttonVariants } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { SignOutButton } from "./sign-out-button";
 
@@ -21,6 +22,11 @@ export default async function DashboardPage({
         {t("welcome", { name: session!.user.name })}
       </h1>
       <p className="text-muted-foreground">{session!.user.email}</p>
+      {session!.user.role === "admin" && (
+        <Link href="/admin" className={buttonVariants()}>
+          {t("admin")}
+        </Link>
+      )}
       <SignOutButton />
     </main>
   );
