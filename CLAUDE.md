@@ -44,8 +44,10 @@ qvashop/
 │           ├── components/ui/   # shadcn components
 │           ├── i18n/            # routing.ts, request.ts, navigation.ts
 │           └── proxy.ts         # locale (and later tenant) routing
+├── docker-compose.yml      # local PostgreSQL
+├── .env.example
 └── packages/
-    └── db/                 # (planned) Drizzle schema + migrations
+    └── db/                 # @qvashop/db: Drizzle schema + migrations
 ```
 
 ## Domains and routing
@@ -109,7 +111,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Next.js app in `apps/web`
 - [x] shadcn/ui
 - [x] next-intl (es, en)
-- [ ] PostgreSQL in Docker (`docker-compose.yml`) + Drizzle in `packages/db`
+- [x] PostgreSQL in Docker (`docker-compose.yml`) + Drizzle in `packages/db`
 - [ ] Better Auth with login
 - [ ] Subdomain routing in `proxy.ts`
 - [ ] Deploy to VPS with Dokploy + wildcard `*.qvashop.com`
@@ -192,5 +194,9 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 pnpm install                 # install all workspaces
 pnpm --filter web dev        # run the web app (localhost:3000)
 pnpm --filter web build      # production build
+docker compose up -d         # start local PostgreSQL
+pnpm --filter @qvashop/db check     # test DB connection
+pnpm --filter @qvashop/db generate  # generate migration from schema
+pnpm --filter @qvashop/db migrate   # apply migrations
 pnpm dlx shadcn@latest add <component>   # run inside apps/web
 ```
