@@ -44,7 +44,8 @@
       "store": "Store",
       "company": "Company",
       "owner": "Owner",
-      "status": "Status"
+      "status": "Status",
+      "actions": "Actions"
     },
     "status": {
       "active": "Active",
@@ -78,6 +79,26 @@
     "errors": {
       "forbidden": "You are not allowed to do this.",
       "failed": "The merchant could not be created. Please try again."
+    },
+    "reset": {
+      "button": "Reset password",
+      "title": "Reset password",
+      "confirm": "A new temporary password will be generated for {email}, all their sessions will be signed out, and they must change it when they sign in again.",
+      "confirmButton": "Reset",
+      "resetting": "Resetting...",
+      "cancel": "Cancel",
+      "doneTitle": "Password reset",
+      "warning": "Share these details with the owner now: the password will not be shown again.",
+      "email": "Email",
+      "password": "Temporary password",
+      "copy": "Copy details",
+      "copied": "Copied!",
+      "close": "Close",
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "notFound": "User not found.",
+        "failed": "The password could not be reset. Please try again."
+      }
     }
   },
   "ChangePassword": {

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { createMerchantSchema } from "@/lib/validation/merchant";
-import { createMerchant } from "./merchants";
+import { createMerchant, resetMerchantPassword } from "./merchants";
 
 export type CreateMerchantActionResult =
   | {
@@ -52,4 +52,16 @@ export async function createMerchantAction(
     userEmail: parsed.data.userEmail,
     temporaryPassword: parsed.data.temporaryPassword,
   };
+}
+
+export type ResetPasswordActionResult =
+  | { ok: true; email: string; temporaryPassword: string }
+  | { ok: false; error: "forbidden" | "notFound" | "failed" };
+
+export async function resetMerchantPasswordAction(
+  userId: unknown,
+): Promise<ResetPasswordActionResult> {
+  const parsed = z.uuid().safeParse(userId);
+  if (!parsed.success) return { ok: false, error: "notFound" };
+  return resetMerchantPassword(parsed.data, await headers());
 }

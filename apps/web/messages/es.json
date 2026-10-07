@@ -44,7 +44,8 @@
       "store": "Tienda",
       "company": "Empresa",
       "owner": "Propietario",
-      "status": "Estado"
+      "status": "Estado",
+      "actions": "Acciones"
     },
     "status": {
       "active": "Activa",
@@ -78,6 +79,26 @@
     "errors": {
       "forbidden": "No tienes permiso para hacer esto.",
       "failed": "No se pudo crear el comercio. Inténtalo de nuevo."
+    },
+    "reset": {
+      "button": "Restablecer contraseña",
+      "title": "Restablecer contraseña",
+      "confirm": "Se generará una contraseña temporal nueva para {email}, se cerrarán todas sus sesiones y deberá cambiarla al volver a entrar.",
+      "confirmButton": "Restablecer",
+      "resetting": "Restableciendo...",
+      "cancel": "Cancelar",
+      "doneTitle": "Contraseña restablecida",
+      "warning": "Comparte estos datos con el propietario ahora: la contraseña no se volverá a mostrar.",
+      "email": "Correo",
+      "password": "Contraseña temporal",
+      "copy": "Copiar datos",
+      "copied": "¡Copiado!",
+      "close": "Cerrar",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se encontró al usuario.",
+        "failed": "No se pudo restablecer la contraseña. Inténtalo de nuevo."
+      }
     }
   },
   "ChangePassword": {

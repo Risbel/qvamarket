@@ -82,6 +82,7 @@ qvashop/
 - Passwords are **hashed** by Better Auth. Never store plaintext or reversibly encrypted passwords.
 - The superadmin creates merchant accounts with a temporary password and a `mustChangePassword` flag; the merchant must change it on first login. The flag is a Better Auth additional field (`input: false`, so users cannot set it) and is cleared server-side after the password change.
 - **Forced password change:** while `mustChangePassword` is true, `requireUser()` (`src/server/session.ts`) and `requireAdminPage()` redirect to `/[locale]/change-password`, and `getAdminSession()` refuses the session. **Every protected page/layout must use `requireUser()` or `requireAdminPage()`** so the change cannot be skipped. `changePasswordAction` verifies the current password through Better Auth, revokes other sessions, then clears the flag.
+- **Password reset (MVP recovery):** `resetMerchantPassword()` (button + dialog in the admin list) sets `mustChangePassword` first, then a new temporary password, then revokes all of the merchant's sessions; the credentials are shown once and forgotten when the dialog closes. It refuses admin accounts (`notFound`), so a superadmin password can never be reset this way.
 - **Rate limiting:** Better Auth limits `/sign-in/email` to 3 requests per 10 s per IP in production builds (the window resets after 10 s without requests); the login form shows a specific message on 429. **Deploy note:** behind Cloudflare + Traefik set `advanced.ipAddress.ipAddressHeaders: ["cf-connecting-ip"]` in `auth.ts`, otherwise all visitors share one counter.
 - Superadmin logic lives in `apps/web/src/server/`: `getAdminSession(headers)` (role `admin`, not banned — every superadmin action must call it first), `createMerchant()` (user + company/organization with the user as owner + first store; compensates by deleting created rows if a step fails), `generateTemporaryPassword()`. Merchant users have role `user`; only the superadmin has role `admin`.
 - Superadmin UI (path-based for now; the `admin.` host is not routed separately yet): `/[locale]/admin` (all stores with company + owner) and `/[locale]/admin/merchants/new` (create merchant form + one-time credentials card). `requireAdminPage()` guards the layout (anonymous -> login, non-admin -> 404); `createMerchantAction` re-validates and re-checks the admin role on the server.
@@ -149,7 +150,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 
 ### Phase 1 — Superadmin panel
 - [x] Create companies, stores and users (temporary password)
-- [ ] Reset passwords
+- [x] Reset passwords
 - [ ] Impersonate a merchant (logged)
 
 ✅ Done when: I can create a complete merchant in 2 minutes.

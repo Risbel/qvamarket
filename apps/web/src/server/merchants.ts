@@ -1,6 +1,7 @@
 import { db, eq, organization, store, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import type { MerchantValues } from "@/lib/validation/merchant";
+import { generateTemporaryPassword } from "@/lib/passwords";
 import { getAdminSession } from "./admin";
 
 export type CreateMerchantResult =
@@ -86,6 +87,55 @@ export async function createMerchant(
     if (userId) {
       await db.delete(user).where(eq(user.id, userId));
     }
+    return { ok: false, error: "failed" };
+  }
+}
+
+export type ResetPasswordResult =
+  | { ok: true; email: string; temporaryPassword: string }
+  | { ok: false; error: "forbidden" | "notFound" | "failed" };
+
+/**
+ * Superadmin resets a merchant's password (MVP recovery path: no email provider).
+ * Order matters: the forced-change flag goes first so that, if a later step fails,
+ * the merchant is never left signed in with a password they do not know and no
+ * forced change; the sessions are revoked last.
+ */
+export async function resetMerchantPassword(
+  userId: string,
+  requestHeaders: Headers,
+): Promise<ResetPasswordResult> {
+  if (!(await getAdminSession(requestHeaders))) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const [target] = await db
+    .select({ id: user.id, email: user.email, role: user.role })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  // Only merchants: never reset a superadmin's password through this path
+  if (!target || target.role === "admin") {
+    return { ok: false, error: "notFound" };
+  }
+
+  const temporaryPassword = generateTemporaryPassword();
+  try {
+    await db
+      .update(user)
+      .set({ mustChangePassword: true })
+      .where(eq(user.id, target.id));
+    await auth.api.setUserPassword({
+      body: { userId: target.id, newPassword: temporaryPassword },
+      headers: requestHeaders,
+    });
+    await auth.api.revokeUserSessions({
+      body: { userId: target.id },
+      headers: requestHeaders,
+    });
+    return { ok: true, email: target.email, temporaryPassword };
+  } catch (error) {
+    console.error("resetMerchantPassword failed", error);
     return { ok: false, error: "failed" };
   }
 }

@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { headers } from "next/headers";
+import { ResetPasswordDialog } from "./reset-password-dialog";
 
 export default async function AdminHomePage({
   params,
@@ -30,6 +31,7 @@ export default async function AdminHomePage({
       slug: store.slug,
       isActive: store.isActive,
       company: organization.name,
+      ownerId: user.id,
       ownerEmail: user.email,
       createdAt: store.createdAt,
     })
@@ -61,6 +63,7 @@ export default async function AdminHomePage({
               <TableHead>{t("columns.company")}</TableHead>
               <TableHead>{t("columns.owner")}</TableHead>
               <TableHead>{t("columns.status")}</TableHead>
+              <TableHead className="text-right">{t("columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -83,6 +86,11 @@ export default async function AdminHomePage({
                   <Badge variant={row.isActive ? "default" : "secondary"}>
                     {row.isActive ? t("status.active") : t("status.inactive")}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {row.ownerId && row.ownerEmail && (
+                    <ResetPasswordDialog userId={row.ownerId} email={row.ownerEmail} />
+                  )}
                 </TableCell>
               </TableRow>
             ))}
