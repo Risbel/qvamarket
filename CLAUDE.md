@@ -72,6 +72,8 @@ qvashop/
 - **One shared PostgreSQL database** for the MVP. Every tenant-owned table has a `tenant_id` column.
 - Data model: **Company (tenant) → Stores → Products / Orders**. The company is the unit of isolation and billing; the store is the unit of catalog and branding.
 - All IDs are **UUIDs (v7 preferred)**, never auto-increment, so a tenant's data can later be copied to another database without collisions.
+- **A company (tenant) is a Better Auth `organization`** (plugin enabled in `apps/web/src/lib/auth.ts`). `tenant_id` on any table = `organization.id`; merchant users are `member`s of it. No separate `companies` table.
+- App tables live in `packages/db/src/app-schema.ts` (auth tables stay in the generated `auth-schema.ts`). Done so far: `store` (`tenant_id`, globally unique `slug` with a DB format check, `name`, `is_active`). The `invitation` table exists because the plugin requires it but is unused (no email in the MVP).
 - Every query must be scoped by tenant. Never write a query on tenant data without a `tenant_id` filter.
 - Future (not MVP): Postgres Row Level Security, and a tenant registry with a per-tenant connection string so large tenants can be moved to a dedicated database.
 

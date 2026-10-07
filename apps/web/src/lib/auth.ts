@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 import { db } from "@qvashop/db";
 
 export const auth = betterAuth({
@@ -13,6 +13,7 @@ export const auth = betterAuth({
   },
   plugins: [
     admin(),
+    organization(), // a company (tenant) is an organization; its stores reference organization.id
     nextCookies(), // must be the last plugin
   ],
 });
