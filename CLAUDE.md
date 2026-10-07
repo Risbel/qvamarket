@@ -45,6 +45,7 @@ qvashop/
 │           ├── i18n/            # routing.ts, request.ts, navigation.ts
 │           └── proxy.ts         # locale (and later tenant) routing
 ├── docker-compose.yml      # local PostgreSQL
+├── Dockerfile              # production image for apps/web (build context: repo root)
 ├── .env.example
 └── packages/
     └── db/                 # @qvashop/db: Drizzle schema + migrations
@@ -102,6 +103,11 @@ Orders are created at storefront checkout (guest checkout, no customer account).
 
 ### Home delivery (to be designed in Phase 5)
 Merchant configures per store: delivery on/off, pickup on/off, delivery zones, fee per zone, minimum order, optional schedule/slots. Checkout reads this config and fills `order_delivery`. Open decision at that point: zones by neighborhood/municipality list vs. radius, flat vs. variable fees.
+
+### Deployment image
+- `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
+- Build uses **placeholder** `DATABASE_URL` / `BETTER_AUTH_SECRET` only so `next build` can import modules; real values are runtime env vars (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ROOT_DOMAIN`).
+- Migrations are not run by the image yet (to be decided in the Dokploy step).
 
 ### i18n
 - Never hardcode UI text. All strings go in `apps/web/messages/es.json` and `en.json`, with the same keys in both.
@@ -200,6 +206,7 @@ pnpm install                 # install all workspaces
 pnpm --filter web dev        # run the web app (localhost:3000)
 pnpm --filter web build      # production build
 docker compose up -d         # start local PostgreSQL
+docker build -t qvashop-web:local .   # production image (Next standalone, ~300 MB)
 pnpm --filter @qvashop/db check     # test DB connection
 pnpm --filter @qvashop/db generate  # generate migration from schema
 pnpm --filter @qvashop/db migrate   # apply migrations

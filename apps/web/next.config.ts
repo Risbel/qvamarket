@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -11,6 +12,9 @@ try {
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Self-contained build for Docker; trace from the monorepo root so @qvashop/db is included
+  output: "standalone",
+  outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
   allowedDevOrigins: ["*.localhost"],
   transpilePackages: ["@qvashop/db"],
 };
