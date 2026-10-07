@@ -27,7 +27,7 @@ QvaShop is a **B2B2C multi-tenant SaaS** for creating online stores.
 | Forms / validation | react-hook-form + zod, connected with `@hookform/resolvers` (`zodResolver`) |
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | Better Auth (email + password, organizations, admin/impersonation plugins) |
-| File storage | S3-compatible (MinIO on the VPS) |
+| File storage | S3-compatible: **SeaweedFS** in Docker (MinIO's official images are no longer published; any S3 server works, only the env vars change) |
 | Hosting | Single VPS (Hostinger) + Dokploy, everything in Docker |
 | DNS / SSL | Cloudflare, wildcard `*.qvashop.com` |
 
@@ -112,6 +112,10 @@ Orders are created at storefront checkout (guest checkout, no customer account).
 
 ### Home delivery (to be designed in Phase 5)
 Merchant configures per store: delivery on/off, pickup on/off, delivery zones, fee per zone, minimum order, optional schedule/slots. Checkout reads this config and fills `order_delivery`. Open decision at that point: zones by neighborhood/municipality list vs. radius, flat vs. variable fees.
+
+### File storage
+- `docker-compose.yml` runs SeaweedFS (`chrislusf/seaweedfs:4.48`, S3 API on port 8333). One bucket (`S3_BUCKET`, created on first use) with **public read** (anonymous identity) and write/delete only with the access key. Env: `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_PUBLIC_URL` (see `.env.example`). Use a strong secret outside local dev.
+- Code: `apps/web/src/server/storage.ts` (`putObject`, `deleteObject`, `publicUrl`, `tenantKey`). **Every key must be built with `tenantKey(tenantId, ...)`** (`tenants/<tenantId>/...`), so each company's files live under its own prefix. File names include a random UUID and are never overwritten (served with `immutable` cache headers). Uploads go through our server (validate type/size, check the user's tenant), never straight from the browser.
 
 ### Deployment image
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
