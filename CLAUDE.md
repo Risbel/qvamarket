@@ -75,6 +75,8 @@ qvashop/
 - All IDs are **UUIDs (v7 preferred)**, never auto-increment, so a tenant's data can later be copied to another database without collisions.
 - **A company (tenant) is a Better Auth `organization`** (plugin enabled in `apps/web/src/lib/auth.ts`). `tenant_id` on any table = `organization.id`; merchant users are `member`s of it. No separate `companies` table.
 - App tables live in `packages/db/src/app-schema.ts` (auth tables stay in the generated `auth-schema.ts`). Done so far: `store` (`tenant_id`, globally unique `slug` with a DB format check, `name`, `is_active`). The `invitation` table exists because the plugin requires it but is unused (no email in the MVP).
+- **Catalog tables** (`app-schema.ts`): `product` (`tenant_id`, `store_id`, `name`, `description`, `price_minor` integer minor units, `stock` nullable = not tracked, `status` draft | active | archived) and `product_image` (`storage_key`, `content_type`, `size_bytes`, `position` where 0 is the main image). The currency lives on the store (`store.currency`, ISO 4217, default USD), not on each product.
+- **Cross-tenant integrity is enforced by the database:** children carry `tenant_id` plus a **composite FK** to the parent's `(id, tenant_id)` (`product` -> `store`, `product_image` -> `product`), so a row can never point at another tenant's parent. Do the same for every new tenant-owned table. Deleting a store/product cascades to rows only: **the code must also `deleteObject()` the image files**.
 - Every query must be scoped by tenant. Never write a query on tenant data without a `tenant_id` filter.
 - Future (not MVP): Postgres Row Level Security, and a tenant registry with a per-tenant connection string so large tenants can be moved to a dedicated database.
 
