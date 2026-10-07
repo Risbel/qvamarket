@@ -27,7 +27,7 @@ QvaShop is a **B2B2C multi-tenant SaaS** for creating online stores.
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | Better Auth (email + password, organizations, admin/impersonation plugins) |
 | File storage | S3-compatible (MinIO on the VPS) |
-| Hosting | Single VPS (Hetzner) + Dokploy, everything in Docker |
+| Hosting | Single VPS (Hostinger) + Dokploy, everything in Docker |
 | DNS / SSL | Cloudflare, wildcard `*.qvashop.com` |
 
 ## Repo structure
@@ -107,7 +107,7 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 ### Deployment image
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
 - Build uses **placeholder** `DATABASE_URL` / `BETTER_AUTH_SECRET` only so `next build` can import modules; real values are runtime env vars (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ROOT_DOMAIN`).
-- Migrations are not run by the image yet (to be decided in the Dokploy step).
+- Migrations: separate Dockerfile target `migrator` (`docker build --target migrator -t qvashop-migrate .`), a one-off job that runs `packages/db/src/migrate.ts` against `DATABASE_URL` and exits. Idempotent; run it on every deploy before starting the web app. Locally: `pnpm --filter @qvashop/db migrate:run`.
 
 ### i18n
 - Never hardcode UI text. All strings go in `apps/web/messages/es.json` and `en.json`, with the same keys in both.
@@ -126,6 +126,8 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Better Auth with login
 - [x] Subdomain routing in `proxy.ts`
 - [ ] Deploy to VPS with Dokploy + wildcard `*.qvashop.com`
+
+> **Decision (2026-10):** the VPS deploy is deferred until the product is further along. Phases 1–3 are built and tested locally (`*.localhost`). Plan for when we deploy: Hostinger **KVM 2** (2 vCPU, 8 GB) with Dokploy, domain on Cloudflare. The `Dockerfile` and `migrator` target are already tested locally.
 
 ✅ Done when: `prueba.qvashop.com` shows "Hola, tienda prueba".
 

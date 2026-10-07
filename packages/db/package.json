@@ -11,6 +11,7 @@
     "check": "node --env-file=../../.env src/check.ts",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
+    "migrate:run": "node --env-file-if-exists=../../.env src/migrate.ts",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"

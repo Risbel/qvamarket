@@ -39,3 +39,13 @@ COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/public ./apps/web/publi
 USER nextjs
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]
+
+# --- migrator: one-off job that applies SQL migrations (not part of the web image).
+# Build with: docker build --target migrator -t qvashop-migrate .
+# Run with DATABASE_URL set; it exits when done.
+FROM base AS migrator
+ENV NODE_ENV=production
+COPY --from=deps /repo/ ./
+COPY packages/db packages/db
+WORKDIR /repo/packages/db
+CMD ["pnpm", "run", "migrate:run"]
