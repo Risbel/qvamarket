@@ -6,5 +6,17 @@
   "Home": {
     "title": "QvaShop",
     "subtitle": "Crea tu tienda online"
+  },
+  "Login": {
+    "title": "Iniciar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Entrar",
+    "submitting": "Entrando...",
+    "invalidCredentials": "Correo o contraseña incorrectos"
+  },
+  "Dashboard": {
+    "welcome": "Hola, {name}",
+    "signOut": "Cerrar sesión"
   }
 }
