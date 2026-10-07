@@ -99,6 +99,15 @@
         "notFound": "User not found.",
         "failed": "The password could not be reset. Please try again."
       }
+    },
+    "impersonate": {
+      "button": "Sign in as",
+      "starting": "Signing in...",
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "notFound": "You cannot sign in as this user.",
+        "failed": "Could not start the session. Please try again."
+      }
     }
   },
   "ChangePassword": {
@@ -115,5 +124,9 @@
       "unauthenticated": "Your session has expired. Please sign in again.",
       "failed": "The password could not be changed. Please try again."
     }
+  },
+  "Impersonation": {
+    "viewingAs": "You are viewing {email}'s account as a superadmin.",
+    "stop": "Back to the admin panel"
   }
 }

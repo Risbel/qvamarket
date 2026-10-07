@@ -99,6 +99,15 @@
         "notFound": "No se encontró al usuario.",
         "failed": "No se pudo restablecer la contraseña. Inténtalo de nuevo."
       }
+    },
+    "impersonate": {
+      "button": "Entrar como",
+      "starting": "Entrando...",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se puede entrar como este usuario.",
+        "failed": "No se pudo iniciar la sesión. Inténtalo de nuevo."
+      }
     }
   },
   "ChangePassword": {
@@ -115,5 +124,9 @@
       "unauthenticated": "Tu sesión ha expirado. Inicia sesión de nuevo.",
       "failed": "No se pudo cambiar la contraseña. Inténtalo de nuevo."
     }
+  },
+  "Impersonation": {
+    "viewingAs": "Estás viendo la cuenta de {email} como superadministrador.",
+    "stop": "Volver al panel de administración"
   }
 }

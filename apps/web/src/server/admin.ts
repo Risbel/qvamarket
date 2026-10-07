@@ -29,7 +29,8 @@ export async function requireAdminPage(locale: string) {
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) redirect({ href: "/login", locale });
-  if (session!.user.mustChangePassword) {
+  // Same rule as requireUser(): an impersonating superadmin is not forced to change the merchant's password
+  if (session!.user.mustChangePassword && !session!.session.impersonatedBy) {
     redirect({ href: "/change-password", locale });
   }
   const admin = await getAdminSession(requestHeaders);

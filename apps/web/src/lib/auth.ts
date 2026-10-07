@@ -19,7 +19,8 @@ export const auth = betterAuth({
     database: { generateId: "uuid" },
   },
   plugins: [
-    admin(),
+    // Impersonation sessions are short; every start/stop is logged (impersonation_log)
+    admin({ impersonationSessionDuration: 60 * 30 }),
     organization(), // a company (tenant) is an organization; its stores reference organization.id
     nextCookies(), // must be the last plugin
   ],

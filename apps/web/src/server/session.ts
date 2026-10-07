@@ -12,7 +12,8 @@ import { auth } from "@/lib/auth";
 export async function requireUser(locale: string) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect({ href: "/login", locale });
-  if (session!.user.mustChangePassword) {
+  // A superadmin impersonating a merchant must not be forced to change the merchant's password
+  if (session!.user.mustChangePassword && !session!.session.impersonatedBy) {
     redirect({ href: "/change-password", locale });
   }
   return session!;

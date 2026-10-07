@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { headers } from "next/headers";
+import { ImpersonateButton } from "./impersonate-button";
 import { ResetPasswordDialog } from "./reset-password-dialog";
 
 export default async function AdminHomePage({
@@ -89,7 +90,13 @@ export default async function AdminHomePage({
                 </TableCell>
                 <TableCell className="text-right">
                   {row.ownerId && row.ownerEmail && (
-                    <ResetPasswordDialog userId={row.ownerId} email={row.ownerEmail} />
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <ImpersonateButton userId={row.ownerId} />
+                      <ResetPasswordDialog
+                        userId={row.ownerId}
+                        email={row.ownerEmail}
+                      />
+                    </div>
                   )}
                 </TableCell>
               </TableRow>
