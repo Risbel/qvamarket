@@ -21,5 +21,14 @@
   },
   "Store": {
     "hello": "Hola, tienda {slug}"
+  },
+  "Validation": {
+    "required": "Este campo es obligatorio",
+    "emailInvalid": "Introduce un correo válido",
+    "passwordMin": "La contraseña debe tener al menos {min} caracteres",
+    "slugFormat": "Solo minúsculas, números y guiones (no al inicio ni al final)",
+    "slugReserved": "Este nombre está reservado",
+    "slugTaken": "Este subdominio ya está en uso",
+    "emailTaken": "Ya existe un usuario con este correo"
   }
 }

@@ -80,7 +80,8 @@ qvashop/
 
 ### Auth and accounts
 - Passwords are **hashed** by Better Auth. Never store plaintext or reversibly encrypted passwords.
-- The superadmin creates merchant accounts with a temporary password and a `mustChangePassword` flag; the merchant must change it on first login.
+- The superadmin creates merchant accounts with a temporary password and a `mustChangePassword` flag; the merchant must change it on first login. The flag is a Better Auth additional field (`input: false`, so users cannot set it) and is cleared server-side after the password change.
+- Superadmin logic lives in `apps/web/src/server/`: `getAdminSession(headers)` (role `admin`, not banned — every superadmin action must call it first), `createMerchant()` (user + company/organization with the user as owner + first store; compensates by deleting created rows if a step fails), `generateTemporaryPassword()`. Merchant users have role `user`; only the superadmin has role `admin`.
 - Password recovery in the MVP: the superadmin resets it manually. No email provider.
 - Superadmin can impersonate a merchant; every impersonation is logged.
 - Config lives in `apps/web/src/lib/auth.ts` (email+password, `admin` plugin). The `organization` plugin is added in Phase 1 when companies/stores exist.

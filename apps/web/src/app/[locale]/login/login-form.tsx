@@ -1,33 +1,33 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
+import { createLoginSchema, type LoginValues } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
   const t = useTranslations("Login");
+  const tv = useTranslations("Validation");
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setPending(true);
+  const schema = useMemo(() => createLoginSchema(tv), [tv]);
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
+  });
 
-    const form = new FormData(event.currentTarget);
-    const { error } = await authClient.signIn.email({
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-    });
-
+  async function onSubmit(values: LoginValues) {
+    setFormError(null);
+    const { error } = await authClient.signIn.email(values);
     if (error) {
-      setError(t("invalidCredentials"));
-      setPending(false);
+      setFormError(t("invalidCredentials"));
       return;
     }
     router.push("/dashboard");
@@ -35,29 +35,47 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email">{t("email")}</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">{t("password")}</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
+    <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      <FieldGroup>
+        <Controller
+          name="email"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
+              <Input
+                {...field}
+                id="email"
+                type="email"
+                autoComplete="email"
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
         />
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      <Button type="submit" disabled={pending}>
-        {pending ? t("submitting") : t("submit")}
-      </Button>
+        <Controller
+          name="password"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
+              <Input
+                {...field}
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        {formError && <FieldError>{formError}</FieldError>}
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? t("submitting") : t("submit")}
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

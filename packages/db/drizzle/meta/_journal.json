@@ -15,6 +15,13 @@
       "when": 1791343565996,
       "tag": "0001_tired_blue_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791344237059,
+      "tag": "0002_worried_mongu",
+      "breakpoints": true
     }
   ]
 }

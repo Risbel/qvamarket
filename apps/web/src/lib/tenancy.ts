@@ -12,7 +12,7 @@ export const RESERVED_SLUGS = [
   "docs",
 ] as const;
 
-const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 /**
  * Returns the store slug for a `<slug>.<rootDomain>` host, or null when the
