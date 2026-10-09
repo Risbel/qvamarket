@@ -1,8 +1,14 @@
-import { db, eq, organization, store, user } from "@qvashop/db";
+import { db, eq, store, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import type { MerchantValues } from "@/lib/validation/merchant";
 import { generateTemporaryPassword } from "@/lib/passwords";
 import { getAdminSession } from "./admin";
+import {
+  createCompanyAndStore,
+  findUnavailable,
+  removeUser,
+  type StoreStatus,
+} from "./provisioning";
 
 export type CreateMerchantResult =
   | { ok: true; tenantId: string; storeId: string; userId: string }
@@ -10,8 +16,9 @@ export type CreateMerchantResult =
 
 /**
  * Superadmin creates a complete merchant: user (temporary password,
- * mustChangePassword) + company (organization, user is owner) + first store.
- * `input` must already be validated with createMerchantSchema.
+ * mustChangePassword) + company (organization, user is owner) + first store, already
+ * ACTIVE (the superadmin vouches for it). `input` must already be validated with
+ * createMerchantSchema. Self-registration is registerMerchant (store starts pending).
  *
  * Better Auth calls and the store insert cannot share one DB transaction, so on
  * failure the already-created rows are removed (compensation).
@@ -24,27 +31,10 @@ export async function createMerchant(
     return { ok: false, error: "forbidden" };
   }
 
-  const [slugRow] = await db
-    .select({ id: store.id })
-    .from(store)
-    .where(eq(store.slug, input.storeSlug))
-    .limit(1);
-  const [orgRow] = await db
-    .select({ id: organization.id })
-    .from(organization)
-    .where(eq(organization.slug, input.storeSlug))
-    .limit(1);
-  if (slugRow || orgRow) return { ok: false, error: "slugTaken" };
-
-  const [emailRow] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.email, input.userEmail))
-    .limit(1);
-  if (emailRow) return { ok: false, error: "emailTaken" };
+  const unavailable = await findUnavailable(input);
+  if (unavailable) return { ok: false, error: unavailable };
 
   let userId: string | undefined;
-  let tenantId: string | undefined;
   try {
     const created = await auth.api.createUser({
       body: {
@@ -62,31 +52,11 @@ export async function createMerchant(
       .set({ mustChangePassword: true })
       .where(eq(user.id, userId));
 
-    // Company = organization. Passing userId (server-side only) makes the merchant its owner.
-    const company = await auth.api.createOrganization({
-      body: { name: input.companyName, slug: input.storeSlug, userId },
-    });
-    tenantId = company.id;
-
-    const [createdStore] = await db
-      .insert(store)
-      .values({
-        tenantId,
-        slug: input.storeSlug,
-        name: input.storeName,
-      })
-      .returning({ id: store.id });
-
-    return { ok: true, tenantId, storeId: createdStore.id, userId };
+    const { tenantId, storeId } = await createCompanyAndStore(userId, input, "active");
+    return { ok: true, tenantId, storeId, userId };
   } catch (error) {
     console.error("createMerchant failed", error);
-    // organization delete cascades to member and store; user delete cascades to account/session
-    if (tenantId) {
-      await db.delete(organization).where(eq(organization.id, tenantId));
-    }
-    if (userId) {
-      await db.delete(user).where(eq(user.id, userId));
-    }
+    if (userId) await removeUser(userId);
     return { ok: false, error: "failed" };
   }
 }
@@ -136,6 +106,35 @@ export async function resetMerchantPassword(
     return { ok: true, email: target.email, temporaryPassword };
   } catch (error) {
     console.error("resetMerchantPassword failed", error);
+    return { ok: false, error: "failed" };
+  }
+}
+
+export type SetStoreStatusResult =
+  | { ok: true }
+  | { ok: false; error: "forbidden" | "notFound" | "failed" };
+
+/**
+ * Superadmin approves a pending store, suspends an active one or reactivates a suspended
+ * one. Unscoped by tenant on purpose: the superadmin manages every company.
+ */
+export async function setStoreStatus(
+  storeId: string,
+  status: StoreStatus,
+  requestHeaders: Headers,
+): Promise<SetStoreStatusResult> {
+  if (!(await getAdminSession(requestHeaders))) {
+    return { ok: false, error: "forbidden" };
+  }
+  try {
+    const rows = await db
+      .update(store)
+      .set({ status })
+      .where(eq(store.id, storeId))
+      .returning({ id: store.id });
+    return rows.length === 1 ? { ok: true } : { ok: false, error: "notFound" };
+  } catch (error) {
+    console.error("setStoreStatus failed", error);
     return { ok: false, error: "failed" };
   }
 }

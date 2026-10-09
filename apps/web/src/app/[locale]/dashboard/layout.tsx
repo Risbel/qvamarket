@@ -1,6 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { PanelNav, type PanelNavKey } from "@/components/panel-nav";
+import { StoreStatusBanner } from "@/components/store-status-banner";
 import { can } from "@/lib/permissions";
 import { getMerchantContext } from "@/server/tenant";
 import { requireUser } from "@/server/session";
@@ -25,6 +26,9 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1 flex-col">
       {impersonating && <ImpersonationBanner targetEmail={session.user.email} />}
+      {context && context.store.status !== "active" && (
+        <StoreStatusBanner status={context.store.status} />
+      )}
       {context && (
         <header className="border-b">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 p-4">

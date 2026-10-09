@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { use } from "react";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import {
   Card,
@@ -30,8 +30,14 @@ function LoginCard() {
         <CardHeader>
           <CardTitle>{t("title")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4">
           <LoginForm />
+          <p className="text-sm text-muted-foreground">
+            {t("noAccount")}{" "}
+            <Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
+              {t("createStore")}
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </main>

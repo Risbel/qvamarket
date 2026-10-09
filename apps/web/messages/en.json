@@ -5,7 +5,9 @@
   },
   "Home": {
     "title": "QvaShop",
-    "subtitle": "Create your online store"
+    "subtitle": "Create your online store",
+    "createStore": "Create my store",
+    "signIn": "Sign in"
   },
   "Login": {
     "title": "Sign in",
@@ -14,7 +16,9 @@
     "submit": "Sign in",
     "submitting": "Signing in...",
     "invalidCredentials": "Invalid email or password",
-    "tooManyAttempts": "Too many attempts. Wait a few seconds and try again."
+    "tooManyAttempts": "Too many attempts. Wait a few seconds and try again.",
+    "noAccount": "Want to sell with QvaShop?",
+    "createStore": "Create your store"
   },
   "Dashboard": {
     "welcome": "Hello, {name}",
@@ -56,10 +60,6 @@
       "owner": "Owner",
       "status": "Status",
       "actions": "Actions"
-    },
-    "status": {
-      "active": "Active",
-      "inactive": "Inactive"
     },
     "form": {
       "companyName": "Company name",
@@ -118,6 +118,26 @@
         "notFound": "You cannot sign in as this user.",
         "failed": "Could not start the session. Please try again."
       }
+    },
+    "status": {
+      "pending": "Pending",
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "storeStatus": {
+      "approve": "Approve",
+      "reactivate": "Reactivate",
+      "suspend": "Suspend",
+      "suspendTitle": "Suspend store",
+      "suspendConfirm": "Suspend \"{name}\"? Its store will stop being visible to the public until you reactivate it. The merchant can still sign in to their panel.",
+      "suspendButton": "Suspend",
+      "suspending": "Suspending...",
+      "cancel": "Cancel",
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "notFound": "Store not found.",
+        "failed": "The status could not be changed. Please try again."
+      }
     }
   },
   "ChangePassword": {
@@ -145,6 +165,10 @@
       "home": "Home",
       "products": "Products",
       "branding": "Branding"
+    },
+    "status": {
+      "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
+      "suspended": "Your store is suspended and not visible to the public. Please contact us."
     }
   },
   "Products": {
@@ -278,6 +302,28 @@
     "errors": {
       "forbidden": "You are not allowed to do this.",
       "failed": "The changes could not be saved. Please try again."
+    }
+  },
+  "Signup": {
+    "title": "Create your store",
+    "description": "Sign up and start preparing your catalog. Your store goes public once we approve it.",
+    "userName": "Your name",
+    "userEmail": "Email",
+    "password": "Password",
+    "confirmPassword": "Repeat the password",
+    "companyName": "Company name",
+    "storeName": "Store name",
+    "storeSlug": "Subdomain",
+    "storeSlugHelp": "Your store will live at {url}. Lowercase letters, numbers and hyphens only.",
+    "approvalNotice": "We review every store before publishing it. Meanwhile you can sign in, add products and customize your brand.",
+    "submit": "Create my store",
+    "submitting": "Creating your store...",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "errors": {
+      "tooManyAttempts": "Too many attempts from your connection. Please try again later.",
+      "rejected": "The registration could not be completed. Wait a few seconds and try again.",
+      "failed": "The store could not be created. Please try again."
     }
   }
 }

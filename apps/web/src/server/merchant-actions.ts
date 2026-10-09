@@ -7,7 +7,12 @@ import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { createMerchantSchema } from "@/lib/validation/merchant";
-import { createMerchant, resetMerchantPassword } from "./merchants";
+import {
+  createMerchant,
+  resetMerchantPassword,
+  setStoreStatus,
+  type SetStoreStatusResult,
+} from "./merchants";
 
 export type CreateMerchantActionResult =
   | {
@@ -64,4 +69,14 @@ export async function resetMerchantPasswordAction(
   const parsed = z.uuid().safeParse(userId);
   if (!parsed.success) return { ok: false, error: "notFound" };
   return resetMerchantPassword(parsed.data, await headers());
+}
+
+export async function setStoreStatusAction(
+  storeId: unknown,
+  status: unknown,
+): Promise<SetStoreStatusResult> {
+  const id = z.uuid().safeParse(storeId);
+  const next = z.enum(["pending", "active", "suspended"]).safeParse(status);
+  if (!id.success || !next.success) return { ok: false, error: "notFound" };
+  return setStoreStatus(id.data, next.data, await headers());
 }

@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean,
   check,
   foreignKey,
   index,
@@ -15,6 +14,8 @@ import { organization, user } from "./auth-schema.ts";
 
 // A company (tenant) is a Better Auth `organization`. `tenant_id` = organization.id.
 // Every tenant-owned table carries `tenant_id`, and every query must filter by it.
+
+export const STORE_STATUSES = ["pending", "active", "suspended"] as const;
 
 export const store = pgTable(
   "store",
@@ -31,7 +32,10 @@ export const store = pgTable(
     name: text("name").notNull(),
     // ISO 4217 code. All prices of the store's products are in this currency.
     currency: text("currency").default("USD").notNull(),
-    isActive: boolean("is_active").default(true).notNull(),
+    // pending: just registered, not public until the superadmin approves it
+    // active: public storefront; suspended: hidden again by the superadmin.
+    // Default pending so a store inserted without thinking is never public by accident.
+    status: text("status").default("pending").notNull(),
     // Branding (null = platform default). Colors are lowercase #rrggbb; the logo is a key in
     // object storage (tenants/<tenant_id>/stores/<store_id>/logo/...), URL via publicUrl().
     logoKey: text("logo_key"),
@@ -51,6 +55,7 @@ export const store = pgTable(
       "store_slug_format",
       sql`${table.slug} ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'`,
     ),
+    check("store_status", sql`${table.status} in ('pending', 'active', 'suspended')`),
     check("store_currency_format", sql`${table.currency} ~ '^[A-Z]{3}$'`),
     check(
       "store_primary_color_format",

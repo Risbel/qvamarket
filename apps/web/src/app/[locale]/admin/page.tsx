@@ -15,6 +15,7 @@ import {
 import { headers } from "next/headers";
 import { ImpersonateButton } from "./impersonate-button";
 import { ResetPasswordDialog } from "./reset-password-dialog";
+import { StoreStatusControls } from "./store-status-controls";
 
 export default async function AdminHomePage({
   params,
@@ -30,7 +31,7 @@ export default async function AdminHomePage({
       storeId: store.id,
       storeName: store.name,
       slug: store.slug,
-      isActive: store.isActive,
+      status: store.status,
       company: organization.name,
       ownerId: user.id,
       ownerEmail: user.email,
@@ -51,7 +52,8 @@ export default async function AdminHomePage({
       ),
     )
     .leftJoin(user, eq(user.id, member.userId))
-    .orderBy(desc(store.createdAt));
+    // Stores waiting for approval first, then newest first
+    .orderBy(sql`(${store.status} = 'pending') desc`, desc(store.createdAt));
 
   return (
     <div className="flex flex-col gap-6">
@@ -92,20 +94,35 @@ export default async function AdminHomePage({
                 <TableCell>{row.company}</TableCell>
                 <TableCell>{row.ownerEmail ?? "—"}</TableCell>
                 <TableCell>
-                  <Badge variant={row.isActive ? "default" : "secondary"}>
-                    {row.isActive ? t("status.active") : t("status.inactive")}
+                  <Badge
+                    variant={
+                      row.status === "active"
+                        ? "default"
+                        : row.status === "pending"
+                          ? "outline"
+                          : "secondary"
+                    }
+                  >
+                    {t(`status.${row.status as "pending" | "active" | "suspended"}`)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  {row.ownerId && row.ownerEmail && (
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <ImpersonateButton userId={row.ownerId} />
-                      <ResetPasswordDialog
-                        userId={row.ownerId}
-                        email={row.ownerEmail}
-                      />
-                    </div>
-                  )}
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <StoreStatusControls
+                      storeId={row.storeId}
+                      storeName={row.storeName}
+                      status={row.status as "pending" | "active" | "suspended"}
+                    />
+                    {row.ownerId && row.ownerEmail && (
+                      <>
+                        <ImpersonateButton userId={row.ownerId} />
+                        <ResetPasswordDialog
+                          userId={row.ownerId}
+                          email={row.ownerEmail}
+                        />
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

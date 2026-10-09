@@ -75,7 +75,7 @@ qvashop/
 - Data model: **Company (tenant) → Stores → Products / Orders**. The company is the unit of isolation and billing; the store is the unit of catalog and branding.
 - All IDs are **UUIDs (v7 preferred)**, never auto-increment, so a tenant's data can later be copied to another database without collisions.
 - **A company (tenant) is a Better Auth `organization`** (plugin enabled in `apps/web/src/lib/auth.ts`). `tenant_id` on any table = `organization.id`; merchant users are `member`s of it. No separate `companies` table.
-- App tables live in `packages/db/src/app-schema.ts` (auth tables stay in the generated `auth-schema.ts`). Done so far: `store` (`tenant_id`, globally unique `slug` with a DB format check, `name`, `currency`, `is_active`, branding: `logo_key`, `primary_color`, `accent_color`). The `invitation` table exists because the plugin requires it but is unused (no email in the MVP).
+- App tables live in `packages/db/src/app-schema.ts` (auth tables stay in the generated `auth-schema.ts`). Done so far: `store` (`tenant_id`, globally unique `slug` with a DB format check, `name`, `currency`, `status`, branding: `logo_key`, `primary_color`, `accent_color`). The `invitation` table exists because the plugin requires it but is unused (no email in the MVP).
 - **Catalog tables** (`app-schema.ts`): `product` (`tenant_id`, `store_id`, `name`, `description`, `price_minor` integer minor units, `stock` nullable = not tracked, `status` draft | active | archived) and `product_image` (`storage_key`, `content_type`, `size_bytes`, `position` where 0 is the main image). The currency lives on the store (`store.currency`, ISO 4217, default USD), not on each product.
 - **Cross-tenant integrity is enforced by the database:** children carry `tenant_id` plus a **composite FK** to the parent's `(id, tenant_id)` (`product` -> `store`, `product_image` -> `product`), so a row can never point at another tenant's parent. Do the same for every new tenant-owned table. Deleting a store/product cascades to rows only: **the code must also `deleteObject()` the image files**.
 - **Merchant panel** (`/[locale]/dashboard/...`, path-based for now; it moves to `app.` later): `dashboard/layout.tsx` renders the header (store, company, nav) and the impersonation banner. **Every merchant page and Server Action starts with `requireMerchant(locale)`** (`src/server/tenant.ts`: signed in + past the forced password change + member of a company with a store, else 404) and passes the returned `tenantId` / `store.id` to the query helpers in `src/server/*.ts` (e.g. `products.ts`), which always filter by `tenant_id`. Never take a tenant or store id from client input. MVP: the active store is the company's oldest store (no switcher yet). Prices are shown with `formatMoney(minor, store.currency, locale)` (`src/lib/money.ts`).
@@ -110,6 +110,10 @@ qvashop/
 ### Merchant signup (decided 2026-10)
 - Merchants can register themselves (`/[locale]/signup`): the form creates the user (own password, no forced change), the company and the first store. **The store starts `pending`**: the merchant can log in and set up (products, branding) but the storefront is not public until the superadmin approves it in the admin panel (store `status`: pending | active | suspended, replacing `is_active`). The superadmin can still create merchants by hand.
 - No email provider in the MVP: emails are not verified and recovery stays manual, so signup needs rate limiting (and a captcha/honeypot) before it is opened to the public.
+
+- **Implemented:** `/[locale]/signup` (linked from the home and login pages) -> `signupAction` -> `registerMerchant()` (`src/server/signup.ts`): user with their own password (no forced change, email NOT verified), company with the user as owner, first store with status `pending`, and the user is signed in. Shares `findUnavailable` / `createCompanyAndStore` / `removeUser` (`src/server/provisioning.ts`) with the superadmin's `createMerchant`, which creates stores `active`.
+- **Store status** (`store.status`, DB CHECK): `pending` (default) -> not public; `active` -> public; `suspended` -> not public again. The storefront only serves `active` stores (404 otherwise); the merchant panel keeps working in every status and shows a banner while the store is not active. The superadmin approves / suspends / reactivates in the admin list (pending stores are listed first); changes are not audited yet.
+- **Abuse protection on signup** (no email verification yet): per-IP limits (`SIGNUP_MAX_ATTEMPTS`, default 10 per hour, and `SIGNUP_MAX_ACCOUNTS`, default 3 per day; in-memory sliding window in `src/server/rate-limit.ts`, resets on restart), a honeypot field and a minimum fill time of 1.5 s (client-reported, only a speed bump), plus the manual approval, which is the real gate.
 
 ### Customer accounts (decided 2026-10)
 - **One global account, one `customer` record per company.** Signing up or logging in from a store's storefront creates the `customer` row (`tenant_id`, `user_id`) for that company if it does not exist. The planned `customers` table (guest checkout, by phone) gets a nullable `user_id`; guest orders can be linked to the account later.
@@ -155,6 +159,14 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - **Text on a brand color is automatic**: `readableForeground(color)` returns black or white, whichever contrasts more. The worst case (a mid grey) is still about 4.6:1, so brand colors can never produce text below WCAG AA (4.5:1); there is nothing for the merchant to get wrong.
 - **The storefront wears the brand through CSS variables** set on its root element: `--brand`, `--brand-foreground`, `--brand-accent`, `--brand-accent-foreground`. Storefront components must use these (`var(--brand)`), not hard-coded colors, so the customer login/signup pages can reuse them later.
 - **`getPublicStoreBySlug(slug)`** (`src/server/public-store.ts`) is the one place that reads tenant data without a tenant filter, because the visitor is anonymous and the slug is the key. It returns public fields only (never `tenant_id`) and only active stores. Every other read uses `requireMerchant()`'s `tenantId`.
+
+### Pre-launch checklist (before opening signup to the public)
+- **Captcha on signup** (Cloudflare Turnstile): the honeypot and timing checks only stop naive bots.
+- **Rate limits need the real client IP**: set `advanced.ipAddress.ipAddressHeaders: ["cf-connecting-ip"]` for Better Auth (sign-in limit) and make the VPS accept web traffic only from Cloudflare's ranges, otherwise `cf-connecting-ip` can be forged (`clientIp()` in `src/server/request.ts` is used by our own signup limiter). If the app ever runs as several instances, move `rate-limit.ts` to a shared store.
+- **Email**: with no provider, emails are unverified and recovery is manual; decide before a larger launch.
+- **Strong secrets**: `BETTER_AUTH_SECRET`, `S3_SECRET_KEY`, database password (the local defaults are for development only).
+- **Deleting a company must delete its `tenants/<id>/` files** in storage (there is no delete-company feature yet).
+- Add `ROOT_DOMAIN`, `S3_*` and `SIGNUP_*` to the production environment; run the `migrator` before each deploy.
 
 ### Deployment image
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
@@ -205,7 +217,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Products CRUD (create, edit, delete, status draft/active/archived)
 - [x] Product images (upload, delete, main image; compressed to < 1 MB in the browser)
 - [x] Store branding: logo, colors
-- [ ] Merchant self-signup (store pending until the superadmin approves)
+- [x] Merchant self-signup (store pending until the superadmin approves)
 
 ✅ Done when: a merchant loads 10 products on their own.
 

@@ -11,7 +11,8 @@ export type MerchantStore = {
   name: string;
   slug: string;
   currency: string;
-  isActive: boolean;
+  /** pending (awaiting approval) | active | suspended */
+  status: "pending" | "active" | "suspended";
   logoKey: string | null;
   primaryColor: string | null;
   accentColor: string | null;
@@ -54,7 +55,7 @@ export const getMerchantContext = cache(
         name: store.name,
         slug: store.slug,
         currency: store.currency,
-        isActive: store.isActive,
+        status: store.status,
         logoKey: store.logoKey,
         primaryColor: store.primaryColor,
         accentColor: store.accentColor,
@@ -64,7 +65,9 @@ export const getMerchantContext = cache(
       .orderBy(asc(store.createdAt));
     if (stores.length === 0) return null;
 
-    return { ...membership, store: stores[0], stores };
+    // The DB CHECK guarantees status is one of the three values
+    const typed = stores.map((s) => ({ ...s, status: s.status as MerchantStore["status"] }));
+    return { ...membership, store: typed[0], stores: typed };
   },
 );
 

@@ -3,19 +3,24 @@ import { RESERVED_SLUGS, SLUG_PATTERN } from "@/lib/tenancy";
 import { MIN_PASSWORD_LENGTH } from "./auth";
 import type { Translator } from "./types";
 
+/** Subdomain rules shared by the superadmin form and self-signup. */
+export function createStoreSlugSchema(t: Translator) {
+  return z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(SLUG_PATTERN, t("slugFormat"))
+    .refine(
+      (slug) => !(RESERVED_SLUGS as readonly string[]).includes(slug),
+      t("slugReserved"),
+    );
+}
+
 export function createMerchantSchema(t: Translator) {
   return z.object({
     companyName: z.string().trim().min(2, t("required")),
     storeName: z.string().trim().min(2, t("required")),
-    storeSlug: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .regex(SLUG_PATTERN, t("slugFormat"))
-      .refine(
-        (slug) => !(RESERVED_SLUGS as readonly string[]).includes(slug),
-        t("slugReserved"),
-      ),
+    storeSlug: createStoreSlugSchema(t),
     userName: z.string().trim().min(2, t("required")),
     userEmail: z.email(t("emailInvalid")).toLowerCase(),
     // Temporary password: the merchant must change it on first login

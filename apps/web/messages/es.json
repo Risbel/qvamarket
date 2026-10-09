@@ -5,7 +5,9 @@
   },
   "Home": {
     "title": "QvaShop",
-    "subtitle": "Crea tu tienda online"
+    "subtitle": "Crea tu tienda online",
+    "createStore": "Crear mi tienda",
+    "signIn": "Iniciar sesión"
   },
   "Login": {
     "title": "Iniciar sesión",
@@ -14,7 +16,9 @@
     "submit": "Entrar",
     "submitting": "Entrando...",
     "invalidCredentials": "Correo o contraseña incorrectos",
-    "tooManyAttempts": "Demasiados intentos. Espera unos segundos e inténtalo de nuevo."
+    "tooManyAttempts": "Demasiados intentos. Espera unos segundos e inténtalo de nuevo.",
+    "noAccount": "¿Quieres vender con QvaShop?",
+    "createStore": "Crea tu tienda"
   },
   "Dashboard": {
     "welcome": "Hola, {name}",
@@ -56,10 +60,6 @@
       "owner": "Propietario",
       "status": "Estado",
       "actions": "Acciones"
-    },
-    "status": {
-      "active": "Activa",
-      "inactive": "Inactiva"
     },
     "form": {
       "companyName": "Nombre de la empresa",
@@ -118,6 +118,26 @@
         "notFound": "No se puede entrar como este usuario.",
         "failed": "No se pudo iniciar la sesión. Inténtalo de nuevo."
       }
+    },
+    "status": {
+      "pending": "Pendiente",
+      "active": "Activa",
+      "suspended": "Suspendida"
+    },
+    "storeStatus": {
+      "approve": "Aprobar",
+      "reactivate": "Reactivar",
+      "suspend": "Suspender",
+      "suspendTitle": "Suspender tienda",
+      "suspendConfirm": "¿Suspender \"{name}\"? Su tienda dejará de ser visible para el público hasta que la reactives. El comerciante podrá seguir entrando a su panel.",
+      "suspendButton": "Suspender",
+      "suspending": "Suspendiendo...",
+      "cancel": "Cancelar",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se encontró la tienda.",
+        "failed": "No se pudo cambiar el estado. Inténtalo de nuevo."
+      }
     }
   },
   "ChangePassword": {
@@ -145,6 +165,10 @@
       "home": "Inicio",
       "products": "Productos",
       "branding": "Marca"
+    },
+    "status": {
+      "pending": "Tu tienda está pendiente de aprobación. Puedes preparar tus productos y tu marca; no será visible para el público hasta que la aprobemos.",
+      "suspended": "Tu tienda está suspendida y no es visible para el público. Ponte en contacto con nosotros."
     }
   },
   "Products": {
@@ -278,6 +302,28 @@
     "errors": {
       "forbidden": "No tienes permiso para hacer esto.",
       "failed": "No se pudieron guardar los cambios. Inténtalo de nuevo."
+    }
+  },
+  "Signup": {
+    "title": "Crea tu tienda",
+    "description": "Regístrate y empieza a preparar tu catálogo. Tu tienda se publicará cuando la aprobemos.",
+    "userName": "Tu nombre",
+    "userEmail": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Repite la contraseña",
+    "companyName": "Nombre de la empresa",
+    "storeName": "Nombre de la tienda",
+    "storeSlug": "Subdominio",
+    "storeSlugHelp": "Tu tienda estará en {url}. Solo minúsculas, números y guiones.",
+    "approvalNotice": "Revisamos cada tienda antes de publicarla. Mientras tanto puedes entrar, añadir productos y personalizar tu marca.",
+    "submit": "Crear mi tienda",
+    "submitting": "Creando tu tienda...",
+    "haveAccount": "¿Ya tienes cuenta?",
+    "signIn": "Inicia sesión",
+    "errors": {
+      "tooManyAttempts": "Demasiados intentos desde tu conexión. Inténtalo de nuevo más tarde.",
+      "rejected": "No se pudo completar el registro. Espera unos segundos e inténtalo de nuevo.",
+      "failed": "No se pudo crear la tienda. Inténtalo de nuevo."
     }
   }
 }
