@@ -78,6 +78,7 @@ qvashop/
 - **Catalog tables** (`app-schema.ts`): `product` (`tenant_id`, `store_id`, `name`, `description`, `price_minor` integer minor units, `stock` nullable = not tracked, `status` draft | active | archived) and `product_image` (`storage_key`, `content_type`, `size_bytes`, `position` where 0 is the main image). The currency lives on the store (`store.currency`, ISO 4217, default USD), not on each product.
 - **Cross-tenant integrity is enforced by the database:** children carry `tenant_id` plus a **composite FK** to the parent's `(id, tenant_id)` (`product` -> `store`, `product_image` -> `product`), so a row can never point at another tenant's parent. Do the same for every new tenant-owned table. Deleting a store/product cascades to rows only: **the code must also `deleteObject()` the image files**.
 - **Merchant panel** (`/[locale]/dashboard/...`, path-based for now; it moves to `app.` later): `dashboard/layout.tsx` renders the header (store, company, nav) and the impersonation banner. **Every merchant page and Server Action starts with `requireMerchant(locale)`** (`src/server/tenant.ts`: signed in + past the forced password change + member of a company with a store, else 404) and passes the returned `tenantId` / `store.id` to the query helpers in `src/server/*.ts` (e.g. `products.ts`), which always filter by `tenant_id`. Never take a tenant or store id from client input. MVP: the active store is the company's oldest store (no switcher yet). Prices are shown with `formatMoney(minor, store.currency, locale)` (`src/lib/money.ts`).
+- **Products (merchant panel):** pages `/dashboard/products`, `/new`, `/[id]/edit`; form = react-hook-form + zod (`lib/validation/product.ts`). The price input is a decimal string converted to integer minor units on the server with `parsePriceToMinor(input, currencyDigits(store.currency))` (string arithmetic, no floats; max 10 000 000 major units); the form shows it back with `minorToInput`. Empty stock = not tracked (null). **Server Actions** (`src/server/product-actions.ts`) use `getMerchantOrNull()` (never throws/redirects), answer `forbidden` when `can({ product: [...] })` is false, re-validate with the same schema, and call tenant-scoped helpers in `src/server/products.ts` (update/delete match `id` AND `tenant_id` AND `store_id`; another company's id is a 404/`notFound`). `deleteProduct` removes the rows and then the image files from storage.
 - Every query must be scoped by tenant. Never write a query on tenant data without a `tenant_id` filter.
 - Future (not MVP): Postgres Row Level Security, and a tenant registry with a per-tenant connection string so large tenants can be moved to a dedicated database.
 
@@ -185,7 +186,8 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 ### Phase 2 — Merchant panel
 - [x] Storage (SeaweedFS S3), products schema, merchant panel shell with tenant-scoped product list
 - [x] Roles and permissions (access control, `can()`); company roles owner / manager / staff
-- [ ] Products CRUD with images
+- [x] Products CRUD (create, edit, delete, status draft/active/archived)
+- [ ] Product images (upload, delete, main image)
 - [ ] Store branding: logo, colors
 - [ ] Merchant self-signup (store pending until the superadmin approves)
 

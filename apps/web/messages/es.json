@@ -38,7 +38,11 @@
     "slugTaken": "Este subdominio ya está en uso",
     "emailTaken": "Ya existe un usuario con este correo",
     "passwordsDontMatch": "Las contraseñas no coinciden",
-    "passwordSameAsCurrent": "La contraseña nueva debe ser distinta de la actual"
+    "passwordSameAsCurrent": "La contraseña nueva debe ser distinta de la actual",
+    "tooLong": "Máximo {max} caracteres",
+    "priceInvalid": "Introduce un precio válido, con hasta {digits} decimales (ej. 19,99)",
+    "priceInvalidWhole": "Introduce un precio válido, sin decimales (ej. 1500)",
+    "stockInvalid": "Introduce un número entero (o déjalo vacío si no controlas el stock)"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -149,12 +153,55 @@
       "name": "Nombre",
       "price": "Precio",
       "stock": "Stock",
-      "status": "Estado"
+      "status": "Estado",
+      "actions": "Acciones"
     },
     "status": {
       "draft": "Borrador",
       "active": "Activo",
       "archived": "Archivado"
+    },
+    "newButton": "Nuevo producto",
+    "editButton": "Editar",
+    "new": "Nuevo producto",
+    "edit": "Editar producto",
+    "form": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "price": "Precio ({currency})",
+      "stock": "Stock",
+      "stockHelp": "Déjalo vacío si no controlas el stock.",
+      "status": "Estado",
+      "statuses": {
+        "draft": "Borrador",
+        "active": "Activo",
+        "archived": "Archivado"
+      },
+      "statusHelp": {
+        "draft": "No se muestra en la tienda.",
+        "active": "Visible para los clientes en la tienda.",
+        "archived": "Oculto, pero se conserva."
+      },
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "cancel": "Cancelar",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se encontró el producto.",
+        "failed": "No se pudo guardar el producto. Inténtalo de nuevo."
+      }
+    },
+    "delete": {
+      "button": "Eliminar",
+      "title": "Eliminar producto",
+      "confirm": "¿Eliminar \"{name}\"? También se borrarán sus imágenes. Esta acción no se puede deshacer.",
+      "confirmButton": "Eliminar",
+      "deleting": "Eliminando...",
+      "cancel": "Cancelar",
+      "errors": {
+        "forbidden": "No tienes permiso para eliminar productos.",
+        "failed": "No se pudo eliminar el producto. Inténtalo de nuevo."
+      }
     }
   }
 }

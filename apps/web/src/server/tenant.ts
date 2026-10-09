@@ -1,6 +1,8 @@
 import { cache } from "react";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { asc, db, eq, member, organization, store } from "@qvashop/db";
+import { auth } from "@/lib/auth";
 import { can, type PermissionRequest } from "@/lib/permissions";
 import { requireUser } from "./session";
 
@@ -73,6 +75,24 @@ export async function requireMerchant(locale: string) {
     session,
     ...context,
     /** Does the member's role grant ALL of these permissions? e.g. can({ product: ["update"] }) */
+    can: (request: PermissionRequest) => can(context.role, request),
+  };
+}
+
+/**
+ * Same checks as requireMerchant but never redirects or throws: returns null when the
+ * caller is not a merchant member (signed out, temporary password, no company).
+ * For Server Actions, which answer "forbidden" instead of rendering a 404.
+ */
+export async function getMerchantOrNull() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+  if (session.user.mustChangePassword && !session.session.impersonatedBy) return null;
+  const context = await getMerchantContext(session.user.id);
+  if (!context) return null;
+  return {
+    session,
+    ...context,
     can: (request: PermissionRequest) => can(context.role, request),
   };
 }

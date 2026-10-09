@@ -38,7 +38,11 @@
     "slugTaken": "This subdomain is already in use",
     "emailTaken": "A user with this email already exists",
     "passwordsDontMatch": "Passwords do not match",
-    "passwordSameAsCurrent": "The new password must be different from the current one"
+    "passwordSameAsCurrent": "The new password must be different from the current one",
+    "tooLong": "At most {max} characters",
+    "priceInvalid": "Enter a valid price with up to {digits} decimals (e.g. 19.99)",
+    "priceInvalidWhole": "Enter a valid price without decimals (e.g. 1500)",
+    "stockInvalid": "Enter a whole number (or leave it empty if you do not track stock)"
   },
   "Admin": {
     "title": "Admin panel",
@@ -149,12 +153,55 @@
       "name": "Name",
       "price": "Price",
       "stock": "Stock",
-      "status": "Status"
+      "status": "Status",
+      "actions": "Actions"
     },
     "status": {
       "draft": "Draft",
       "active": "Active",
       "archived": "Archived"
+    },
+    "newButton": "New product",
+    "editButton": "Edit",
+    "new": "New product",
+    "edit": "Edit product",
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "price": "Price ({currency})",
+      "stock": "Stock",
+      "stockHelp": "Leave empty if you do not track stock.",
+      "status": "Status",
+      "statuses": {
+        "draft": "Draft",
+        "active": "Active",
+        "archived": "Archived"
+      },
+      "statusHelp": {
+        "draft": "Not shown in the store.",
+        "active": "Visible to customers in the store.",
+        "archived": "Hidden, but kept."
+      },
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "notFound": "Product not found.",
+        "failed": "The product could not be saved. Please try again."
+      }
+    },
+    "delete": {
+      "button": "Delete",
+      "title": "Delete product",
+      "confirm": "Delete \"{name}\"? Its images will be deleted too. This cannot be undone.",
+      "confirmButton": "Delete",
+      "deleting": "Deleting...",
+      "cancel": "Cancel",
+      "errors": {
+        "forbidden": "You are not allowed to delete products.",
+        "failed": "The product could not be deleted. Please try again."
+      }
     }
   }
 }
