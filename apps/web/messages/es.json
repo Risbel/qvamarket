@@ -31,7 +31,19 @@
     }
   },
   "Store": {
-    "hello": "Hola, tienda {slug}"
+    "catalog": {
+      "title": "Productos",
+      "empty": "Esta tienda aún no tiene productos.",
+      "soldOut": "Agotado",
+      "noImage": "Sin imagen"
+    },
+    "product": {
+      "back": "Volver a la tienda",
+      "soldOut": "Agotado",
+      "lowStock": "Quedan solo {count}",
+      "noImage": "Sin imagen",
+      "showImage": "Ver imagen {number}"
+    }
   },
   "Validation": {
     "required": "Este campo es obligatorio",

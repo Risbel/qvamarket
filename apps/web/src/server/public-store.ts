@@ -1,13 +1,17 @@
+import { cache } from "react";
 import { and, db, eq, store } from "@qvashop/db";
 
 /**
  * Public view of a store for the storefront, found by its globally unique subdomain slug.
- * This is the one place that reads tenant data WITHOUT a tenant filter, because the visitor
+ * This is the one place that reads a store WITHOUT a tenant filter, because the visitor
  * is anonymous and the slug is the key. It therefore returns only public fields (never
  * tenant_id) and only for APPROVED stores (status "active"): pending and suspended stores
- * do not exist for the public. Everything else uses requireMerchant()'s tenantId.
+ * do not exist for the public. Products are read through public-catalog.ts with the same
+ * rules; everything else uses requireMerchant()'s tenantId.
+ *
+ * Cached per request: the storefront layout and its pages all need the store.
  */
-export async function getPublicStoreBySlug(slug: string) {
+export const getPublicStoreBySlug = cache(async (slug: string) => {
   const [row] = await db
     .select({
       id: store.id,
@@ -22,4 +26,4 @@ export async function getPublicStoreBySlug(slug: string) {
     .where(and(eq(store.slug, slug), eq(store.status, "active")))
     .limit(1);
   return row ?? null;
-}
+});

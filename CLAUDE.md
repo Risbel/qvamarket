@@ -153,6 +153,12 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - **Deleting a whole company must also delete its `tenants/<tenantId>/` prefix in storage** (a database cascade only removes rows). Not implemented yet because there is no delete-company feature.
 - Images are shown with a plain `<img>` pointing at the public bucket URL (`publicUrl(key)`); `next/image` is not used (it would need `sharp` and a remote host config for the bucket).
 
+### Public storefront (Phase 3)
+- Internal routes under `/[locale]/stores/[slug]/` (reached through the subdomain rewrite in `proxy.ts`): `layout.tsx` (resolves the store, 404 unless `active`, sets the brand CSS variables, header), `page.tsx` (catalog) and `products/[id]/page.tsx` (product page: gallery, price, description, stock hint). Public URLs: `<slug>.qvashop.com/es` and `<slug>.qvashop.com/es/products/<id>`.
+- **Public reads** live in `src/server/public-store.ts` (store by slug) and `src/server/public-catalog.ts` (products). They run without a signed-in tenant, so safety is in the query: a product is joined to its store by the composite key (`store_id`, `tenant_id`), and only `active` products of `active` stores are returned (draft, archived, pending and suspended do not exist for the public). `tenant_id` never leaves these files. Add any new public read there, with the same rules.
+- Visitors see: `stock = 0` -> "Agotado" badge; `stock` 1 to 5 -> "Quedan solo N"; untracked stock (null) -> nothing. Descriptions are plain text (React escapes it, line breaks kept): never render merchant text as HTML.
+- Storefront pages use the brand only through CSS variables (`var(--brand)`, `--brand-accent`, and their `-foreground` pairs); the price stays neutral so a light brand color never hurts readability.
+
 ### Store branding (decided 2026-10)
 - Per store: a **logo** (`store.logo_key`, storage key under `tenants/<tenantId>/stores/<storeId>/logo/`), a **primary color** and an **accent color** (`#rrggbb`, lowercase, enforced by DB CHECKs; null = platform default `DEFAULT_PRIMARY` / `DEFAULT_ACCENT` in `src/lib/color.ts`). Edited at `/dashboard/branding` with a live preview; needs `store:update` (owner, manager).
 - **Logo upload** reuses the product-image pipeline (browser compression, server re-check, real-type sniffing, < 1 MB) with a 512 px limit; where the browser cannot encode WebP the fallback is **PNG, not JPEG**, so transparent logos do not get a black background. Replacing or removing a logo deletes the old file after the row is updated.
@@ -202,7 +208,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 
 > **Decision (2026-10):** the VPS deploy is deferred until the product is further along. Phases 1–3 are built and tested locally (`*.localhost`). Plan for when we deploy: Hostinger **KVM 2** (2 vCPU, 8 GB) with Dokploy, domain on Cloudflare. The `Dockerfile` and `migrator` target are already tested locally.
 
-✅ Done when: `prueba.qvashop.com` shows "Hola, tienda prueba".
+✅ Done when: `prueba.qvashop.com` shows the catalog of the (approved) store with slug `prueba`.
 
 ### Phase 1 — Superadmin panel
 - [x] Create companies, stores and users (temporary password)
@@ -222,7 +228,8 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 ✅ Done when: a merchant loads 10 products on their own.
 
 ### Phase 3 — Public storefront
-- [ ] Catalog, product page, cart
+- [x] Catalog and product page (public, branded)
+- [ ] Cart
 - [ ] Checkout that creates an order (pickup only for now)
 - [ ] Customer accounts: branded login/signup on the store subdomain (global account + per-store `customer` record)
 
