@@ -65,7 +65,7 @@ qvashop/
 - `proxy.ts` (Next.js 16; was `middleware.ts` before) reads the `host` header, resolves the store by slug, and rewrites internally. It also handles locale routing via next-intl.
 - **Reserved slugs** that merchants cannot use: `www`, `app`, `admin`, `api`, `mail`, `static`, `assets`, `status`, `help`, `docs`.
 - `ROOT_DOMAIN` env var (hostname only): `localhost` in dev, `qvashop.com` in prod. `src/lib/tenancy.ts` extracts the store slug from the host and holds the reserved slugs.
-- Store hosts are rewritten to the internal route `/[locale]/stores/[slug]/...` (direct access to `/stores/...` on other hosts returns 404). Phase 0 does not look the slug up; Phase 1 resolves it against the `stores` table. `app.` / `admin.` hosts are not routed separately yet.
+- Store hosts are rewritten to the internal route `/[locale]/stores/[slug]/...` (direct access to `/stores/...` on other hosts returns 404). The storefront page resolves the slug against the `store` table (`getPublicStoreBySlug`): unknown or inactive stores return 404 (so `prueba.qvashop.com` needs a store with slug `prueba`, created from the admin panel). `app.` / `admin.` hosts are not routed separately yet.
 - Local development: use `*.localhost` (e.g. `http://mitienda.localhost:3000`), which resolves to 127.0.0.1 in modern browsers without editing the hosts file.
 
 ## Architecture decisions
@@ -75,7 +75,7 @@ qvashop/
 - Data model: **Company (tenant) → Stores → Products / Orders**. The company is the unit of isolation and billing; the store is the unit of catalog and branding.
 - All IDs are **UUIDs (v7 preferred)**, never auto-increment, so a tenant's data can later be copied to another database without collisions.
 - **A company (tenant) is a Better Auth `organization`** (plugin enabled in `apps/web/src/lib/auth.ts`). `tenant_id` on any table = `organization.id`; merchant users are `member`s of it. No separate `companies` table.
-- App tables live in `packages/db/src/app-schema.ts` (auth tables stay in the generated `auth-schema.ts`). Done so far: `store` (`tenant_id`, globally unique `slug` with a DB format check, `name`, `currency`, `is_active`). The `invitation` table exists because the plugin requires it but is unused (no email in the MVP).
+- App tables live in `packages/db/src/app-schema.ts` (auth tables stay in the generated `auth-schema.ts`). Done so far: `store` (`tenant_id`, globally unique `slug` with a DB format check, `name`, `currency`, `is_active`, branding: `logo_key`, `primary_color`, `accent_color`). The `invitation` table exists because the plugin requires it but is unused (no email in the MVP).
 - **Catalog tables** (`app-schema.ts`): `product` (`tenant_id`, `store_id`, `name`, `description`, `price_minor` integer minor units, `stock` nullable = not tracked, `status` draft | active | archived) and `product_image` (`storage_key`, `content_type`, `size_bytes`, `position` where 0 is the main image). The currency lives on the store (`store.currency`, ISO 4217, default USD), not on each product.
 - **Cross-tenant integrity is enforced by the database:** children carry `tenant_id` plus a **composite FK** to the parent's `(id, tenant_id)` (`product` -> `store`, `product_image` -> `product`), so a row can never point at another tenant's parent. Do the same for every new tenant-owned table. Deleting a store/product cascades to rows only: **the code must also `deleteObject()` the image files**.
 - **Merchant panel** (`/[locale]/dashboard/...`, path-based for now; it moves to `app.` later): `dashboard/layout.tsx` renders the header (store, company, nav) and the impersonation banner. **Every merchant page and Server Action starts with `requireMerchant(locale)`** (`src/server/tenant.ts`: signed in + past the forced password change + member of a company with a store, else 404) and passes the returned `tenantId` / `store.id` to the query helpers in `src/server/*.ts` (e.g. `products.ts`), which always filter by `tenant_id`. Never take a tenant or store id from client input. MVP: the active store is the company's oldest store (no switcher yet). Prices are shown with `formatMoney(minor, store.currency, locale)` (`src/lib/money.ts`).
@@ -149,6 +149,13 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - **Deleting a whole company must also delete its `tenants/<tenantId>/` prefix in storage** (a database cascade only removes rows). Not implemented yet because there is no delete-company feature.
 - Images are shown with a plain `<img>` pointing at the public bucket URL (`publicUrl(key)`); `next/image` is not used (it would need `sharp` and a remote host config for the bucket).
 
+### Store branding (decided 2026-10)
+- Per store: a **logo** (`store.logo_key`, storage key under `tenants/<tenantId>/stores/<storeId>/logo/`), a **primary color** and an **accent color** (`#rrggbb`, lowercase, enforced by DB CHECKs; null = platform default `DEFAULT_PRIMARY` / `DEFAULT_ACCENT` in `src/lib/color.ts`). Edited at `/dashboard/branding` with a live preview; needs `store:update` (owner, manager).
+- **Logo upload** reuses the product-image pipeline (browser compression, server re-check, real-type sniffing, < 1 MB) with a 512 px limit; where the browser cannot encode WebP the fallback is **PNG, not JPEG**, so transparent logos do not get a black background. Replacing or removing a logo deletes the old file after the row is updated.
+- **Text on a brand color is automatic**: `readableForeground(color)` returns black or white, whichever contrasts more. The worst case (a mid grey) is still about 4.6:1, so brand colors can never produce text below WCAG AA (4.5:1); there is nothing for the merchant to get wrong.
+- **The storefront wears the brand through CSS variables** set on its root element: `--brand`, `--brand-foreground`, `--brand-accent`, `--brand-accent-foreground`. Storefront components must use these (`var(--brand)`), not hard-coded colors, so the customer login/signup pages can reuse them later.
+- **`getPublicStoreBySlug(slug)`** (`src/server/public-store.ts`) is the one place that reads tenant data without a tenant filter, because the visitor is anonymous and the slug is the key. It returns public fields only (never `tenant_id`) and only active stores. Every other read uses `requireMerchant()`'s `tenantId`.
+
 ### Deployment image
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
 - Build uses **placeholder** `DATABASE_URL` / `BETTER_AUTH_SECRET` only so `next build` can import modules; real values are runtime env vars (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ROOT_DOMAIN`).
@@ -197,7 +204,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Roles and permissions (access control, `can()`); company roles owner / manager / staff
 - [x] Products CRUD (create, edit, delete, status draft/active/archived)
 - [x] Product images (upload, delete, main image; compressed to < 1 MB in the browser)
-- [ ] Store branding: logo, colors
+- [x] Store branding: logo, colors
 - [ ] Merchant self-signup (store pending until the superadmin approves)
 
 ✅ Done when: a merchant loads 10 products on their own.

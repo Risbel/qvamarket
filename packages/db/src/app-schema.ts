@@ -32,6 +32,11 @@ export const store = pgTable(
     // ISO 4217 code. All prices of the store's products are in this currency.
     currency: text("currency").default("USD").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
+    // Branding (null = platform default). Colors are lowercase #rrggbb; the logo is a key in
+    // object storage (tenants/<tenant_id>/stores/<store_id>/logo/...), URL via publicUrl().
+    logoKey: text("logo_key"),
+    primaryColor: text("primary_color"),
+    accentColor: text("accent_color"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -47,6 +52,14 @@ export const store = pgTable(
       sql`${table.slug} ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'`,
     ),
     check("store_currency_format", sql`${table.currency} ~ '^[A-Z]{3}$'`),
+    check(
+      "store_primary_color_format",
+      sql`${table.primaryColor} is null or ${table.primaryColor} ~ '^#[0-9a-f]{6}$'`,
+    ),
+    check(
+      "store_accent_color_format",
+      sql`${table.accentColor} is null or ${table.accentColor} ~ '^#[0-9a-f]{6}$'`,
+    ),
   ],
 );
 

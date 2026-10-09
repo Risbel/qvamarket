@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { href: "/dashboard", key: "home", exact: true },
   { href: "/dashboard/products", key: "products", exact: false },
+  { href: "/dashboard/branding", key: "branding", exact: false },
 ] as const;
 
 export type PanelNavKey = (typeof ITEMS)[number]["key"];

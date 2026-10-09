@@ -12,6 +12,9 @@ export type MerchantStore = {
   slug: string;
   currency: string;
   isActive: boolean;
+  logoKey: string | null;
+  primaryColor: string | null;
+  accentColor: string | null;
 };
 
 export type MerchantContext = {
@@ -52,6 +55,9 @@ export const getMerchantContext = cache(
         slug: store.slug,
         currency: store.currency,
         isActive: store.isActive,
+        logoKey: store.logoKey,
+        primaryColor: store.primaryColor,
+        accentColor: store.accentColor,
       })
       .from(store)
       .where(eq(store.tenantId, membership.tenantId))

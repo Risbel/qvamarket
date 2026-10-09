@@ -42,7 +42,8 @@
     "tooLong": "At most {max} characters",
     "priceInvalid": "Enter a valid price with up to {digits} decimals (e.g. 19.99)",
     "priceInvalidWhole": "Enter a valid price without decimals (e.g. 1500)",
-    "stockInvalid": "Enter a whole number (or leave it empty if you do not track stock)"
+    "stockInvalid": "Enter a whole number (or leave it empty if you do not track stock)",
+    "colorInvalid": "Enter a valid hex color (e.g. #1a2b3c)"
   },
   "Admin": {
     "title": "Admin panel",
@@ -142,7 +143,8 @@
     "nav": {
       "label": "Navigation",
       "home": "Home",
-      "products": "Products"
+      "products": "Products",
+      "branding": "Branding"
     }
   },
   "Products": {
@@ -230,6 +232,52 @@
         "failed": "The operation could not be completed. Please try again.",
         "unreadable": "The image could not be read. Is it damaged or not an image?"
       }
+    }
+  },
+  "Branding": {
+    "title": "Branding",
+    "description": "Your store's logo and colors. They are applied to your online store.",
+    "logo": {
+      "title": "Logo",
+      "help": "JPG, PNG or WebP. It is reduced automatically (max {size} px and under {limit}); transparency is kept.",
+      "none": "You have not uploaded a logo yet.",
+      "upload": "Upload logo",
+      "replace": "Replace logo",
+      "remove": "Remove logo",
+      "uploading": "Uploading...",
+      "uploaded": "Logo updated ({from} → {to})",
+      "removed": "Logo removed",
+      "errors": {
+        "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
+        "originalTooLarge": "The file is too large (maximum {max}).",
+        "couldNotShrink": "Could not reduce it below {limit}. Try another image.",
+        "tooLarge": "The image is larger than {limit}.",
+        "empty": "The file is empty.",
+        "notFound": "Store not found.",
+        "unreadable": "The image could not be read. Is it damaged or not an image?",
+        "forbidden": "You are not allowed to do this.",
+        "failed": "The operation could not be completed. Please try again."
+      }
+    },
+    "colors": {
+      "title": "Colors",
+      "primary": "Primary color",
+      "primaryHelp": "Your store's header and buttons.",
+      "accent": "Accent color",
+      "accentHelp": "Badges and highlights.",
+      "picker": "{label} (color picker)"
+    },
+    "preview": {
+      "title": "Preview",
+      "button": "Buy",
+      "badge": "Sale"
+    },
+    "save": "Save changes",
+    "saving": "Saving...",
+    "saved": "Changes saved.",
+    "errors": {
+      "forbidden": "You are not allowed to do this.",
+      "failed": "The changes could not be saved. Please try again."
     }
   }
 }

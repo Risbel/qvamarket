@@ -14,6 +14,16 @@ export type CompressionResult =
   | { ok: true; file: File; originalBytes: number }
   | { ok: false; error: CompressionError };
 
+export type CompressionOptions = {
+  /** Longest side in pixels after resizing. Default: product photos (1600). */
+  maxDimension?: number;
+  /**
+   * Output type when the browser cannot encode WebP. JPEG for photos; use PNG for logos,
+   * since JPEG has no transparency (a transparent logo would get a black background).
+   */
+  fallbackType?: "image/jpeg" | "image/png";
+};
+
 let webpEncoding: boolean | undefined;
 /**
  * Can this browser ENCODE WebP from a canvas? (All browsers can show it.) Some, notably
@@ -28,22 +38,24 @@ function canEncodeWebp(): boolean {
 }
 
 /**
- * Browser-side: shrink a photo to a WebP (JPEG where WebP cannot be encoded) under
- * MAX_IMAGE_BYTES before uploading. Re-encoding through a canvas also strips EXIF
- * metadata (GPS position, camera, ...). The server checks size and real type again;
+ * Browser-side: shrink an image to a WebP (or the fallback type where WebP cannot be
+ * encoded) under MAX_IMAGE_BYTES before uploading. Re-encoding through a canvas also strips
+ * EXIF metadata (GPS position, camera, ...). The server checks size and real type again;
  * this only saves the merchant's bandwidth and makes big phone photos fit.
  */
-export async function compressForUpload(file: File): Promise<CompressionResult> {
+export async function compressForUpload(
+  file: File,
+  { maxDimension = MAX_IMAGE_DIMENSION, fallbackType = "image/jpeg" }: CompressionOptions = {},
+): Promise<CompressionResult> {
   if (!(IMAGE_TYPES as readonly string[]).includes(file.type as ImageType)) {
     return { ok: false, error: "unsupportedType" };
   }
   if (file.size > MAX_ORIGINAL_BYTES) return { ok: false, error: "originalTooLarge" };
 
-  const fileType = canEncodeWebp() ? "image/webp" : "image/jpeg";
   const compressed = await imageCompression(file, {
     maxSizeMB: COMPRESSION_TARGET_MB,
-    maxWidthOrHeight: MAX_IMAGE_DIMENSION,
-    fileType,
+    maxWidthOrHeight: maxDimension,
+    fileType: canEncodeWebp() ? "image/webp" : fallbackType,
     initialQuality: 0.85,
     maxIteration: 12,
     // The default worker script is downloaded from a CDN (cdn.jsdelivr.net); running on

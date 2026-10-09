@@ -42,7 +42,8 @@
     "tooLong": "Máximo {max} caracteres",
     "priceInvalid": "Introduce un precio válido, con hasta {digits} decimales (ej. 19,99)",
     "priceInvalidWhole": "Introduce un precio válido, sin decimales (ej. 1500)",
-    "stockInvalid": "Introduce un número entero (o déjalo vacío si no controlas el stock)"
+    "stockInvalid": "Introduce un número entero (o déjalo vacío si no controlas el stock)",
+    "colorInvalid": "Introduce un color hexadecimal válido (ej. #1a2b3c)"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -142,7 +143,8 @@
     "nav": {
       "label": "Navegación",
       "home": "Inicio",
-      "products": "Productos"
+      "products": "Productos",
+      "branding": "Marca"
     }
   },
   "Products": {
@@ -230,6 +232,52 @@
         "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
         "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
       }
+    }
+  },
+  "Branding": {
+    "title": "Marca",
+    "description": "El logo y los colores de tu tienda. Se aplican en tu tienda online.",
+    "logo": {
+      "title": "Logo",
+      "help": "JPG, PNG o WebP. Se reduce automáticamente (máx. {size} px y menos de {limit}); la transparencia se conserva.",
+      "none": "Aún no has subido un logo.",
+      "upload": "Subir logo",
+      "replace": "Cambiar logo",
+      "remove": "Quitar logo",
+      "uploading": "Subiendo...",
+      "uploaded": "Logo actualizado ({from} → {to})",
+      "removed": "Logo eliminado",
+      "errors": {
+        "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
+        "originalTooLarge": "El archivo es demasiado grande (máximo {max}).",
+        "couldNotShrink": "No se pudo reducir por debajo de {limit}. Prueba con otra imagen.",
+        "tooLarge": "La imagen supera {limit}.",
+        "empty": "El archivo está vacío.",
+        "notFound": "No se encontró la tienda.",
+        "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?",
+        "forbidden": "No tienes permiso para hacer esto.",
+        "failed": "No se pudo completar la operación. Inténtalo de nuevo."
+      }
+    },
+    "colors": {
+      "title": "Colores",
+      "primary": "Color principal",
+      "primaryHelp": "Cabecera y botones de tu tienda.",
+      "accent": "Color de acento",
+      "accentHelp": "Etiquetas y destacados.",
+      "picker": "{label} (selector de color)"
+    },
+    "preview": {
+      "title": "Vista previa",
+      "button": "Comprar",
+      "badge": "Oferta"
+    },
+    "save": "Guardar cambios",
+    "saving": "Guardando...",
+    "saved": "Cambios guardados.",
+    "errors": {
+      "forbidden": "No tienes permiso para hacer esto.",
+      "failed": "No se pudieron guardar los cambios. Inténtalo de nuevo."
     }
   }
 }
