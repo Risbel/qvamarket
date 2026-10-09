@@ -154,7 +154,8 @@
       "price": "Price",
       "stock": "Stock",
       "status": "Status",
-      "actions": "Actions"
+      "actions": "Actions",
+      "image": "Image"
     },
     "status": {
       "draft": "Draft",
@@ -201,6 +202,33 @@
       "errors": {
         "forbidden": "You are not allowed to delete products.",
         "failed": "The product could not be deleted. Please try again."
+      }
+    },
+    "createdNotice": "Product created. You can now add images.",
+    "images": {
+      "title": "Images",
+      "count": "{count}/{max}",
+      "help": "JPG, PNG or WebP. They are automatically reduced to under {limit} before uploading. The first one is the main image.",
+      "empty": "This product has no images yet.",
+      "add": "Add images",
+      "main": "Main",
+      "makeMain": "Make main",
+      "remove": "Delete",
+      "compressing": "Reducing {name}...",
+      "uploading": "Uploading {name}...",
+      "compressedInfo": "uploaded ({from} → {to})",
+      "tooMany": "You can only add {count} more image(s) to this product.",
+      "errors": {
+        "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
+        "originalTooLarge": "The file is too large (maximum {max}).",
+        "couldNotShrink": "Could not reduce it below {limit}. Try another image.",
+        "tooLarge": "The image is larger than {limit}.",
+        "empty": "The file is empty.",
+        "limit": "This product already has the maximum of {count} images.",
+        "notFound": "Product or image not found.",
+        "forbidden": "You are not allowed to do this.",
+        "failed": "The operation could not be completed. Please try again.",
+        "unreadable": "The image could not be read. Is it damaged or not an image?"
       }
     }
   }

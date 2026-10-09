@@ -25,6 +25,7 @@ QvaShop is a **B2B2C multi-tenant SaaS** for creating online stores.
 | UI | Tailwind CSS + shadcn/ui |
 | i18n | next-intl — locales `es` (default) and `en` |
 | Forms / validation | react-hook-form + zod, connected with `@hookform/resolvers` (`zodResolver`) |
+| Image compression | `browser-image-compression` in the browser: every product image is shrunk to a WebP **under 1 MB** (max 1600 px) before upload |
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | Better Auth (email + password, organizations, admin/impersonation plugins) |
 | File storage | S3-compatible: **SeaweedFS** in Docker (MinIO's official images are no longer published; any S3 server works, only the env vars change) |
@@ -140,6 +141,14 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - `docker-compose.yml` runs SeaweedFS (`chrislusf/seaweedfs:4.48`, S3 API on port 8333). One bucket (`S3_BUCKET`, created on first use) with **public read** (anonymous identity) and write/delete only with the access key. Env: `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_PUBLIC_URL` (see `.env.example`). Use a strong secret outside local dev.
 - Code: `apps/web/src/server/storage.ts` (`putObject`, `deleteObject`, `publicUrl`, `tenantKey`). **Every key must be built with `tenantKey(tenantId, ...)`** (`tenants/<tenantId>/...`), so each company's files live under its own prefix. File names include a random UUID and are never overwritten (served with `immutable` cache headers). Uploads go through our server (validate type/size, check the user's tenant), never straight from the browser.
 
+### Product images (decided 2026-10)
+- **Hard limit: each stored image is under 1 MB** (`MAX_IMAGE_BYTES = 1_000_000`), max **6 images per product**, JPEG/PNG/WebP only. Constants and the type/size checks live in `src/lib/images.ts`.
+- **Browser** (`src/lib/compress-image.ts`, `browser-image-compression`): resizes to at most 1600 px on the long side and re-encodes to WebP targeting 0.9 MiB (**JPEG instead where the browser cannot encode WebP**, notably Safari, which silently returns PNG; detected at runtime with `canEncodeWebp()`); originals up to 20 MB are accepted for compression. Re-encoding through a canvas also strips EXIF (GPS, camera). `useWebWorker: false` on purpose: the library's default worker is downloaded from cdn.jsdelivr.net at runtime, and we do not run third-party code on merchants' pages.
+- **Server** (`src/server/product-image-actions.ts` -> `product-images.ts`) never trusts the client: it re-checks size (> 1 MB is refused), detects the real type from the file's magic bytes (the browser-reported type and file name are ignored; SVG/HTML are refused), requires `product:update`, and derives the key extension from the detected type. Uploads are Server Actions with `experimental.serverActions.bodySizeLimit: "2mb"` in `next.config.ts` (the default is 1 MB and multipart adds overhead).
+- **Consistency:** the file is uploaded first and the row inserted second (inside a transaction that locks the product row, so simultaneous uploads cannot exceed the limit); if recording fails the file is removed. Deleting an image removes the row, repacks positions (the next image becomes main) and then deletes the file. `deleteProduct` removes all its files. Keys: `tenants/<tenantId>/products/<productId>/<uuid>.<ext>`.
+- **Deleting a whole company must also delete its `tenants/<tenantId>/` prefix in storage** (a database cascade only removes rows). Not implemented yet because there is no delete-company feature.
+- Images are shown with a plain `<img>` pointing at the public bucket URL (`publicUrl(key)`); `next/image` is not used (it would need `sharp` and a remote host config for the bucket).
+
 ### Deployment image
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
 - Build uses **placeholder** `DATABASE_URL` / `BETTER_AUTH_SECRET` only so `next build` can import modules; real values are runtime env vars (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ROOT_DOMAIN`).
@@ -187,7 +196,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Storage (SeaweedFS S3), products schema, merchant panel shell with tenant-scoped product list
 - [x] Roles and permissions (access control, `can()`); company roles owner / manager / staff
 - [x] Products CRUD (create, edit, delete, status draft/active/archived)
-- [ ] Product images (upload, delete, main image)
+- [x] Product images (upload, delete, main image; compressed to < 1 MB in the browser)
 - [ ] Store branding: logo, colors
 - [ ] Merchant self-signup (store pending until the superadmin approves)
 

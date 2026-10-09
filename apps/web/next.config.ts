@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
   // Self-contained build for Docker; trace from the monorepo root so @qvashop/db is included
   output: "standalone",
   outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
+  experimental: {
+    // Images are compressed to < 1 MB in the browser; the default Server Action body limit
+    // is 1 MB and multipart adds overhead.
+    serverActions: { bodySizeLimit: "2mb" },
+  },
   allowedDevOrigins: ["*.localhost"],
   transpilePackages: ["@qvashop/db"],
 };

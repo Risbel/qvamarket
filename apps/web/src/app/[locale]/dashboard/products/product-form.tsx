@@ -56,7 +56,10 @@ export function ProductForm({ productId, initialValues, currency, currencyDigits
       : await createProductAction(values, locale);
 
     if (result.ok) {
-      router.push("/dashboard/products");
+      // A new product continues on its edit page, where images can be added
+      router.push(
+        productId ? "/dashboard/products" : `/dashboard/products/${result.id}/edit?created=1`,
+      );
       router.refresh();
       return;
     }

@@ -154,7 +154,8 @@
       "price": "Precio",
       "stock": "Stock",
       "status": "Estado",
-      "actions": "Acciones"
+      "actions": "Acciones",
+      "image": "Imagen"
     },
     "status": {
       "draft": "Borrador",
@@ -201,6 +202,33 @@
       "errors": {
         "forbidden": "No tienes permiso para eliminar productos.",
         "failed": "No se pudo eliminar el producto. Inténtalo de nuevo."
+      }
+    },
+    "createdNotice": "Producto creado. Ahora puedes añadir imágenes.",
+    "images": {
+      "title": "Imágenes",
+      "count": "{count}/{max}",
+      "help": "JPG, PNG o WebP. Se reducen automáticamente a menos de {limit} antes de subirlas. La primera es la principal.",
+      "empty": "Este producto aún no tiene imágenes.",
+      "add": "Añadir imágenes",
+      "main": "Principal",
+      "makeMain": "Hacer principal",
+      "remove": "Eliminar",
+      "compressing": "Reduciendo {name}...",
+      "uploading": "Subiendo {name}...",
+      "compressedInfo": "subida ({from} → {to})",
+      "tooMany": "Solo puedes añadir {count} imagen(es) más a este producto.",
+      "errors": {
+        "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
+        "originalTooLarge": "El archivo es demasiado grande (máximo {max}).",
+        "couldNotShrink": "No se pudo reducir por debajo de {limit}. Prueba con otra imagen.",
+        "tooLarge": "La imagen supera {limit}.",
+        "empty": "El archivo está vacío.",
+        "limit": "Este producto ya tiene el máximo de {count} imágenes.",
+        "notFound": "No se encontró el producto o la imagen.",
+        "forbidden": "No tienes permiso para hacer esto.",
+        "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
+        "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
       }
     }
   }

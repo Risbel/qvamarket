@@ -11,7 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { mainImageKeys } from "@/server/product-images";
 import { listProducts } from "@/server/products";
+import { publicUrl } from "@/server/storage";
 import { requireMerchantPermission } from "@/server/tenant";
 import { DeleteProductButton } from "./delete-product-button";
 
@@ -23,10 +25,12 @@ export default async function ProductsPage({
 
   const merchant = await requireMerchantPermission(locale, { product: ["read"] });
   const t = await getTranslations("Products");
-  const products = await listProducts({
-    tenantId: merchant.tenantId,
-    storeId: merchant.store.id,
-  });
+  const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
+  const products = await listProducts(scope);
+  const mainImages = await mainImageKeys(
+    scope,
+    products.map((p) => p.id),
+  );
 
   // What the member may do (the Server Actions check it again)
   const canCreate = merchant.can({ product: ["create"] });
@@ -51,6 +55,9 @@ export default async function ProductsPage({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-14">
+                <span className="sr-only">{t("columns.image")}</span>
+              </TableHead>
               <TableHead>{t("columns.name")}</TableHead>
               <TableHead>{t("columns.price")}</TableHead>
               <TableHead>{t("columns.stock")}</TableHead>
@@ -63,6 +70,21 @@ export default async function ProductsPage({
           <TableBody>
             {products.map((p) => (
               <TableRow key={p.id}>
+                <TableCell>
+                  {mainImages.has(p.id) ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
+                    <img
+                      src={publicUrl(mainImages.get(p.id)!)}
+                      alt=""
+                      width={40}
+                      height={40}
+                      loading="lazy"
+                      className="size-10 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="size-10 rounded-md bg-muted" aria-hidden />
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell>
                   {formatMoney(p.priceMinor, merchant.store.currency, locale)}
