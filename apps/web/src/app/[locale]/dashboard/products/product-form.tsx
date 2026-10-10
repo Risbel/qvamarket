@@ -1,14 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  type Control,
+  type Path,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
+import { slugify } from "@/lib/slug";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
   createProductSchema,
+  MAX_TIERS,
   PRODUCT_STATUS_VALUES,
+  type FormCurrency,
   type ProductFormValues,
 } from "@/lib/validation/product";
 import {
@@ -31,11 +40,17 @@ type Props = {
   /** edit mode when `productId` is given */
   productId?: string;
   initialValues: ProductFormValues;
-  currency: string;
-  currencyDigits: number;
+  currencies: FormCurrency[];
+  categories: { id: string; name: string }[];
 };
 
-export function ProductForm({ productId, initialValues, currency, currencyDigits }: Props) {
+const selectClass = cn(
+  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base outline-none transition-colors md:text-sm",
+  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+  "aria-invalid:border-destructive dark:bg-input/30",
+);
+
+export function ProductForm({ productId, initialValues, currencies, categories }: Props) {
   const t = useTranslations("Products.form");
   const tv = useTranslations("Validation");
   const locale = useLocale();
@@ -43,11 +58,19 @@ export function ProductForm({ productId, initialValues, currency, currencyDigits
   const hydrated = useHydrated();
   const [formError, setFormError] = useState<string | null>(null);
 
-  const schema = useMemo(() => createProductSchema(tv, currencyDigits), [tv, currencyDigits]);
+  const schema = useMemo(() => createProductSchema(tv, currencies), [tv, currencies]);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(schema),
     defaultValues: initialValues,
   });
+
+  // New products: the URL slug follows the name until the merchant edits it
+  const name = form.watch("name");
+  const slug = form.watch("slug");
+  const slugDirty = form.formState.dirtyFields.slug;
+  useEffect(() => {
+    if (!productId && !slugDirty) form.setValue("slug", slugify(name));
+  }, [name, slugDirty, productId, form]);
 
   async function onSubmit(values: ProductFormValues) {
     setFormError(null);
@@ -57,118 +80,161 @@ export function ProductForm({ productId, initialValues, currency, currencyDigits
 
     if (result.ok) {
       // A new product continues on its edit page, where images can be added
-      router.push(
-        productId ? "/dashboard/products" : `/dashboard/products/${result.id}/edit?created=1`,
-      );
+      router.push(productId ? "/dashboard/products" : `/dashboard/products/${result.id}/edit?created=1`);
       router.refresh();
       return;
     }
-    if (result.error === "invalid") {
-      for (const [name, messages] of Object.entries(result.fieldErrors ?? {})) {
-        form.setError(name as keyof ProductFormValues, { message: messages[0] });
-      }
-      return;
+    switch (result.error) {
+      case "invalid":
+        for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
+          form.setError(field as Path<ProductFormValues>, { message: messages[0] });
+        }
+        return;
+      case "slugTaken":
+        form.setError("slug", { message: tv("productSlugTaken") });
+        return;
+      case "skuTaken":
+        form.setError("sku", { message: tv("skuTaken") });
+        return;
+      case "categoryNotFound":
+        form.setError("categoryId", { message: t("errors.categoryNotFound") });
+        return;
+      default:
+        setFormError(t(`errors.${result.error}`));
     }
-    setFormError(t(`errors.${result.error}`));
   }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
-        <Controller
-          name="name"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="name">{t("name")}</FieldLabel>
-              <Input {...field} id="name" aria-invalid={fieldState.invalid} />
-              <FieldError errors={[fieldState.error]} />
-            </Field>
-          )}
-        />
-
+        {/* ---- basics */}
+        <TextField control={form.control} name="name" label={t("name")} />
         <Controller
           name="description"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="description">{t("description")}</FieldLabel>
-              <Textarea
-                {...field}
-                id="description"
-                rows={4}
-                aria-invalid={fieldState.invalid}
-              />
+              <Textarea {...field} id="description" rows={4} aria-invalid={fieldState.invalid} />
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}
         />
-
         <div className="grid gap-4 sm:grid-cols-2">
           <Controller
-            name="price"
+            name="categoryId"
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="price">{t("price", { currency })}</FieldLabel>
-                <Input
-                  {...field}
-                  id="price"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  aria-invalid={fieldState.invalid}
-                />
+                <FieldLabel htmlFor="categoryId">{t("category")}</FieldLabel>
+                <select {...field} id="categoryId" aria-invalid={fieldState.invalid} className={selectClass}>
+                  <option value="">{t("noCategory")}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {categories.length === 0 && (
+                  <FieldDescription>
+                    <Link href="/dashboard/categories" className="underline underline-offset-4">
+                      {t("createCategories")}
+                    </Link>
+                  </FieldDescription>
+                )}
                 <FieldError errors={[fieldState.error]} />
               </Field>
             )}
           />
           <Controller
-            name="stock"
+            name="status"
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="stock">{t("stock")}</FieldLabel>
-                <Input
-                  {...field}
-                  id="stock"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  aria-invalid={fieldState.invalid}
-                />
-                <FieldDescription>{t("stockHelp")}</FieldDescription>
+                <FieldLabel htmlFor="status">{t("status")}</FieldLabel>
+                <select {...field} id="status" aria-invalid={fieldState.invalid} className={selectClass}>
+                  {PRODUCT_STATUS_VALUES.map((status) => (
+                    <option key={status} value={status}>
+                      {t(`statuses.${status}`)}
+                    </option>
+                  ))}
+                </select>
+                <FieldDescription>{t(`statusHelp.${field.value}`)}</FieldDescription>
                 <FieldError errors={[fieldState.error]} />
               </Field>
             )}
           />
         </div>
 
-        <Controller
-          name="status"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="status">{t("status")}</FieldLabel>
-              <select
-                {...field}
-                id="status"
-                aria-invalid={fieldState.invalid}
-                className={cn(
-                  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base outline-none transition-colors md:text-sm",
-                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                  "aria-invalid:border-destructive dark:bg-input/30",
-                )}
-              >
-                {PRODUCT_STATUS_VALUES.map((status) => (
-                  <option key={status} value={status}>
-                    {t(`statuses.${status}`)}
-                  </option>
-                ))}
-              </select>
-              <FieldDescription>{t(`statusHelp.${field.value}`)}</FieldDescription>
-              <FieldError errors={[fieldState.error]} />
-            </Field>
-          )}
-        />
+        {/* ---- prices, one card per currency of the store */}
+        <section className="flex flex-col gap-3" aria-labelledby="prices-title">
+          <div>
+            <h2 id="prices-title" className="text-base font-semibold">
+              {t("pricesTitle")}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {currencies.length > 1 ? t("pricesHelpMulti") : t("pricesHelp")}
+            </p>
+          </div>
+          {currencies.map((currency, index) => (
+            <CurrencyPrices
+              key={currency.code}
+              control={form.control}
+              index={index}
+              currency={currency}
+            />
+          ))}
+        </section>
+
+        {/* ---- inventory */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField control={form.control} name="sku" label={t("sku")} description={t("skuHelp")} autoComplete="off" />
+          <TextField
+            control={form.control}
+            name="stock"
+            label={t("stock")}
+            description={t("stockHelp")}
+            inputMode="numeric"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* ---- search and SEO */}
+        <section className="flex flex-col gap-4" aria-labelledby="seo-title">
+          <div>
+            <h2 id="seo-title" className="text-base font-semibold">
+              {t("seoTitle")}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t("seoHelp")}</p>
+          </div>
+          <TextField
+            control={form.control}
+            name="slug"
+            label={t("slug")}
+            description={t("slugHelp", { path: `/products/${slug || "..."}` })}
+            autoCapitalize="none"
+            autoComplete="off"
+          />
+          <TextField control={form.control} name="tags" label={t("tags")} description={t("tagsHelp")} autoComplete="off" />
+          <TextField
+            control={form.control}
+            name="metaTitle"
+            label={t("metaTitle")}
+            description={t("metaTitleHelp", { count: form.watch("metaTitle").length })}
+          />
+          <Controller
+            name="metaDescription"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="metaDescription">{t("metaDescription")}</FieldLabel>
+                <Textarea {...field} id="metaDescription" rows={2} aria-invalid={fieldState.invalid} />
+                <FieldDescription>{t("metaDescriptionHelp", { count: field.value.length })}</FieldDescription>
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+        </section>
 
         {formError && <FieldError>{formError}</FieldError>}
 
@@ -176,14 +242,130 @@ export function ProductForm({ productId, initialValues, currency, currencyDigits
           <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
             {form.formState.isSubmitting ? t("saving") : t("save")}
           </Button>
-          <Link
-            href="/dashboard/products"
-            className={buttonVariants({ variant: "outline" })}
-          >
+          <Link href="/dashboard/products" className={buttonVariants({ variant: "outline" })}>
             {t("cancel")}
           </Link>
         </div>
       </FieldGroup>
     </form>
+  );
+}
+
+/** Regular price, compare-at price and volume tiers in one currency. */
+function CurrencyPrices({
+  control,
+  index,
+  currency,
+}: {
+  control: Control<ProductFormValues>;
+  index: number;
+  currency: FormCurrency;
+}) {
+  const t = useTranslations("Products.form");
+  const tiers = useFieldArray({ control, name: `prices.${index}.tiers` });
+
+  return (
+    <fieldset className="flex flex-col gap-3 rounded-lg border p-4" data-currency={currency.code}>
+      <legend className="px-1 text-sm font-medium">
+        {currency.code} {currency.isDefault && <span className="text-muted-foreground">· {t("defaultCurrency")}</span>}
+      </legend>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          control={control}
+          name={`prices.${index}.price`}
+          label={t("price", { currency: currency.code })}
+          description={currency.isDefault ? undefined : t("priceOptional")}
+          inputMode="decimal"
+          autoComplete="off"
+        />
+        <TextField
+          control={control}
+          name={`prices.${index}.compareAt`}
+          label={t("compareAt", { currency: currency.code })}
+          description={t("compareAtHelp")}
+          inputMode="decimal"
+          autoComplete="off"
+        />
+      </div>
+
+      {tiers.fields.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium">{t("tiersTitle")}</span>
+          {tiers.fields.map((tier, k) => (
+            <div key={tier.id} className="grid grid-cols-[1fr_1fr_auto] items-start gap-2">
+              <TextField
+                control={control}
+                name={`prices.${index}.tiers.${k}.minQuantity`}
+                label={t("tierFrom")}
+                inputMode="numeric"
+                autoComplete="off"
+              />
+              <TextField
+                control={control}
+                name={`prices.${index}.tiers.${k}.price`}
+                label={t("tierPrice", { currency: currency.code })}
+                inputMode="decimal"
+                autoComplete="off"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-6"
+                onClick={() => tiers.remove(k)}
+                aria-label={t("tierRemove")}
+              >
+                ×
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      {tiers.fields.length < MAX_TIERS && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-fit"
+          onClick={() => tiers.append({ minQuantity: "", price: "" })}
+        >
+          {t("tierAdd")}
+        </Button>
+      )}
+    </fieldset>
+  );
+}
+
+function TextField({
+  control,
+  name,
+  label,
+  description,
+  ...inputProps
+}: {
+  control: Control<ProductFormValues>;
+  name: Path<ProductFormValues>;
+  label: string;
+  description?: string;
+} & Omit<React.ComponentProps<typeof Input>, "name">) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldLabel htmlFor={name}>{label}</FieldLabel>
+          <Input
+            {...inputProps}
+            {...field}
+            value={(field.value as string | undefined) ?? ""}
+            id={name}
+            aria-invalid={fieldState.invalid}
+          />
+          {description && <FieldDescription>{description}</FieldDescription>}
+          <FieldError errors={[fieldState.error]} />
+        </Field>
+      )}
+    />
   );
 }

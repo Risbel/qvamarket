@@ -4,13 +4,16 @@ import { notFound } from "next/navigation";
 import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { can, type PermissionRequest } from "@/lib/permissions";
+import { getStoreCurrencies, type StoreCurrency } from "./currencies";
 import { requireUser } from "./session";
 
 export type MerchantStore = {
   id: string;
   name: string;
   slug: string;
-  currency: string;
+  /** currencies the store sells in, default first */
+  currencies: StoreCurrency[];
+  defaultCurrency: StoreCurrency;
   /** pending (awaiting approval) | active | suspended */
   status: "pending" | "active" | "suspended";
   logoKey: string | null;
@@ -54,7 +57,6 @@ export const getMerchantContext = cache(
         id: store.id,
         name: store.name,
         slug: store.slug,
-        currency: store.currency,
         status: store.status,
         logoKey: store.logoKey,
         primaryColor: store.primaryColor,
@@ -65,8 +67,19 @@ export const getMerchantContext = cache(
       .orderBy(asc(store.createdAt));
     if (stores.length === 0) return null;
 
-    // The DB CHECK guarantees status is one of the three values
-    const typed = stores.map((s) => ({ ...s, status: s.status as MerchantStore["status"] }));
+    const currencies = await getStoreCurrencies(stores.map((s) => s.id));
+    // The DB CHECK guarantees status is one of the three values. Every store has a default
+    // currency (created with the store); the fallback only guards against a broken row.
+    const typed = stores.map((s): MerchantStore => {
+      const list = currencies.get(s.id) ?? [];
+      const fallback = { code: "USD", digits: 2, isDefault: true };
+      return {
+        ...s,
+        status: s.status as MerchantStore["status"],
+        currencies: list.length > 0 ? list : [fallback],
+        defaultCurrency: list.find((c) => c.isDefault) ?? list[0] ?? fallback,
+      };
+    });
     return { ...membership, store: typed[0], stores: typed };
   },
 );

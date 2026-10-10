@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { and, db, eq, store } from "@qvashop/db";
+import { getStoreCurrencies } from "./currencies";
 
 /**
  * Public view of a store for the storefront, found by its globally unique subdomain slug.
@@ -17,7 +18,14 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
       id: store.id,
       name: store.name,
       slug: store.slug,
-      currency: store.currency,
+      description: store.description,
+      phone: store.phone,
+      whatsapp: store.whatsapp,
+      contactEmail: store.contactEmail,
+      address: store.address,
+      pickupInstructions: store.pickupInstructions,
+      metaTitle: store.metaTitle,
+      metaDescription: store.metaDescription,
       logoKey: store.logoKey,
       primaryColor: store.primaryColor,
       accentColor: store.accentColor,
@@ -25,5 +33,9 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
     .from(store)
     .where(and(eq(store.slug, slug), eq(store.status, "active")))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  const currencies = (await getStoreCurrencies([row.id])).get(row.id) ?? [];
+  const defaultCurrency = currencies.find((c) => c.isDefault) ?? currencies[0];
+  if (!defaultCurrency) return null; // a store without currencies cannot sell anything
+  return { ...row, currencies, defaultCurrency };
 });

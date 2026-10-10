@@ -4,15 +4,15 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
-import { currencyDigits } from "@/lib/money";
 import {
   createProductSchema,
-  toProductData,
+  toProductInput,
 } from "@/lib/validation/product";
 import {
   createProduct,
   deleteProduct,
   updateProduct,
+  type SaveProductResult,
 } from "./products";
 import { getMerchantOrNull } from "./tenant";
 
@@ -20,7 +20,12 @@ export type ProductActionResult =
   | { ok: true; id: string }
   | {
       ok: false;
-      error: "forbidden" | "notFound" | "failed" | "invalid";
+      error:
+        | "forbidden"
+        | "notFound"
+        | "failed"
+        | "invalid"
+        | Extract<SaveProductResult, { ok: false }>["error"];
       fieldErrors?: Record<string, string[]>;
     };
 
@@ -32,8 +37,9 @@ async function parseValues(values: unknown, locale: string, merchant: Merchant) 
     locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale,
     namespace: "Validation",
   });
-  const digits = currencyDigits(merchant.store.currency);
-  const parsed = createProductSchema(t, digits).safeParse(values);
+  // The store's own currencies: a price in any other currency is rejected here
+  const currencies = merchant.store.currencies;
+  const parsed = createProductSchema(t, currencies).safeParse(values);
   if (!parsed.success) {
     return {
       error: {
@@ -43,7 +49,7 @@ async function parseValues(values: unknown, locale: string, merchant: Merchant) 
       } satisfies ProductActionResult,
     };
   }
-  return { data: toProductData(parsed.data, digits) };
+  return { data: toProductInput(parsed.data, currencies) };
 }
 
 const scopeOf = (merchant: Merchant) => ({
@@ -63,7 +69,7 @@ export async function createProductAction(
   if (error) return error;
 
   try {
-    return { ok: true, id: await createProduct(scopeOf(merchant), data) };
+    return await createProduct(scopeOf(merchant), data);
   } catch (e) {
     console.error("createProductAction failed", e);
     return { ok: false, error: "failed" };
@@ -85,8 +91,7 @@ export async function updateProductAction(
   if (error) return error;
 
   try {
-    const updated = await updateProduct(scopeOf(merchant), parsedId.data, data);
-    return updated ? { ok: true, id: parsedId.data } : { ok: false, error: "notFound" };
+    return await updateProduct(scopeOf(merchant), parsedId.data, data);
   } catch (e) {
     console.error("updateProductAction failed", e);
     return { ok: false, error: "failed" };

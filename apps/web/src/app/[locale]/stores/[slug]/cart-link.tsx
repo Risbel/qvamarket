@@ -13,7 +13,7 @@ export function CartLink() {
     <Link
       href="/cart"
       aria-label={t("linkLabel", { count })}
-      className="ml-auto flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium hover:opacity-80"
+      className="flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium hover:opacity-80"
     >
       {t("link")}
       <span

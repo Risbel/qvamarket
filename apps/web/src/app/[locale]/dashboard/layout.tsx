@@ -21,7 +21,8 @@ export default async function DashboardLayout({
   // Only show what the member's role allows (the pages enforce it again on the server)
   const visibleNav: PanelNavKey[] = ["home"];
   if (context && can(context.role, { product: ["read"] })) visibleNav.push("products");
-  if (context && can(context.role, { store: ["update"] })) visibleNav.push("branding");
+  if (context && can(context.role, { category: ["update"] })) visibleNav.push("categories");
+  if (context && can(context.role, { store: ["update"] })) visibleNav.push("branding", "settings");
 
   return (
     <div className="flex flex-1 flex-col">

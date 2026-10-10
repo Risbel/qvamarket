@@ -1,0 +1,114 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Controller, useForm, type Control } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useHydrated } from "@/lib/use-hydrated";
+import { createStoreProfileSchema, type StoreProfileValues } from "@/lib/validation/catalog-settings";
+import { updateStoreProfileAction } from "@/server/catalog-actions";
+import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+export function StoreProfileForm({ initialValues }: { initialValues: StoreProfileValues }) {
+  const t = useTranslations("Settings.profile");
+  const tv = useTranslations("Validation");
+  const locale = useLocale();
+  const router = useRouter();
+  const hydrated = useHydrated();
+  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const schema = useMemo(() => createStoreProfileSchema(tv), [tv]);
+  const form = useForm<StoreProfileValues>({ resolver: zodResolver(schema), defaultValues: initialValues });
+
+  async function onSubmit(values: StoreProfileValues) {
+    setStatus(null);
+    const result = await updateStoreProfileAction(values, locale);
+    if (result.ok) {
+      setStatus({ ok: true, text: t("saved") });
+      router.refresh();
+    } else if (result.error === "invalid") {
+      for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
+        form.setError(field as keyof StoreProfileValues, { message: messages[0] });
+      }
+    } else {
+      setStatus({ ok: false, text: t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`) });
+    }
+  }
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
+      <FieldGroup>
+        <Area control={form.control} name="description" label={t("descriptionField")} rows={3} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Text control={form.control} name="phone" label={t("phone")} type="tel" autoComplete="tel" />
+          <Text control={form.control} name="whatsapp" label={t("whatsapp")} type="tel" />
+        </div>
+        <Text control={form.control} name="contactEmail" label={t("contactEmail")} type="email" autoComplete="email" />
+        <Area control={form.control} name="address" label={t("address")} rows={2} />
+        <Area
+          control={form.control}
+          name="pickupInstructions"
+          label={t("pickupInstructions")}
+          help={t("pickupInstructionsHelp")}
+          rows={3}
+        />
+        <Text control={form.control} name="metaTitle" label={t("metaTitle")} help={t("metaHelp")} />
+        <Area control={form.control} name="metaDescription" label={t("metaDescription")} rows={2} />
+        {status && (
+          <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
+            {status.text}
+          </p>
+        )}
+        <div>
+          <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? t("saving") : t("save")}
+          </Button>
+        </div>
+      </FieldGroup>
+    </form>
+  );
+}
+
+type FieldProps = {
+  control: Control<StoreProfileValues>;
+  name: keyof StoreProfileValues;
+  label: string;
+  help?: string;
+};
+
+function Text({ control, name, label, help, ...inputProps }: FieldProps & Omit<React.ComponentProps<typeof Input>, "name">) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldLabel htmlFor={name}>{label}</FieldLabel>
+          <Input {...inputProps} {...field} id={name} aria-invalid={fieldState.invalid} />
+          {help && <FieldDescription>{help}</FieldDescription>}
+          <FieldError errors={[fieldState.error]} />
+        </Field>
+      )}
+    />
+  );
+}
+
+function Area({ control, name, label, help, rows }: FieldProps & { rows: number }) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldLabel htmlFor={name}>{label}</FieldLabel>
+          <Textarea {...field} id={name} rows={rows} aria-invalid={fieldState.invalid} />
+          {help && <FieldDescription>{help}</FieldDescription>}
+          <FieldError errors={[fieldState.error]} />
+        </Field>
+      )}
+    />
+  );
+}

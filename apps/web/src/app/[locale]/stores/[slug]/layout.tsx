@@ -10,15 +10,19 @@ import {
 } from "@/lib/color";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
+import { selectedCurrency } from "@/server/storefront-currency";
 import { CartLink } from "./cart-link";
 import { CartProvider } from "./cart-provider";
+import { CurrencySwitcher } from "./currency-switcher";
 
 export async function generateMetadata({
   params,
 }: LayoutProps<"/[locale]/stores/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const store = await getPublicStoreBySlug(slug);
-  return store ? { title: store.name } : {};
+  return store
+    ? { title: store.metaTitle ?? store.name, description: store.metaDescription ?? store.description ?? undefined }
+    : {};
 }
 
 /**
@@ -36,6 +40,7 @@ export default async function StoreLayout({
   const store = await getPublicStoreBySlug(slug);
   if (!store) notFound();
 
+  const currency = await selectedCurrency(store.currencies);
   const primary = store.primaryColor ?? DEFAULT_PRIMARY;
   const accent = store.accentColor ?? DEFAULT_ACCENT;
   const brand = {
@@ -46,7 +51,7 @@ export default async function StoreLayout({
   } as CSSProperties;
 
   return (
-    <CartProvider storeId={store.id} storeSlug={store.slug}>
+    <CartProvider storeId={store.id} storeSlug={store.slug} currency={currency.code}>
       <div className="flex flex-1 flex-col" style={brand}>
         <header
           style={{ backgroundColor: "var(--brand)", color: "var(--brand-foreground)" }}
@@ -65,7 +70,12 @@ export default async function StoreLayout({
               )}
               <span className="text-lg font-semibold">{store.name}</span>
             </Link>
-            <CartLink />
+            <div className="ml-auto flex items-center gap-3">
+              {store.currencies.length > 1 && (
+                <CurrencySwitcher codes={store.currencies.map((c) => c.code)} current={currency.code} />
+              )}
+              <CartLink />
+            </div>
           </div>
         </header>
         {children}

@@ -1,11 +1,11 @@
 // The customer's cart lives in the browser (localStorage, one per store) and holds ONLY
-// product ids and quantities. Names, prices and stock are never stored here: the server
+// variant ids and quantities (a simple product is sold through its default variant). Names, prices and stock are never stored here: the server
 // re-reads them every time (src/server/cart.ts), so a tampered cart cannot change a price.
 
 export const MAX_LINE_QUANTITY = 99;
 export const MAX_CART_LINES = 50;
 
-export type CartItem = { productId: string; quantity: number };
+export type CartItem = { variantId: string; quantity: number };
 
 // Same rule as zod's z.uuid() on the server: anything else is dropped here, so the browser
 // never sends an id the server would refuse.
@@ -29,48 +29,48 @@ export function parseCart(raw: string | null): CartItem[] {
   const merged = new Map<string, number>();
   for (const entry of data) {
     if (typeof entry !== "object" || entry === null) continue;
-    const { productId, quantity } = entry as Record<string, unknown>;
-    if (typeof productId !== "string" || !UUID.test(productId)) continue;
+    const { variantId, quantity } = entry as Record<string, unknown>;
+    if (typeof variantId !== "string" || !UUID.test(variantId)) continue;
     if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1) continue;
-    const id = productId.toLowerCase();
+    const id = variantId.toLowerCase();
     merged.set(id, Math.min((merged.get(id) ?? 0) + quantity, MAX_LINE_QUANTITY));
     if (merged.size >= MAX_CART_LINES) break;
   }
-  return [...merged].map(([productId, quantity]) => ({ productId, quantity }));
+  return [...merged].map(([variantId, quantity]) => ({ variantId, quantity }));
 }
 
 export function serializeCart(items: CartItem[]): string {
-  return JSON.stringify(items.map(({ productId, quantity }) => ({ productId, quantity })));
+  return JSON.stringify(items.map(({ variantId, quantity }) => ({ variantId, quantity })));
 }
 
 /** Adds `quantity` of a product (merging with an existing line), up to `max` per line. */
 export function addToCart(
   items: CartItem[],
-  productId: string,
+  variantId: string,
   quantity: number,
   max: number = MAX_LINE_QUANTITY,
 ): CartItem[] {
   const limit = Math.min(max, MAX_LINE_QUANTITY);
-  const existing = items.find((item) => item.productId === productId);
+  const existing = items.find((item) => item.variantId === variantId);
   if (!existing && items.length >= MAX_CART_LINES) return items;
   const next = Math.min((existing?.quantity ?? 0) + quantity, limit);
   if (next < 1) return items;
   return existing
-    ? items.map((item) => (item.productId === productId ? { productId, quantity: next } : item))
-    : [...items, { productId, quantity: next }];
+    ? items.map((item) => (item.variantId === variantId ? { variantId, quantity: next } : item))
+    : [...items, { variantId, quantity: next }];
 }
 
-export function setLineQuantity(items: CartItem[], productId: string, quantity: number): CartItem[] {
-  if (!Number.isInteger(quantity) || quantity < 1) return removeLine(items, productId);
+export function setLineQuantity(items: CartItem[], variantId: string, quantity: number): CartItem[] {
+  if (!Number.isInteger(quantity) || quantity < 1) return removeLine(items, variantId);
   return items.map((item) =>
-    item.productId === productId
-      ? { productId, quantity: Math.min(quantity, MAX_LINE_QUANTITY) }
+    item.variantId === variantId
+      ? { variantId, quantity: Math.min(quantity, MAX_LINE_QUANTITY) }
       : item,
   );
 }
 
-export function removeLine(items: CartItem[], productId: string): CartItem[] {
-  return items.filter((item) => item.productId !== productId);
+export function removeLine(items: CartItem[], variantId: string): CartItem[] {
+  return items.filter((item) => item.variantId !== variantId);
 }
 
 export function cartCount(items: CartItem[]): number {
@@ -79,7 +79,8 @@ export function cartCount(items: CartItem[]): number {
 
 // ---- browser storage + change notification (client only)
 
-export const cartStorageKey = (storeId: string) => `qvashop:cart:${storeId}`;
+// v2: entries are variant ids (v1 carts held product ids and are simply ignored)
+export const cartStorageKey = (storeId: string) => `qvashop:cart:v2:${storeId}`;
 
 const listeners = new Set<() => void>();
 

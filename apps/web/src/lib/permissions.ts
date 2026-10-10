@@ -14,6 +14,7 @@ export const statement = {
   ...defaultStatements,
   store: ["read", "update"],
   product: ["read", "create", "update", "delete"],
+  category: ["read", "create", "update", "delete"],
   order: ["read", "update"],
 } as const;
 
@@ -24,6 +25,7 @@ export const owner = ac.newRole({
   ...ownerAc.statements,
   store: ["read", "update"],
   product: ["read", "create", "update", "delete"],
+  category: ["read", "create", "update", "delete"],
   order: ["read", "update"],
 });
 
@@ -31,6 +33,7 @@ export const owner = ac.newRole({
 export const manager = ac.newRole({
   store: ["read", "update"],
   product: ["read", "create", "update", "delete"],
+  category: ["read", "create", "update", "delete"],
   order: ["read", "update"],
 });
 
@@ -38,6 +41,7 @@ export const manager = ac.newRole({
 export const staff = ac.newRole({
   store: ["read"],
   product: ["read"],
+  category: ["read"],
   order: ["read", "update"],
 });
 

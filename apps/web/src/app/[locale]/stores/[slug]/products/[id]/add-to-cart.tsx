@@ -8,7 +8,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { useCart } from "../../cart-provider";
 
 /** Quantity picker + "add to cart". `stock` null = not tracked. */
-export function AddToCart({ productId, stock }: { productId: string; stock: number | null }) {
+export function AddToCart({ variantId, stock }: { variantId: string; stock: number | null }) {
   const t = useTranslations("Store.cart");
   const hydrated = useHydrated();
   const { items, add } = useCart();
@@ -16,7 +16,7 @@ export function AddToCart({ productId, stock }: { productId: string; stock: numb
   const [added, setAdded] = useState(false);
 
   const max = stock === null ? MAX_LINE_QUANTITY : Math.min(stock, MAX_LINE_QUANTITY);
-  const inCart = items.find((item) => item.productId === productId)?.quantity ?? 0;
+  const inCart = items.find((item) => item.variantId === variantId)?.quantity ?? 0;
   const room = Math.max(max - inCart, 0);
   const chosen = Math.min(quantity, Math.max(room, 1));
 
@@ -62,7 +62,7 @@ export function AddToCart({ productId, stock }: { productId: string; stock: numb
           type="button"
           disabled={!hydrated}
           onClick={() => {
-            add(productId, chosen, max);
+            add(variantId, chosen, max);
             setAdded(true);
             setQuantity(1);
           }}

@@ -35,14 +35,25 @@
       "title": "Productos",
       "empty": "Esta tienda aún no tiene productos.",
       "soldOut": "Agotado",
-      "noImage": "Sin imagen"
+      "noImage": "Sin imagen",
+      "categoriesLabel": "Categorías",
+      "other": "Otros productos",
+      "from": "Desde",
+      "sale": "Oferta",
+      "was": "Antes"
     },
     "product": {
       "back": "Volver a la tienda",
       "soldOut": "Agotado",
       "lowStock": "Quedan solo {count}",
       "noImage": "Sin imagen",
-      "showImage": "Ver imagen {number}"
+      "showImage": "Ver imagen {number}",
+      "breadcrumb": "Ruta de navegación",
+      "sale": "Oferta",
+      "was": "Antes",
+      "tiersTitle": "Precio por cantidad",
+      "tierLine": "Desde {count} unidades: {price} c/u",
+      "notInCurrency": "Este producto no está disponible en {currency}. Elige otra moneda arriba."
     },
     "cart": {
       "title": "Tu carrito",
@@ -67,8 +78,10 @@
       "errors": {
         "failed": "No se pudo actualizar tu carrito. Inténtalo de nuevo.",
         "tooManyRequests": "Demasiadas consultas seguidas. Espera un momento."
-      }
-    }
+      },
+      "notInCurrency": "No disponible en {currency}: no se incluye en el total."
+    },
+    "currency": "Moneda"
   },
   "Validation": {
     "required": "Este campo es obligatorio",
@@ -84,7 +97,22 @@
     "priceInvalid": "Introduce un precio válido, con hasta {digits} decimales (ej. 19,99)",
     "priceInvalidWhole": "Introduce un precio válido, sin decimales (ej. 1500)",
     "stockInvalid": "Introduce un número entero (o déjalo vacío si no controlas el stock)",
-    "colorInvalid": "Introduce un color hexadecimal válido (ej. #1a2b3c)"
+    "colorInvalid": "Introduce un color hexadecimal válido (ej. #1a2b3c)",
+    "compareAtHigher": "El precio anterior debe ser mayor que el precio actual",
+    "currencyRequired": "Elige al menos una moneda y márcala como principal",
+    "phoneInvalid": "Solo números, espacios y los signos + ( ) -",
+    "priceNeededFirst": "Indica primero el precio normal en esta moneda",
+    "tagTooLong": "Cada etiqueta puede tener como máximo {max} caracteres",
+    "tierCheaper": "El precio por volumen debe ser menor que el precio normal",
+    "tierQuantity": "Introduce una cantidad entera entre 2 y {max}",
+    "tierRepeated": "Ya hay un precio para esta cantidad",
+    "tooManyCurrencies": "Máximo {max} monedas",
+    "tooManyTags": "Máximo {max} etiquetas",
+    "tooManyTiers": "Máximo {max} precios por volumen",
+    "urlSlugFormat": "Solo minúsculas, números y guiones (no al inicio ni al final)",
+    "categorySlugTaken": "Ya hay una categoría con este identificador",
+    "productSlugTaken": "Ya hay un producto con esta dirección",
+    "skuTaken": "Ya hay un producto con este SKU"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -201,7 +229,9 @@
       "label": "Navegación",
       "home": "Inicio",
       "products": "Productos",
-      "branding": "Marca"
+      "branding": "Marca",
+      "categories": "Categorías",
+      "settings": "Ajustes"
     },
     "status": {
       "pending": "Tu tienda está pendiente de aprobación. Puedes preparar tus productos y tu marca; no será visible para el público hasta que la aprobemos.",
@@ -218,7 +248,8 @@
       "stock": "Stock",
       "status": "Estado",
       "actions": "Acciones",
-      "image": "Imagen"
+      "image": "Imagen",
+      "category": "Categoría"
     },
     "status": {
       "draft": "Borrador",
@@ -252,8 +283,37 @@
       "errors": {
         "forbidden": "No tienes permiso para hacer esto.",
         "notFound": "No se encontró el producto.",
-        "failed": "No se pudo guardar el producto. Inténtalo de nuevo."
-      }
+        "failed": "No se pudo guardar el producto. Inténtalo de nuevo.",
+        "categoryNotFound": "La categoría ya no existe. Elige otra.",
+        "hasVariants": "Este producto tiene variantes; su precio y stock se editan por variante."
+      },
+      "category": "Categoría",
+      "noCategory": "Sin categoría",
+      "createCategories": "Crear categorías",
+      "pricesTitle": "Precios",
+      "pricesHelp": "El precio que verán tus clientes.",
+      "pricesHelpMulti": "Pon un precio en cada moneda en la que quieras vender este producto. Si dejas una moneda vacía, el producto no se mostrará en ella (no se convierte automáticamente).",
+      "defaultCurrency": "principal",
+      "priceOptional": "Opcional. Déjalo vacío para no vender en esta moneda.",
+      "compareAt": "Precio anterior ({currency})",
+      "compareAtHelp": "Opcional. Se muestra tachado para indicar una rebaja.",
+      "tiersTitle": "Precios por volumen",
+      "tierFrom": "Desde (unidades)",
+      "tierPrice": "Precio por unidad ({currency})",
+      "tierAdd": "Añadir precio por volumen",
+      "tierRemove": "Quitar este precio por volumen",
+      "sku": "SKU",
+      "skuHelp": "Opcional. Tu código interno del producto.",
+      "seoTitle": "Buscadores (SEO)",
+      "seoHelp": "Ayuda a que encuentren tu producto en Google y al compartir el enlace.",
+      "slug": "Dirección del producto",
+      "slugHelp": "Aparece en el enlace: {path}",
+      "tags": "Etiquetas",
+      "tagsHelp": "Palabras separadas por comas (ej. algodón, verano).",
+      "metaTitle": "Título para buscadores",
+      "metaTitleHelp": "{count}/70. Si lo dejas vacío se usa el nombre.",
+      "metaDescription": "Descripción para buscadores",
+      "metaDescriptionHelp": "{count}/160. Si la dejas vacía se usa la descripción."
     },
     "delete": {
       "button": "Eliminar",
@@ -293,7 +353,10 @@
         "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
         "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
       }
-    }
+    },
+    "fromPrefix": "desde",
+    "noPrice": "Sin precio",
+    "hasVariantsNotice": "Este producto tiene variantes. Aquí puedes editar sus datos generales; el precio y el stock de cada variante se editarán en el editor de variantes."
   },
   "Branding": {
     "title": "Marca",
@@ -361,6 +424,75 @@
       "tooManyAttempts": "Demasiados intentos desde tu conexión. Inténtalo de nuevo más tarde.",
       "rejected": "No se pudo completar el registro. Espera unos segundos e inténtalo de nuevo.",
       "failed": "No se pudo crear la tienda. Inténtalo de nuevo."
+    }
+  },
+  "Categories": {
+    "title": "Categorías",
+    "description": "Organizan tu tienda: aparecen arriba como un índice y cada una lleva a su sección de productos. En este orden se muestran.",
+    "new": "Nueva categoría",
+    "name": "Nombre",
+    "slug": "Identificador",
+    "slugHelp": "Se usa en el enlace a la sección (#identificador).",
+    "create": "Crear categoría",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "empty": "Aún no tienes categorías.",
+    "hidden": "Oculta",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "rename": "Editar",
+    "delete": "Eliminar",
+    "moveUp": "Subir {name}",
+    "moveDown": "Bajar {name}",
+    "productCount": "{count, plural, =0 {sin productos} one {# producto} other {# productos}}",
+    "deleteTitle": "Eliminar categoría",
+    "deleteConfirm": "¿Eliminar \"{name}\"? {count, plural, =0 {No tiene productos.} one {Su producto quedará sin categoría.} other {Sus # productos quedarán sin categoría.}}",
+    "errors": {
+      "forbidden": "No tienes permiso para hacer esto.",
+      "failed": "No se pudo completar la operación. Inténtalo de nuevo."
+    }
+  },
+  "Settings": {
+    "title": "Ajustes de la tienda",
+    "currencies": {
+      "title": "Monedas",
+      "description": "Las monedas en las que vendes. Tus clientes pueden elegir en cuál ver los precios.",
+      "enabled": "Monedas activas",
+      "default": "principal",
+      "makeDefault": "Usar {code} como moneda principal",
+      "remove": "Quitar",
+      "add": "Añadir moneda",
+      "choose": "Elige una moneda...",
+      "help": "Cada producto necesita su propio precio en cada moneda; no se hace conversión automática. La moneda principal es la que se muestra por defecto.",
+      "save": "Guardar monedas",
+      "saving": "Guardando...",
+      "saved": "Monedas guardadas.",
+      "inUse": "No se puede quitar {codes}: hay productos con precio en esa moneda. Borra esos precios primero.",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "failed": "No se pudieron guardar las monedas. Inténtalo de nuevo."
+      }
+    },
+    "profile": {
+      "title": "Información de la tienda",
+      "description": "Se muestra a tus clientes en la tienda y al recoger sus pedidos.",
+      "descriptionField": "Descripción",
+      "phone": "Teléfono",
+      "whatsapp": "WhatsApp",
+      "contactEmail": "Correo de contacto",
+      "address": "Dirección",
+      "pickupInstructions": "Instrucciones de recogida",
+      "pickupInstructionsHelp": "Dónde y cuándo pueden recoger los pedidos (ej. horario, referencias).",
+      "metaTitle": "Título para buscadores",
+      "metaHelp": "Si lo dejas vacío se usa el nombre de la tienda.",
+      "metaDescription": "Descripción para buscadores",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "saved": "Información guardada.",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      }
     }
   }
 }

@@ -26,7 +26,8 @@ export default async function ProductsPage({
   const merchant = await requireMerchantPermission(locale, { product: ["read"] });
   const t = await getTranslations("Products");
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
-  const products = await listProducts(scope);
+  const currency = merchant.store.defaultCurrency.code;
+  const products = await listProducts(scope, currency);
   const mainImages = await mainImageKeys(
     scope,
     products.map((p) => p.id),
@@ -59,6 +60,7 @@ export default async function ProductsPage({
                 <span className="sr-only">{t("columns.image")}</span>
               </TableHead>
               <TableHead>{t("columns.name")}</TableHead>
+              <TableHead>{t("columns.category")}</TableHead>
               <TableHead>{t("columns.price")}</TableHead>
               <TableHead>{t("columns.stock")}</TableHead>
               <TableHead>{t("columns.status")}</TableHead>
@@ -86,8 +88,12 @@ export default async function ProductsPage({
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{p.name}</TableCell>
+                <TableCell className="text-muted-foreground">{p.categoryName ?? "—"}</TableCell>
                 <TableCell>
-                  {formatMoney(p.priceMinor, merchant.store.currency, locale)}
+                  {p.priceMinor === null
+                    ? t("noPrice")
+                    : (p.variantCount > 1 ? t("fromPrefix") + " " : "") +
+                      formatMoney(p.priceMinor, currency, locale)}
                 </TableCell>
                 <TableCell>{p.stock ?? t("stockUntracked")}</TableCell>
                 <TableCell>

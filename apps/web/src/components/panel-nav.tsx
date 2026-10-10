@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { href: "/dashboard", key: "home", exact: true },
   { href: "/dashboard/products", key: "products", exact: false },
+  { href: "/dashboard/categories", key: "categories", exact: false },
   { href: "/dashboard/branding", key: "branding", exact: false },
+  { href: "/dashboard/settings", key: "settings", exact: false },
 ] as const;
 
 export type PanelNavKey = (typeof ITEMS)[number]["key"];
@@ -18,7 +20,7 @@ export function PanelNav({ visible }: { visible: readonly PanelNavKey[] }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1" aria-label={t("label")}>
+    <nav className="flex flex-wrap gap-1" aria-label={t("label")}>
       {ITEMS.filter((item) => visible.includes(item.key)).map((item) => {
         const active = item.exact
           ? pathname === item.href

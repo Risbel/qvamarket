@@ -8,12 +8,13 @@ import { getPublicStoreBySlug } from "./public-store";
 import { createRateLimiter } from "./rate-limit";
 import { clientIp } from "./request";
 import { publicUrl } from "./storage";
+import { pickCurrency } from "./storefront-currency";
 
 // Public and read-only, but it hits the database: limit it per IP.
 const limiter = createRateLimiter({ limit: 120, windowMs: 60 * 1000 });
 
 const entrySchema = z.object({
-  productId: z.uuid(),
+  variantId: z.uuid(),
   quantity: z.number().int().min(1).max(MAX_LINE_QUANTITY),
 });
 
@@ -25,42 +26,43 @@ export type PriceCartActionResult =
   | { ok: false; error: "invalid" | "notFound" | "tooManyRequests" };
 
 /**
- * Current prices, stock and totals for the customer's cart. The slug only says WHICH public
- * store to read (it is looked up, not trusted); the items are re-validated; no price or
- * name comes from the client.
+ * Current prices, stock and totals for the shopper's cart. The slug only says WHICH public
+ * store to read (it is looked up, not trusted); the currency must be one of the store's
+ * (otherwise its default is used); the items are re-validated; no price or name comes from
+ * the client.
  */
 export async function priceCartAction(
   slug: unknown,
+  currency: unknown,
   items: unknown,
 ): Promise<PriceCartActionResult> {
   if (!limiter.tryConsume(clientIp(await headers()))) {
     return { ok: false, error: "tooManyRequests" };
   }
-
   if (typeof slug !== "string" || !Array.isArray(items)) return { ok: false, error: "invalid" };
 
   const store = await getPublicStoreBySlug(slug);
   if (!store) return { ok: false, error: "notFound" };
+  const chosen = pickCurrency(store.currencies, typeof currency === "string" ? currency : null);
 
-  // Merge duplicates the same way the client does
-  const merged = new Map<string, number>();
   // A broken entry (tampered or corrupt storage) is skipped; it must not break the whole cart
-  const entries = items.slice(0, MAX_CART_LINES * 2).flatMap((entry) => {
+  const merged = new Map<string, number>();
+  for (const entry of items.slice(0, MAX_CART_LINES * 2)) {
     const parsed = entrySchema.safeParse(entry);
-    return parsed.success ? [parsed.data] : [];
-  });
-  for (const { productId, quantity } of entries) {
-    const id = productId.toLowerCase();
-    merged.set(id, Math.min((merged.get(id) ?? 0) + quantity, MAX_LINE_QUANTITY));
+    if (!parsed.success) continue;
+    const id = parsed.data.variantId.toLowerCase();
+    merged.set(id, Math.min((merged.get(id) ?? 0) + parsed.data.quantity, MAX_LINE_QUANTITY));
+    if (merged.size >= MAX_CART_LINES) break;
   }
 
   const cart = await priceCart(
     store.id,
-    [...merged].map(([productId, quantity]) => ({ productId, quantity })),
+    chosen.code,
+    [...merged].map(([variantId, quantity]) => ({ variantId, quantity })),
   );
   return {
     ok: true,
-    currency: store.currency,
+    currency: cart.currency,
     subtotalMinor: cart.subtotalMinor,
     lines: cart.lines.map(({ imageKey, ...line }) => ({
       ...line,

@@ -35,14 +35,25 @@
       "title": "Products",
       "empty": "This store has no products yet.",
       "soldOut": "Sold out",
-      "noImage": "No image"
+      "noImage": "No image",
+      "categoriesLabel": "Categories",
+      "other": "Other products",
+      "from": "From",
+      "sale": "Sale",
+      "was": "Was"
     },
     "product": {
       "back": "Back to the store",
       "soldOut": "Sold out",
       "lowStock": "Only {count} left",
       "noImage": "No image",
-      "showImage": "Show image {number}"
+      "showImage": "Show image {number}",
+      "breadcrumb": "Breadcrumb",
+      "sale": "Sale",
+      "was": "Was",
+      "tiersTitle": "Price by quantity",
+      "tierLine": "From {count} units: {price} each",
+      "notInCurrency": "This product is not available in {currency}. Choose another currency above."
     },
     "cart": {
       "title": "Your cart",
@@ -67,8 +78,10 @@
       "errors": {
         "failed": "Your cart could not be updated. Please try again.",
         "tooManyRequests": "Too many requests in a row. Please wait a moment."
-      }
-    }
+      },
+      "notInCurrency": "Not available in {currency}: not included in the total."
+    },
+    "currency": "Currency"
   },
   "Validation": {
     "required": "This field is required",
@@ -84,7 +97,22 @@
     "priceInvalid": "Enter a valid price with up to {digits} decimals (e.g. 19.99)",
     "priceInvalidWhole": "Enter a valid price without decimals (e.g. 1500)",
     "stockInvalid": "Enter a whole number (or leave it empty if you do not track stock)",
-    "colorInvalid": "Enter a valid hex color (e.g. #1a2b3c)"
+    "colorInvalid": "Enter a valid hex color (e.g. #1a2b3c)",
+    "compareAtHigher": "The previous price must be higher than the current price",
+    "currencyRequired": "Choose at least one currency and mark it as the main one",
+    "phoneInvalid": "Only digits, spaces and + ( ) -",
+    "priceNeededFirst": "Enter the regular price in this currency first",
+    "tagTooLong": "Each tag can have at most {max} characters",
+    "tierCheaper": "The volume price must be lower than the regular price",
+    "tierQuantity": "Enter a whole quantity between 2 and {max}",
+    "tierRepeated": "There is already a price for this quantity",
+    "tooManyCurrencies": "At most {max} currencies",
+    "tooManyTags": "At most {max} tags",
+    "tooManyTiers": "At most {max} volume prices",
+    "urlSlugFormat": "Only lowercase letters, numbers and hyphens (not at the start or end)",
+    "categorySlugTaken": "A category already uses this identifier",
+    "productSlugTaken": "A product already uses this address",
+    "skuTaken": "A product already uses this SKU"
   },
   "Admin": {
     "title": "Admin panel",
@@ -201,7 +229,9 @@
       "label": "Navigation",
       "home": "Home",
       "products": "Products",
-      "branding": "Branding"
+      "branding": "Branding",
+      "categories": "Categories",
+      "settings": "Settings"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -218,7 +248,8 @@
       "stock": "Stock",
       "status": "Status",
       "actions": "Actions",
-      "image": "Image"
+      "image": "Image",
+      "category": "Category"
     },
     "status": {
       "draft": "Draft",
@@ -252,8 +283,37 @@
       "errors": {
         "forbidden": "You are not allowed to do this.",
         "notFound": "Product not found.",
-        "failed": "The product could not be saved. Please try again."
-      }
+        "failed": "The product could not be saved. Please try again.",
+        "categoryNotFound": "That category no longer exists. Choose another one.",
+        "hasVariants": "This product has variants; its price and stock are edited per variant."
+      },
+      "category": "Category",
+      "noCategory": "No category",
+      "createCategories": "Create categories",
+      "pricesTitle": "Prices",
+      "pricesHelp": "The price your customers will see.",
+      "pricesHelpMulti": "Set a price in each currency you want to sell this product in. If you leave a currency empty, the product is not shown in it (there is no automatic conversion).",
+      "defaultCurrency": "main",
+      "priceOptional": "Optional. Leave it empty to not sell in this currency.",
+      "compareAt": "Previous price ({currency})",
+      "compareAtHelp": "Optional. Shown struck through to signal a discount.",
+      "tiersTitle": "Volume prices",
+      "tierFrom": "From (units)",
+      "tierPrice": "Price per unit ({currency})",
+      "tierAdd": "Add volume price",
+      "tierRemove": "Remove this volume price",
+      "sku": "SKU",
+      "skuHelp": "Optional. Your internal product code.",
+      "seoTitle": "Search engines (SEO)",
+      "seoHelp": "Helps people find your product on Google and when the link is shared.",
+      "slug": "Product address",
+      "slugHelp": "Shown in the link: {path}",
+      "tags": "Tags",
+      "tagsHelp": "Words separated by commas (e.g. cotton, summer).",
+      "metaTitle": "Search engine title",
+      "metaTitleHelp": "{count}/70. If empty, the name is used.",
+      "metaDescription": "Search engine description",
+      "metaDescriptionHelp": "{count}/160. If empty, the description is used."
     },
     "delete": {
       "button": "Delete",
@@ -293,7 +353,10 @@
         "failed": "The operation could not be completed. Please try again.",
         "unreadable": "The image could not be read. Is it damaged or not an image?"
       }
-    }
+    },
+    "fromPrefix": "from",
+    "noPrice": "No price",
+    "hasVariantsNotice": "This product has variants. You can edit its general details here; each variant's price and stock will be edited in the variants editor."
   },
   "Branding": {
     "title": "Branding",
@@ -361,6 +424,75 @@
       "tooManyAttempts": "Too many attempts from your connection. Please try again later.",
       "rejected": "The registration could not be completed. Wait a few seconds and try again.",
       "failed": "The store could not be created. Please try again."
+    }
+  },
+  "Categories": {
+    "title": "Categories",
+    "description": "They organize your store: they appear at the top as an index and each one jumps to its product section. They are shown in this order.",
+    "new": "New category",
+    "name": "Name",
+    "slug": "Identifier",
+    "slugHelp": "Used in the link to the section (#identifier).",
+    "create": "Create category",
+    "save": "Save",
+    "cancel": "Cancel",
+    "empty": "You have no categories yet.",
+    "hidden": "Hidden",
+    "hide": "Hide",
+    "show": "Show",
+    "rename": "Edit",
+    "delete": "Delete",
+    "moveUp": "Move {name} up",
+    "moveDown": "Move {name} down",
+    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}",
+    "deleteTitle": "Delete category",
+    "deleteConfirm": "Delete \"{name}\"? {count, plural, =0 {It has no products.} one {Its product will have no category.} other {Its # products will have no category.}}",
+    "errors": {
+      "forbidden": "You don't have permission to do this.",
+      "failed": "The operation could not be completed. Please try again."
+    }
+  },
+  "Settings": {
+    "title": "Store settings",
+    "currencies": {
+      "title": "Currencies",
+      "description": "The currencies you sell in. Your customers can choose which one to see prices in.",
+      "enabled": "Active currencies",
+      "default": "main",
+      "makeDefault": "Use {code} as the main currency",
+      "remove": "Remove",
+      "add": "Add currency",
+      "choose": "Choose a currency...",
+      "help": "Each product needs its own price in each currency; there is no automatic conversion. The main currency is shown by default.",
+      "save": "Save currencies",
+      "saving": "Saving...",
+      "saved": "Currencies saved.",
+      "inUse": "{codes} can't be removed: some products have prices in it. Delete those prices first.",
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "failed": "The currencies could not be saved. Please try again."
+      }
+    },
+    "profile": {
+      "title": "Store information",
+      "description": "Shown to your customers in the store and when they pick up their orders.",
+      "descriptionField": "Description",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "contactEmail": "Contact email",
+      "address": "Address",
+      "pickupInstructions": "Pickup instructions",
+      "pickupInstructionsHelp": "Where and when orders can be picked up (e.g. hours, landmarks).",
+      "metaTitle": "Search engine title",
+      "metaHelp": "If empty, the store name is used.",
+      "metaDescription": "Search engine description",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Information saved.",
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "failed": "Could not save. Please try again."
+      }
     }
   }
 }

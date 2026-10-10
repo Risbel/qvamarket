@@ -1,4 +1,4 @@
-import { db, eq, organization, store, user } from "@qvashop/db";
+import { db, eq, organization, store, storeCurrency, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 
 // Building blocks shared by the two ways a merchant comes to exist: created by the
@@ -47,6 +47,8 @@ export async function createCompanyAndStore(
   userId: string,
   input: NewCompanyInput,
   status: StoreStatus,
+  /** first (default) currency; the merchant can add more or change it in Settings */
+  currencyCode = "USD",
 ) {
   const company = await auth.api.createOrganization({
     body: { name: input.companyName, slug: input.storeSlug, userId },
@@ -62,6 +64,12 @@ export async function createCompanyAndStore(
         status,
       })
       .returning({ id: store.id });
+    await db.insert(storeCurrency).values({
+      storeId: created.id,
+      tenantId: company.id,
+      currencyCode,
+      isDefault: true,
+    });
     return { tenantId: company.id, storeId: created.id };
   } catch (error) {
     await db.delete(organization).where(eq(organization.id, company.id));
