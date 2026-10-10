@@ -1,0 +1,33 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getStoreProfile } from "@/server/store-settings";
+import { requireMerchantPermission } from "@/server/tenant";
+import { SectionHeader } from "../section-header";
+import { StoreProfileForm } from "./store-profile-form";
+
+export default async function GeneralSettingsPage({
+  params,
+}: PageProps<"/[locale]/dashboard/settings/general">) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const t = await getTranslations("Settings.profile");
+  const profile = await getStoreProfile({ tenantId: merchant.tenantId, storeId: merchant.store.id });
+
+  return (
+    <>
+      <SectionHeader title={t("title")} description={t("description")} />
+      <StoreProfileForm
+        initialValues={{
+          description: profile?.description ?? "",
+          phone: profile?.phone ?? "",
+          whatsapp: profile?.whatsapp ?? "",
+          contactEmail: profile?.contactEmail ?? "",
+          address: profile?.address ?? "",
+          metaTitle: profile?.metaTitle ?? "",
+          metaDescription: profile?.metaDescription ?? "",
+        }}
+      />
+    </>
+  );
+}

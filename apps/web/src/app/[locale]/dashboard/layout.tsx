@@ -47,7 +47,6 @@ export default async function DashboardLayout({
     {
       label: "store",
       items: [
-        ...allowed("branding", can(context.role, { store: ["update"] })),
         ...allowed("settings", can(context.role, { store: ["update"] })),
       ],
     },

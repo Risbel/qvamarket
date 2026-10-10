@@ -240,7 +240,6 @@
       "label": "Navegación",
       "home": "Inicio",
       "products": "Productos",
-      "branding": "Marca",
       "categories": "Categorías",
       "settings": "Ajustes",
       "promotions": "Promociones",
@@ -521,7 +520,13 @@
     "anchorPreview": "Enlace a su sección en la tienda: {anchor}"
   },
   "Settings": {
-    "title": "Ajustes de la tienda",
+    "nav": {
+      "label": "Secciones de ajustes",
+      "general": "General",
+      "branding": "Marca",
+      "currencies": "Monedas",
+      "pickup": "Recogida"
+    },
     "currencies": {
       "title": "Monedas",
       "description": "Las monedas en las que vendes. Tus clientes pueden elegir en cuál ver los precios.",
@@ -549,14 +554,25 @@
       "whatsapp": "WhatsApp",
       "contactEmail": "Correo de contacto",
       "address": "Dirección",
-      "pickupInstructions": "Instrucciones de recogida",
-      "pickupInstructionsHelp": "Dónde y cuándo pueden recoger los pedidos (ej. horario, referencias).",
       "metaTitle": "Título para buscadores",
       "metaHelp": "Si lo dejas vacío se usa el nombre de la tienda.",
       "metaDescription": "Descripción para buscadores",
       "save": "Guardar",
       "saving": "Guardando...",
       "saved": "Información guardada.",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      }
+    },
+    "pickup": {
+      "title": "Recogida en tienda",
+      "description": "Cómo recogen tus clientes sus pedidos.",
+      "instructions": "Instrucciones de recogida",
+      "instructionsHelp": "Dónde y cuándo pueden recoger los pedidos (ej. horario, referencias).",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "saved": "Ajustes de recogida guardados.",
       "errors": {
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo guardar. Inténtalo de nuevo."

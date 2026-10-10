@@ -12,7 +12,7 @@ export type CategoryValues = z.infer<ReturnType<typeof createCategorySchema>>;
 const optionalText = (t: Translator, max: number) =>
   z.string().trim().max(max, t("tooLong", { max }));
 
-/** Public store profile: shown on the storefront and on the order confirmation (pickup). */
+/** Public store profile (Settings > General): shown on the storefront and on order confirmations. */
 export function createStoreProfileSchema(t: Translator) {
   return z.object({
     description: optionalText(t, 1000),
@@ -20,12 +20,19 @@ export function createStoreProfileSchema(t: Translator) {
     whatsapp: optionalText(t, 30).regex(/^[0-9+()\s-]*$/, t("phoneInvalid")),
     contactEmail: z.union([z.literal(""), z.email(t("emailInvalid"))]),
     address: optionalText(t, 300),
-    pickupInstructions: optionalText(t, 1000),
     metaTitle: optionalText(t, 70),
     metaDescription: optionalText(t, 160),
   });
 }
 export type StoreProfileValues = z.infer<ReturnType<typeof createStoreProfileSchema>>;
+
+/** Pickup settings (Settings > Pickup): shown to customers who pick up their order. */
+export function createPickupSchema(t: Translator) {
+  return z.object({
+    pickupInstructions: optionalText(t, 1000),
+  });
+}
+export type PickupValues = z.infer<ReturnType<typeof createPickupSchema>>;
 
 export function createCurrenciesSchema(t: Translator) {
   return z

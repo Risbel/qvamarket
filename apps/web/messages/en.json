@@ -240,7 +240,6 @@
       "label": "Navigation",
       "home": "Home",
       "products": "Products",
-      "branding": "Branding",
       "categories": "Categories",
       "settings": "Settings",
       "promotions": "Promotions",
@@ -521,7 +520,13 @@
     "anchorPreview": "Link to its section in the store: {anchor}"
   },
   "Settings": {
-    "title": "Store settings",
+    "nav": {
+      "label": "Settings sections",
+      "general": "General",
+      "branding": "Branding",
+      "currencies": "Currencies",
+      "pickup": "Pickup"
+    },
     "currencies": {
       "title": "Currencies",
       "description": "The currencies you sell in. Your customers can choose which one to see prices in.",
@@ -549,14 +554,25 @@
       "whatsapp": "WhatsApp",
       "contactEmail": "Contact email",
       "address": "Address",
-      "pickupInstructions": "Pickup instructions",
-      "pickupInstructionsHelp": "Where and when orders can be picked up (e.g. hours, landmarks).",
       "metaTitle": "Search engine title",
       "metaHelp": "If empty, the store name is used.",
       "metaDescription": "Search engine description",
       "save": "Save",
       "saving": "Saving...",
       "saved": "Information saved.",
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "failed": "Could not save. Please try again."
+      }
+    },
+    "pickup": {
+      "title": "In-store pickup",
+      "description": "How your customers pick up their orders.",
+      "instructions": "Pickup instructions",
+      "instructionsHelp": "Where and when orders can be picked up (e.g. hours, landmarks).",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Pickup settings saved.",
       "errors": {
         "forbidden": "You don't have permission to do this.",
         "failed": "Could not save. Please try again."

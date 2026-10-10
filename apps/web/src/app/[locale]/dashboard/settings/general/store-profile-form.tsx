@@ -48,13 +48,6 @@ export function StoreProfileForm({ initialValues }: { initialValues: StoreProfil
         </div>
         <Text control={form.control} name="contactEmail" label={t("contactEmail")} type="email" autoComplete="email" />
         <Area control={form.control} name="address" label={t("address")} rows={2} />
-        <Area
-          control={form.control}
-          name="pickupInstructions"
-          label={t("pickupInstructions")}
-          help={t("pickupInstructionsHelp")}
-          rows={3}
-        />
         <Text control={form.control} name="metaTitle" label={t("metaTitle")} help={t("metaHelp")} />
         <Area control={form.control} name="metaDescription" label={t("metaDescription")} rows={2} />
         {status && (

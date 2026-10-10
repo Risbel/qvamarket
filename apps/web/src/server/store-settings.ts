@@ -1,5 +1,5 @@
 import { and, db, eq, store } from "@qvashop/db";
-import type { StoreProfileValues } from "@/lib/validation/catalog-settings";
+import type { PickupValues, StoreProfileValues } from "@/lib/validation/catalog-settings";
 
 type Scope = { tenantId: string; storeId: string };
 const owns = ({ tenantId, storeId }: Scope) => and(eq(store.id, storeId), eq(store.tenantId, tenantId));
@@ -22,9 +22,10 @@ export async function getStoreProfile(scope: Scope) {
   return row ?? null;
 }
 
+const orNull = (value: string) => (value === "" ? null : value);
+
 /** Saves the public profile; empty fields are stored as NULL. */
 export async function updateStoreProfile(scope: Scope, values: StoreProfileValues) {
-  const orNull = (value: string) => (value === "" ? null : value);
   const rows = await db
     .update(store)
     .set({
@@ -33,10 +34,19 @@ export async function updateStoreProfile(scope: Scope, values: StoreProfileValue
       whatsapp: orNull(values.whatsapp),
       contactEmail: orNull(values.contactEmail),
       address: orNull(values.address),
-      pickupInstructions: orNull(values.pickupInstructions),
       metaTitle: orNull(values.metaTitle),
       metaDescription: orNull(values.metaDescription),
     })
+    .where(owns(scope))
+    .returning({ id: store.id });
+  return rows.length === 1;
+}
+
+/** Saves the pickup settings; empty fields are stored as NULL. */
+export async function updatePickupSettings(scope: Scope, values: PickupValues) {
+  const rows = await db
+    .update(store)
+    .set({ pickupInstructions: orNull(values.pickupInstructions) })
     .where(owns(scope))
     .returning({ id: store.id });
   return rows.length === 1;
