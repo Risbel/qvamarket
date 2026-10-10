@@ -134,20 +134,25 @@ qvashop/
 - Session cookies stay **host-only** (no `crossSubDomainCookies`): a session on one store is not sent to another store or to `app.`/`admin.`. The same person signs in once per store with the same credentials.
 - Open technical point to verify when building it: Better Auth `baseURL`/trusted origins must accept every store subdomain (wildcard `*.<root domain>`).
 
-### Orders (planned structure — no code yet)
-Orders are created at storefront checkout (guest checkout, no customer account). Merchants manage them in the panel.
+### Orders (schema done 2026-10, migration `0011`; checkout and panel not built yet)
+Orders are created at storefront checkout (guest checkout, no customer account). Merchants manage them in the panel. Tables in `app-schema.ts` (singular names like the rest; `order` is a reserved word, so raw SQL must quote it: `"order"`):
 
 | Table | Purpose / key fields |
 |---|---|
-| `customers` | Per tenant. Name, phone, email (optional). Guest checkout creates/reuses by phone. |
-| `orders` | `tenant_id`, `store_id`, `customer_id`, `number` (human-readable, unique per store), `status`, `payment_status`, `fulfillment_type` (`pickup` \| `delivery`), `subtotal`, `delivery_fee`, `total`, `currency`, `customer_note`, timestamps |
-| `order_items` | `order_id`, `variant_id` / `product_id` (nullable refs), **snapshot** of name, variant title, SKU, unit price (after tiers/promotions), compare-at, qty, line total. Never read live product price for an existing order. |
-| `order_status_history` | `order_id`, `from_status`, `to_status`, actor (user / system / customer), note, timestamp. Audit trail; written on every status change. |
-| `order_payments` | Manual records: `method` (cash, transfer, other), `amount`, `paid_at`, `recorded_by`, note. No gateway involved. |
-| `order_delivery` | 1:1 with delivery orders: snapshot of address, contact phone, zone, fee, scheduled slot. Filled by the delivery flow (Phase 5). |
+| `customer` | Per **company** (`tenant_id`, shared by its stores). `name`, `phone` (normalized by the app to digits with optional leading `+`, DB format check, **unique per company** when set), `email`, `user_id` (nullable, for customer accounts later; unique per company). Guest checkout finds/creates it by phone. |
+| `order` | `tenant_id`, `store_id`, `number` (unique per store, from `store.last_order_number`), `customer_id` (nullable, `SET NULL ("customer_id")`), **snapshot** `customer_name` / `customer_phone` / `customer_email`, `customer_note`, `status`, `payment_status`, `fulfillment_type`, `currency_code` (FK to the platform `currency`, not `store_currency`, so removing a currency never touches old orders), `subtotal_minor`, `delivery_fee_minor`, `total_minor` (bigint; DB check `total = subtotal + delivery_fee`), `idempotency_key` (unique per store), timestamps. |
+| `order_item` | Composite FK to `order (id, store_id, tenant_id)`; `variant_id` / `product_id` link back to the catalog with `SET NULL (<column>)` when deleted; **snapshot** of product name, variant title, SKU, unit price (after tiers/promotions), compare-at, quantity, line total (DB check `line_total = unit_price * quantity`), `stock_deducted`, `position`. Never read the live product or price for an existing order. |
+| `order_status_history` | `from_status` (null = order placed), `to_status`, `actor` (`customer` \| `merchant` \| `system`), `actor_user_id` (SET NULL), note, timestamp. Written in the same transaction as every status change. |
+| `order_payment` | Manual records: `kind` (`payment` \| `refund`), `method` (`cash` \| `transfer` \| `other`), `amount_minor` (> 0, always in the order's currency), `paid_at`, `recorded_by_user_id`, note. No gateway involved. |
+| `order_delivery` | Phase 5, not created yet: 1:1 with delivery orders, snapshot of address, contact phone, zone, fee, scheduled slot. |
 
-- **Order status:** `pending → confirmed → preparing → ready → out_for_delivery → completed`, plus `cancelled` from any non-final state. `out_for_delivery` only applies to `delivery` orders.
-- **Payment status:** `unpaid | partial | paid | refunded` — derived from `order_payments`, not edited directly.
+- **Order number:** checkout runs `UPDATE store SET last_order_number = last_order_number + 1 ... RETURNING` inside the order's transaction (the row lock serializes concurrent checkouts; a rollback leaves no gap). Format it for display in the app (e.g. `#1001` is a display choice, the column starts at 1).
+- **Customer snapshot:** reusing a customer by phone must not overwrite another order's data; the order keeps what was typed at checkout. Do not show a customer's other orders to someone who only typed their phone.
+- **Stock:** checkout takes the stock in the same transaction (`UPDATE product_variant SET stock = stock - qty WHERE ... AND stock >= qty`; the `stock >= 0` check is the last guard) and sets `order_item.stock_deducted` when the variant tracked stock. Cancelling gives stock back only for lines with `stock_deducted` (once: `cancelled` is final).
+- **Idempotency:** the checkout form sends a random key per attempt; a retried submit finds the existing order (`order_store_idempotency_key_unique`) instead of creating a second one.
+- Hand edit in `0011`: the three `SET NULL` FKs use a column list (same reason as `0008`).
+- **Order status:** `pending → confirmed → preparing → ready → out_for_delivery → completed`, plus `cancelled` from any non-final state. `out_for_delivery` only applies to `delivery` orders (DB check).
+- **Payment status:** `unpaid | partial | paid | refunded` — a cache of `order_payment` (net = payments − refunds; `refunded` when there are refunds and net ≤ 0), recomputed by the app in the same transaction that adds/removes a payment, never edited directly.
 - **Money:** integer minor units (e.g. cents) + currency code, `bigint` columns (currencies like CUP reach large amounts). Never floats.
 - Order totals are computed server-side at checkout; the client never sends prices.
 
@@ -259,7 +264,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 ✅ Done when: a customer can create an order.
 
 ### Phase 4 — Orders management
-- [ ] Orders schema (customers, orders, items, status history, payments)
+- [x] Orders schema (customers, orders, items, status history, payments) — built early, checkout needs it
 - [ ] Merchant order list + detail
 - [ ] Status changes with history
 - [ ] Manual payment recording

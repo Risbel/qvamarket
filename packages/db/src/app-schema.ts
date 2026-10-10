@@ -86,6 +86,9 @@ export const store = pgTable(
     openingHours: jsonb("opening_hours"),
     metaTitle: text("meta_title"),
     metaDescription: text("meta_description"),
+    // Counter behind order.number: checkout increments it with UPDATE ... RETURNING inside the
+    // order's transaction (the row lock serializes checkouts; a rollback leaves no gap).
+    lastOrderNumber: integer("last_order_number").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -94,6 +97,7 @@ export const store = pgTable(
   },
   (table) => [
     index("store_tenantId_idx").on(table.tenantId),
+    check("store_last_order_number", sql`${table.lastOrderNumber} >= 0`),
     // Target of the composite foreign keys that tie child rows to the same tenant
     unique("store_id_tenant_id_unique").on(table.id, table.tenantId),
     check(
@@ -520,6 +524,286 @@ export const productImage = pgTable(
     ),
     check("product_image_size_positive", sql`${table.sizeBytes} > 0`),
     check("product_image_position", sql`${table.position} >= 0`),
+  ],
+);
+
+// ---------------------------------------------------------------------------------------
+// Customers and orders
+// ---------------------------------------------------------------------------------------
+
+/**
+ * A customer of a company (shared by its stores). Guest checkout finds it again by phone
+ * (normalized by the app: digits with an optional leading +); `user_id` links it to a global
+ * account once customer accounts exist. Orders keep their own copy of name/phone/email, so
+ * what a guest types at checkout never rewrites the history of another order.
+ */
+export const customer = pgTable(
+  "customer",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    phone: text("phone"),
+    email: text("email"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("customer_id_tenant_id_unique").on(table.id, table.tenantId),
+    uniqueIndex("customer_tenant_phone_idx")
+      .on(table.tenantId, table.phone)
+      .where(sql`${table.phone} is not null`),
+    uniqueIndex("customer_tenant_user_idx")
+      .on(table.tenantId, table.userId)
+      .where(sql`${table.userId} is not null`),
+    check("customer_name_not_empty", sql`length(trim(${table.name})) > 0`),
+    check("customer_phone_format", sql`${table.phone} is null or ${table.phone} ~ '^\\+?[0-9]{6,20}$'`),
+  ],
+);
+
+export const ORDER_STATUSES = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "ready",
+  "out_for_delivery",
+  "completed",
+  "cancelled",
+] as const;
+export const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"] as const;
+export const FULFILLMENT_TYPES = ["pickup", "delivery"] as const;
+
+/**
+ * An order placed at checkout. Amounts are computed on the server (never sent by the
+ * browser) in integer minor units of `currency_code`, as bigint. `number` is the human
+ * reference, unique per store (taken from store.last_order_number). `payment_status` is a
+ * cache of the order_payment rows, recomputed by the app in the same transaction that adds
+ * or removes a payment; it is never edited directly.
+ */
+export const order = pgTable(
+  "order",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    number: integer("number").notNull(),
+    customerId: uuid("customer_id"),
+    // Snapshot of the contact the customer gave at checkout
+    customerName: text("customer_name").notNull(),
+    customerPhone: text("customer_phone").notNull(),
+    customerEmail: text("customer_email"),
+    customerNote: text("customer_note"),
+    status: text("status").default("pending").notNull(),
+    paymentStatus: text("payment_status").default("unpaid").notNull(),
+    fulfillmentType: text("fulfillment_type").default("pickup").notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    subtotalMinor: bigint("subtotal_minor", { mode: "number" }).notNull(),
+    deliveryFeeMinor: bigint("delivery_fee_minor", { mode: "number" }).default(0).notNull(),
+    totalMinor: bigint("total_minor", { mode: "number" }).notNull(),
+    // Sent by the browser once per checkout attempt, so a retried submit cannot create a
+    // second order
+    idempotencyKey: text("idempotency_key"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "order_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    // ON DELETE SET NULL ("customer_id") only: hand-edited in the migration SQL (see category)
+    foreignKey({
+      name: "order_customer_tenant_fk",
+      columns: [table.customerId, table.tenantId],
+      foreignColumns: [customer.id, customer.tenantId],
+    }).onDelete("set null"),
+    // Targets of the composite foreign keys of items, history and payments
+    unique("order_id_tenant_id_unique").on(table.id, table.tenantId),
+    unique("order_id_store_id_tenant_id_unique").on(table.id, table.storeId, table.tenantId),
+    unique("order_store_number_unique").on(table.storeId, table.number),
+    unique("order_store_idempotency_key_unique").on(table.storeId, table.idempotencyKey),
+    index("order_storeId_createdAt_idx").on(table.storeId, table.createdAt),
+    index("order_storeId_status_idx").on(table.storeId, table.status),
+    index("order_customerId_idx").on(table.customerId),
+    check("order_number_positive", sql`${table.number} > 0`),
+    check(
+      "order_status",
+      sql.raw(`status in (${ORDER_STATUSES.map((s) => `'${s}'`).join(", ")})`),
+    ),
+    check(
+      "order_payment_status",
+      sql.raw(`payment_status in (${PAYMENT_STATUSES.map((s) => `'${s}'`).join(", ")})`),
+    ),
+    check("order_fulfillment_type", sql`${table.fulfillmentType} in ('pickup', 'delivery')`),
+    check(
+      "order_out_for_delivery_only_delivery",
+      sql`${table.status} <> 'out_for_delivery' or ${table.fulfillmentType} = 'delivery'`,
+    ),
+    check("order_customer_name_not_empty", sql`length(trim(${table.customerName})) > 0`),
+    check("order_customer_phone_not_empty", sql`length(trim(${table.customerPhone})) > 0`),
+    check(
+      "order_amounts",
+      sql`${table.subtotalMinor} >= 0 and ${table.deliveryFeeMinor} >= 0 and ${table.totalMinor} = ${table.subtotalMinor} + ${table.deliveryFeeMinor}`,
+    ),
+  ],
+);
+
+/**
+ * A line of an order: a copy of what was bought, at the price it was bought (after volume
+ * tiers and promotions). Never re-read the live product or price for an existing order.
+ * `variant_id` / `product_id` only link back to the catalog and become NULL if the variant
+ * or product is deleted; the snapshot stays.
+ */
+export const orderItem = pgTable(
+  "order_item",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    orderId: uuid("order_id").notNull(),
+    variantId: uuid("variant_id"),
+    productId: uuid("product_id"),
+    position: integer("position").default(0).notNull(),
+    productName: text("product_name").notNull(),
+    // e.g. "M / Rojo"; null for a product without options
+    variantTitle: text("variant_title"),
+    sku: text("sku"),
+    quantity: integer("quantity").notNull(),
+    unitPriceMinor: bigint("unit_price_minor", { mode: "number" }).notNull(),
+    // The struck-through "was" price shown at checkout, if any
+    compareAtMinor: bigint("compare_at_minor", { mode: "number" }),
+    lineTotalMinor: bigint("line_total_minor", { mode: "number" }).notNull(),
+    // true when checkout took `quantity` from the variant's stock (stock was tracked then);
+    // cancelling the order gives it back only in that case
+    stockDeducted: boolean("stock_deducted").default(false).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "order_item_order_store_tenant_fk",
+      columns: [table.orderId, table.storeId, table.tenantId],
+      foreignColumns: [order.id, order.storeId, order.tenantId],
+    }).onDelete("cascade"),
+    // ON DELETE SET NULL ("variant_id") / ("product_id") only: hand-edited in the migration SQL
+    foreignKey({
+      name: "order_item_variant_store_tenant_fk",
+      columns: [table.variantId, table.storeId, table.tenantId],
+      foreignColumns: [productVariant.id, productVariant.storeId, productVariant.tenantId],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "order_item_product_store_tenant_fk",
+      columns: [table.productId, table.storeId, table.tenantId],
+      foreignColumns: [product.id, product.storeId, product.tenantId],
+    }).onDelete("set null"),
+    index("order_item_orderId_idx").on(table.orderId, table.position),
+    index("order_item_variantId_idx").on(table.variantId),
+    index("order_item_productId_idx").on(table.productId),
+    check("order_item_product_name_not_empty", sql`length(trim(${table.productName})) > 0`),
+    check("order_item_quantity", sql`${table.quantity} > 0`),
+    check("order_item_unit_price", sql`${table.unitPriceMinor} >= 0`),
+    check(
+      "order_item_compare_at",
+      sql`${table.compareAtMinor} is null or ${table.compareAtMinor} > ${table.unitPriceMinor}`,
+    ),
+    check(
+      "order_item_line_total",
+      sql`${table.lineTotalMinor} = ${table.unitPriceMinor} * ${table.quantity}`,
+    ),
+  ],
+);
+
+export const ORDER_ACTORS = ["customer", "merchant", "system"] as const;
+
+/**
+ * Audit trail of an order's status: one row per change, written in the same transaction as
+ * the change (the first row, from_status NULL, is the order being placed).
+ */
+export const orderStatusHistory = pgTable(
+  "order_status_history",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    orderId: uuid("order_id").notNull(),
+    fromStatus: text("from_status"),
+    toStatus: text("to_status").notNull(),
+    actor: text("actor").notNull(),
+    // The merchant team member who made the change (null for customer/system, or once the
+    // account is deleted)
+    actorUserId: uuid("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    note: text("note"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "order_status_history_order_tenant_fk",
+      columns: [table.orderId, table.tenantId],
+      foreignColumns: [order.id, order.tenantId],
+    }).onDelete("cascade"),
+    index("order_status_history_orderId_idx").on(table.orderId, table.createdAt),
+    check(
+      "order_status_history_to_status",
+      sql.raw(`to_status in (${ORDER_STATUSES.map((s) => `'${s}'`).join(", ")})`),
+    ),
+    check(
+      "order_status_history_from_status",
+      sql.raw(`from_status is null or from_status in (${ORDER_STATUSES.map((s) => `'${s}'`).join(", ")})`),
+    ),
+    check("order_status_history_actor", sql`${table.actor} in ('customer', 'merchant', 'system')`),
+  ],
+);
+
+export const PAYMENT_KINDS = ["payment", "refund"] as const;
+export const PAYMENT_METHODS = ["cash", "transfer", "other"] as const;
+
+/**
+ * Money received (or given back) outside the platform, recorded by hand by the merchant.
+ * Always in the order's currency, as a positive amount; `kind` says which direction.
+ */
+export const orderPayment = pgTable(
+  "order_payment",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    orderId: uuid("order_id").notNull(),
+    kind: text("kind").default("payment").notNull(),
+    method: text("method").notNull(),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
+    recordedByUserId: uuid("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    note: text("note"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "order_payment_order_tenant_fk",
+      columns: [table.orderId, table.tenantId],
+      foreignColumns: [order.id, order.tenantId],
+    }).onDelete("cascade"),
+    index("order_payment_orderId_idx").on(table.orderId),
+    check("order_payment_kind", sql`${table.kind} in ('payment', 'refund')`),
+    check("order_payment_method", sql`${table.method} in ('cash', 'transfer', 'other')`),
+    check("order_payment_amount", sql`${table.amountMinor} > 0`),
   ],
 );
 
