@@ -119,7 +119,11 @@
     "optionNameRepeated": "There is already an option with this name",
     "optionValueRepeated": "This value is repeated",
     "tooManyVariants": "That would be {count} combinations; the maximum is {max}. Remove some values.",
-    "skuRepeated": "This SKU is repeated in another variant"
+    "skuRepeated": "This SKU is repeated in another variant",
+    "dateInvalid": "Enter a valid date",
+    "endsBeforeStart": "The end date must be after the start date",
+    "tooManyPromotionItems": "At most {max} variants per promotion",
+    "promotionNotCheaper": "It must be lower than the regular price, otherwise the sale does not apply"
   },
   "Admin": {
     "title": "Admin panel",
@@ -238,7 +242,8 @@
       "products": "Products",
       "branding": "Branding",
       "categories": "Categories",
-      "settings": "Settings"
+      "settings": "Settings",
+      "promotions": "Promotions"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -542,6 +547,76 @@
       "errors": {
         "forbidden": "You don't have permission to do this.",
         "failed": "Could not save. Please try again."
+      }
+    }
+  },
+  "Promotions": {
+    "title": "Promotions",
+    "description": "Sales and special prices with dates. While a promotion is active, its prices replace the regular ones in the store.",
+    "new": "New promotion",
+    "edit": "Edit promotion",
+    "empty": "You have no promotions yet.",
+    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}",
+    "from": "from",
+    "until": "until",
+    "states": {
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "running": "Active",
+      "ended": "Ended"
+    },
+    "kinds": {
+      "sale": "Sale",
+      "override": "Special price"
+    },
+    "activate": "Activate",
+    "pause": "Pause",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "deleteTitle": "Delete promotion",
+    "deleteConfirm": "Delete \"{name}\"? Products go back to their regular price. This cannot be undone.",
+    "errors": {
+      "forbidden": "You don't have permission to do this.",
+      "failed": "The operation could not be completed. Please try again."
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "E.g. Black Friday",
+      "kind": "Type",
+      "kinds": {
+        "sale": "Sale",
+        "override": "Special price"
+      },
+      "kindHelp": {
+        "sale": "The regular price is shown struck through next to the sale price. Only applies when cheaper.",
+        "override": "Replaces the regular price without striking it through (e.g. a seasonal price)."
+      },
+      "startsAt": "Starts",
+      "startsAtHelp": "Empty: from now.",
+      "endsAt": "Ends",
+      "endsAtHelp": "Empty: no end date.",
+      "timeZone": "Times in your timezone ({zone}).",
+      "active": "Active (applies between its dates). Uncheck to save it as a draft.",
+      "productsTitle": "Products",
+      "productsHelpSale": "Add products and set their sale price in each currency. Leave a currency empty to not discount it.",
+      "productsHelpOverride": "Add products and set their special price in each currency. Leave a currency empty to keep the regular price.",
+      "addProduct": "Add",
+      "chooseProduct": "Choose a product...",
+      "noMoreProducts": "No more products with a price",
+      "draftProduct": "{name} (draft)",
+      "percentOff": "% off",
+      "applyPercent": "Apply to all prices",
+      "noProducts": "You have not added any products yet.",
+      "removeProduct": "Remove",
+      "promoPrice": "Price ({currency})",
+      "regularPrice": "Regular: {price}",
+      "save": "Save promotion",
+      "saving": "Saving...",
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "notFound": "Promotion not found.",
+        "stale": "A product changed while you were editing (price or variants). We reloaded the data: check and save again.",
+        "failed": "The promotion could not be saved. Please try again."
       }
     }
   }

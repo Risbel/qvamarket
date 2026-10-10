@@ -22,6 +22,7 @@ export default async function DashboardLayout({
   const visibleNav: PanelNavKey[] = ["home"];
   if (context && can(context.role, { product: ["read"] })) visibleNav.push("products");
   if (context && can(context.role, { category: ["update"] })) visibleNav.push("categories");
+  if (context && can(context.role, { promotion: ["update"] })) visibleNav.push("promotions");
   if (context && can(context.role, { store: ["update"] })) visibleNav.push("branding", "settings");
 
   return (

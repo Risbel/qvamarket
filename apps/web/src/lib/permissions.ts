@@ -15,6 +15,8 @@ export const statement = {
   store: ["read", "update"],
   product: ["read", "create", "update", "delete"],
   category: ["read", "create", "update", "delete"],
+  // price lists: dated sales and special prices
+  promotion: ["read", "create", "update", "delete"],
   order: ["read", "update"],
 } as const;
 
@@ -26,6 +28,7 @@ export const owner = ac.newRole({
   store: ["read", "update"],
   product: ["read", "create", "update", "delete"],
   category: ["read", "create", "update", "delete"],
+  promotion: ["read", "create", "update", "delete"],
   order: ["read", "update"],
 });
 
@@ -34,6 +37,7 @@ export const manager = ac.newRole({
   store: ["read", "update"],
   product: ["read", "create", "update", "delete"],
   category: ["read", "create", "update", "delete"],
+  promotion: ["read", "create", "update", "delete"],
   order: ["read", "update"],
 });
 
@@ -42,6 +46,7 @@ export const staff = ac.newRole({
   store: ["read"],
   product: ["read"],
   category: ["read"],
+  promotion: ["read"],
   order: ["read", "update"],
 });
 
