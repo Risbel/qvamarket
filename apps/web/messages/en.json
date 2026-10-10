@@ -80,9 +80,54 @@
         "failed": "Your cart could not be updated. Please try again.",
         "tooManyRequests": "Too many requests in a row. Please wait a moment."
       },
-      "notInCurrency": "Not available in {currency}: not included in the total."
+      "notInCurrency": "Not available in {currency}: not included in the total.",
+      "checkout": "Check out"
     },
-    "currency": "Currency"
+    "currency": "Currency",
+    "checkout": {
+      "title": "Checkout",
+      "loading": "Preparing your order...",
+      "redirecting": "Order placed. Opening the confirmation...",
+      "empty": "Your cart is empty.",
+      "continueShopping": "Continue shopping",
+      "contact": {
+        "title": "Your details",
+        "name": "Name",
+        "phone": "Phone",
+        "phoneHelp": "The store will contact you on this number.",
+        "email": "Email (optional)",
+        "note": "Note for the store (optional)"
+      },
+      "pickup": {
+        "title": "In-store pickup",
+        "payment": "Payment is arranged directly with the store (cash or transfer)."
+      },
+      "summary": "Summary",
+      "total": "Total",
+      "leftOut": "{count, plural, one {# product in your cart is not available and is not included.} other {# products in your cart are not available and are not included.}}",
+      "reviewCart": "Review cart",
+      "place": "Place order · {total}",
+      "placing": "Placing order...",
+      "errors": {
+        "cartChanged": "Some prices or stock changed. Review the summary and confirm again.",
+        "tooManyRequests": "Too many attempts in a row. Please wait a few minutes.",
+        "notFound": "This store is not taking orders right now.",
+        "failed": "Could not place the order. Please try again.",
+        "priceFailed": "Could not load your order. Reload the page."
+      }
+    },
+    "order": {
+      "title": "Order received!",
+      "number": "Order #{number}",
+      "intro": "{store} has received your order and will contact you to confirm it.",
+      "pickup": "In-store pickup",
+      "payment": "Payment is arranged directly with the store.",
+      "contactStore": "Store contact:",
+      "items": "Products",
+      "total": "Total",
+      "yourDetails": "Your details",
+      "continueShopping": "Continue shopping"
+    }
   },
   "Validation": {
     "required": "This field is required",

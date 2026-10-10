@@ -184,9 +184,20 @@ export function CartView() {
         </span>
       </div>
 
-      <Link href="/" className="w-fit text-sm font-medium underline underline-offset-4">
-        {t("continueShopping")}
-      </Link>
+      <div className="flex flex-col-reverse items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Link href="/" className="w-fit text-sm font-medium underline underline-offset-4">
+          {t("continueShopping")}
+        </Link>
+        {lines.some((line) => line.buyable) && (
+          <Link
+            href="/checkout"
+            className="rounded-md px-6 py-3 text-center font-semibold"
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-foreground)" }}
+          >
+            {t("checkout")}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

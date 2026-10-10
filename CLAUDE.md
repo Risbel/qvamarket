@@ -134,7 +134,7 @@ qvashop/
 - Session cookies stay **host-only** (no `crossSubDomainCookies`): a session on one store is not sent to another store or to `app.`/`admin.`. The same person signs in once per store with the same credentials.
 - Open technical point to verify when building it: Better Auth `baseURL`/trusted origins must accept every store subdomain (wildcard `*.<root domain>`).
 
-### Orders (schema done 2026-10, migration `0011`; checkout and panel not built yet)
+### Orders (schema done 2026-10, migration `0011`; checkout built, merchant panel not yet)
 Orders are created at storefront checkout (guest checkout, no customer account). Merchants manage them in the panel. Tables in `app-schema.ts` (singular names like the rest; `order` is a reserved word, so raw SQL must quote it: `"order"`):
 
 | Table | Purpose / key fields |
@@ -184,6 +184,12 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - Known quirk: the header counter comes from storage, so it also counts lines that turn out to be unavailable until the customer opens the cart and removes them.
 - Money: a cart can reach 50 lines x 99 units x 10 000 000 major units, so **order totals must be stored as bigint**, not PostgreSQL `integer`.
 
+### Checkout (Phase 3, pickup only, done 2026-10)
+- Pages on the store subdomain: `/checkout` (`stores/[slug]/checkout/`: contact form + pickup info from Settings > Pickup + summary priced by `priceCartAction`) and `/orders/<id>` (confirmation: number, items, total, pickup and store contact; `noindex`; the random order id in the URL is the key and the order must belong to that store; it shows no status, a tracking page is in the Parking Lot). The cart page links to checkout when at least one line can be bought; lines that are sold out or unavailable are simply left out of the order (the summary says how many).
+- **`placeOrderAction`** (`src/server/checkout-actions.ts`) -> **`placeOrder`** (`src/server/checkout.ts`, the public write: like `public-*.ts`, `tenant_id` is read from the store row there and never leaves the file). The browser sends the slug, the currency it showed, the items (`sanitizeCartItems`, shared with `parseCart`), the subtotal it showed (only compared, never used as an amount), a random **idempotency key** per checkout attempt, and the contact form (`createCheckoutSchema`; phone normalized with `normalizePhone()` in `src/lib/phone.ts`). Any difference (price, stock, line, currency) answers `cartChanged` and the form re-prices so the customer confirms the new amounts.
+- **One transaction:** lock the store row (`FOR NO KEY UPDATE`, serializes a store's checkouts) -> same idempotency key already used = return that order -> `last_order_number + 1` (store `updated_at` kept) -> lock the variants and subtract stock where tracked (refuse if short) -> upsert the customer by `(tenant_id, phone)` without overwriting it -> insert order, items (snapshot, `stock_deducted`) and the first history row (`null -> pending`, actor `customer`). Any refusal throws inside the transaction, so nothing is kept, not even the number.
+- **Abuse:** each order takes stock, so fake orders could empty a store. `placeOrderAction` is limited to 10 per 10 minutes per IP (in memory, see `rate-limit.ts`); retries count too. The merchant cancelling an order (Phase 4) must give stock back for lines with `stock_deducted`.
+
 ### Store branding (decided 2026-10)
 - Per store: a **logo** (`store.logo_key`, storage key under `tenants/<tenantId>/stores/<storeId>/logo/`), a **primary color** and an **accent color** (`#rrggbb`, lowercase, enforced by DB CHECKs; null = platform default `DEFAULT_PRIMARY` / `DEFAULT_ACCENT` in `src/lib/color.ts`). Edited at `/dashboard/settings/branding` with a live preview; needs `store:update` (owner, manager).
 - **Logo upload** reuses the product-image pipeline (browser compression, server re-check, real-type sniffing, < 1 MB) with a 512 px limit; where the browser cannot encode WebP the fallback is **PNG, not JPEG**, so transparent logos do not get a black background. Replacing or removing a logo deletes the old file after the row is updated.
@@ -193,6 +199,7 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 
 ### Pre-launch checklist (before opening signup to the public)
 - **Captcha on signup** (Cloudflare Turnstile): the honeypot and timing checks only stop naive bots.
+- **Captcha on checkout** too (same widget): orders take stock, and the per-IP limit alone does not stop someone with many IPs from emptying a store with fake orders.
 - **Rate limits need the real client IP**: set `advanced.ipAddress.ipAddressHeaders: ["cf-connecting-ip"]` for Better Auth (sign-in limit) and make the VPS accept web traffic only from Cloudflare's ranges, otherwise `cf-connecting-ip` can be forged (`clientIp()` in `src/server/request.ts` is used by our own signup limiter). If the app ever runs as several instances, move `rate-limit.ts` to a shared store.
 - **Email**: with no provider, emails are unverified and recovery is manual; decide before a larger launch.
 - **Strong secrets**: `BETTER_AUTH_SECRET`, `S3_SECRET_KEY`, database password (the local defaults are for development only).
@@ -258,7 +265,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - [x] Catalog v2, part 1: currencies per store, categories with storefront index, hidden default variant, multi-currency prices with compare-at and volume tiers, SEO fields, store profile
 - [x] Catalog v2, part 2: variants editor (options like size/color) + storefront variant picker
 - [x] Catalog v2, part 3: promotions UI (dated sale / override price lists)
-- [ ] Checkout that creates an order (pickup only for now)
+- [x] Checkout that creates an order (pickup only for now)
 - [ ] Customer accounts: branded login/signup on the store subdomain (global account + per-store `customer` record)
 
 ✅ Done when: a customer can create an order.

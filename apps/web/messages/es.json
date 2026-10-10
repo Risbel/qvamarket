@@ -80,9 +80,54 @@
         "failed": "No se pudo actualizar tu carrito. Inténtalo de nuevo.",
         "tooManyRequests": "Demasiadas consultas seguidas. Espera un momento."
       },
-      "notInCurrency": "No disponible en {currency}: no se incluye en el total."
+      "notInCurrency": "No disponible en {currency}: no se incluye en el total.",
+      "checkout": "Realizar pedido"
     },
-    "currency": "Moneda"
+    "currency": "Moneda",
+    "checkout": {
+      "title": "Finalizar pedido",
+      "loading": "Preparando tu pedido...",
+      "redirecting": "Pedido realizado. Abriendo la confirmación...",
+      "empty": "Tu carrito está vacío.",
+      "continueShopping": "Seguir comprando",
+      "contact": {
+        "title": "Tus datos",
+        "name": "Nombre",
+        "phone": "Teléfono",
+        "phoneHelp": "La tienda te contactará por este número.",
+        "email": "Correo electrónico (opcional)",
+        "note": "Nota para la tienda (opcional)"
+      },
+      "pickup": {
+        "title": "Recogida en tienda",
+        "payment": "El pago se acuerda directamente con la tienda (efectivo o transferencia)."
+      },
+      "summary": "Resumen",
+      "total": "Total",
+      "leftOut": "{count, plural, one {# producto de tu carrito no está disponible y no se incluye.} other {# productos de tu carrito no están disponibles y no se incluyen.}}",
+      "reviewCart": "Revisar carrito",
+      "place": "Confirmar pedido · {total}",
+      "placing": "Enviando pedido...",
+      "errors": {
+        "cartChanged": "Algunos precios o existencias cambiaron. Revisa el resumen y confirma de nuevo.",
+        "tooManyRequests": "Demasiados intentos seguidos. Espera unos minutos.",
+        "notFound": "Esta tienda no está aceptando pedidos ahora mismo.",
+        "failed": "No se pudo enviar el pedido. Inténtalo de nuevo.",
+        "priceFailed": "No se pudo cargar tu pedido. Recarga la página."
+      }
+    },
+    "order": {
+      "title": "¡Pedido recibido!",
+      "number": "Pedido #{number}",
+      "intro": "{store} ha recibido tu pedido y te contactará para confirmarlo.",
+      "pickup": "Recogida en tienda",
+      "payment": "El pago se acuerda directamente con la tienda.",
+      "contactStore": "Contacto de la tienda:",
+      "items": "Productos",
+      "total": "Total",
+      "yourDetails": "Tus datos",
+      "continueShopping": "Seguir comprando"
+    }
   },
   "Validation": {
     "required": "Este campo es obligatorio",

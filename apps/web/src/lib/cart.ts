@@ -24,10 +24,19 @@ export function parseCart(raw: string | null): CartItem[] {
   } catch {
     return [];
   }
+  return sanitizeCartItems(data);
+}
+
+/**
+ * Same rules for an already parsed value (e.g. the items a Server Action receives): only
+ * valid `{ variantId, quantity }` entries survive, merged and capped.
+ */
+export function sanitizeCartItems(data: unknown): CartItem[] {
   if (!Array.isArray(data)) return [];
 
   const merged = new Map<string, number>();
-  for (const entry of data) {
+  // Bounded work even for a huge tampered array
+  for (const entry of data.slice(0, MAX_CART_LINES * 2)) {
     if (typeof entry !== "object" || entry === null) continue;
     const { variantId, quantity } = entry as Record<string, unknown>;
     if (typeof variantId !== "string" || !UUID.test(variantId)) continue;

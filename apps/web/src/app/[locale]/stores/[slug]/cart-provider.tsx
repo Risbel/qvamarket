@@ -30,6 +30,8 @@ type CartContextValue = {
   add: (variantId: string, quantity: number, max?: number) => void;
   setQuantity: (variantId: string, quantity: number) => void;
   remove: (variantId: string) => void;
+  /** empties the cart (after an order is placed) */
+  clear: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -73,6 +75,7 @@ export function CartProvider({
       add: (variantId, quantity, max) => update((current) => addToCart(current, variantId, quantity, max)),
       setQuantity: (variantId, quantity) => update((current) => setLineQuantity(current, variantId, quantity)),
       remove: (variantId) => update((current) => removeLine(current, variantId)),
+      clear: () => update(() => []),
     }),
     [items, storeSlug, currency, update],
   );
