@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, product, productImage, sql, store } from "@qvashop/db";
+import { and, asc, db, desc, eq, inArray, product, productImage, sql, store } from "@qvashop/db";
 
 // Public catalog: what an anonymous visitor may see of a store's products.
 //
@@ -88,4 +88,31 @@ export async function getPublicProduct(
     stock: row.stock,
     imageKeys: images.map((image) => image.key),
   };
+}
+
+/**
+ * Current public data for a set of product ids (the cart), same visibility rules as above:
+ * ids that are unknown, not active, or from another store simply do not come back.
+ */
+export async function getPublicProductsByIds(
+  storeId: string,
+  productIds: string[],
+): Promise<Map<string, PublicProductSummary>> {
+  if (productIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      id: product.id,
+      name: product.name,
+      priceMinor: product.priceMinor,
+      stock: product.stock,
+      imageKey: sql<string | null>`(
+        select pi.storage_key from product_image pi
+        where pi.product_id = ${product.id} and pi.tenant_id = ${product.tenantId}
+        order by pi.position asc limit 1
+      )`,
+    })
+    .from(product)
+    .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
+    .where(and(publicProducts(storeId), inArray(product.id, productIds)));
+  return new Map(rows.map((row) => [row.id, row]));
 }

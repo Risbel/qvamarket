@@ -43,6 +43,31 @@
       "lowStock": "Only {count} left",
       "noImage": "No image",
       "showImage": "Show image {number}"
+    },
+    "cart": {
+      "title": "Your cart",
+      "link": "Cart",
+      "linkLabel": "Cart, {count} items",
+      "empty": "Your cart is empty.",
+      "continueShopping": "Continue shopping",
+      "loading": "Loading your cart...",
+      "add": "Add to cart",
+      "added": "Added to your cart.",
+      "view": "View cart",
+      "atMax": "You already have every available unit in your cart ({count}).",
+      "quantity": "Quantity",
+      "increase": "One more",
+      "decrease": "One less",
+      "remove": "Remove",
+      "subtotal": "Subtotal",
+      "reduced": "Only {max} left; we adjusted the quantity.",
+      "soldOut": "Sold out: not included in the total.",
+      "unavailable": "Product unavailable",
+      "unavailableNote": "This product is no longer available: it is not included in the total.",
+      "errors": {
+        "failed": "Your cart could not be updated. Please try again.",
+        "tooManyRequests": "Too many requests in a row. Please wait a moment."
+      }
     }
   },
   "Validation": {

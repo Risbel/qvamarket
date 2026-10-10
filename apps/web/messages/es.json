@@ -43,6 +43,31 @@
       "lowStock": "Quedan solo {count}",
       "noImage": "Sin imagen",
       "showImage": "Ver imagen {number}"
+    },
+    "cart": {
+      "title": "Tu carrito",
+      "link": "Carrito",
+      "linkLabel": "Carrito, {count} artículos",
+      "empty": "Tu carrito está vacío.",
+      "continueShopping": "Seguir comprando",
+      "loading": "Cargando tu carrito...",
+      "add": "Añadir al carrito",
+      "added": "Añadido al carrito.",
+      "view": "Ver carrito",
+      "atMax": "Ya tienes en tu carrito todas las unidades disponibles ({count}).",
+      "quantity": "Cantidad",
+      "increase": "Una unidad más",
+      "decrease": "Una unidad menos",
+      "remove": "Quitar",
+      "subtotal": "Subtotal",
+      "reduced": "Solo quedan {max} unidades; hemos ajustado la cantidad.",
+      "soldOut": "Agotado: no se incluye en el total.",
+      "unavailable": "Producto no disponible",
+      "unavailableNote": "Este producto ya no está disponible: no se incluye en el total.",
+      "errors": {
+        "failed": "No se pudo actualizar tu carrito. Inténtalo de nuevo.",
+        "tooManyRequests": "Demasiadas consultas seguidas. Espera un momento."
+      }
     }
   },
   "Validation": {

@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/money";
 import { getPublicProduct } from "@/server/public-catalog";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
+import { AddToCart } from "./add-to-cart";
 import { ProductGallery } from "./product-gallery";
 
 /** Only low stock is worth showing to a customer. */
@@ -81,6 +82,8 @@ export default async function StoreProductPage({
           {lowStock && (
             <p className="text-sm text-muted-foreground">{t("lowStock", { count: product.stock! })}</p>
           )}
+
+          {!soldOut && <AddToCart productId={product.id} stock={product.stock} />}
 
           {product.description && (
             // Plain text from the merchant: React escapes it; line breaks are kept

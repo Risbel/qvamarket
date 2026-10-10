@@ -159,6 +159,13 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - Visitors see: `stock = 0` -> "Agotado" badge; `stock` 1 to 5 -> "Quedan solo N"; untracked stock (null) -> nothing. Descriptions are plain text (React escapes it, line breaks kept): never render merchant text as HTML.
 - Storefront pages use the brand only through CSS variables (`var(--brand)`, `--brand-accent`, and their `-foreground` pairs); the price stays neutral so a light brand color never hurts readability.
 
+### Cart (Phase 3)
+- **The cart lives in the browser** (localStorage key `qvashop:cart:<storeId>`; each store subdomain is its own origin, so carts are separate) and holds **only `{ productId, quantity }`** (`src/lib/cart.ts`). Names, prices and stock are never stored: a tampered cart cannot change a price. `parseCart` drops anything invalid (bad ids, quantities out of 1..99, extra fields such as a price), merges duplicates and caps the cart at 50 lines.
+- **The server is the only source of amounts:** `priceCartAction(slug, items)` -> `priceCart(storeId, items)` (`src/server/cart.ts`) re-reads each product with the public rules (active product in an active store), applies the stock (`null` = up to 99) and returns per-line `status`: `ok`, `reduced` (asked for more than the stock; quantity lowered), `soldOut`, `unavailable` (hidden, deleted or another store's: no name is revealed), plus the subtotal. Invalid entries are skipped one by one, never failing the whole cart. Rate limited per IP (120 per minute). **Checkout must call `priceCart` again and never trust any amount from the browser.**
+- Cart page (`/cart` on the store subdomain): shows what the customer has with the prices the server sent, updates instantly on +/-/remove and re-prices right after; a quantity the server lowered keeps an explanation ("Solo quedan N") until the customer touches that line. Product pages offer a quantity picker limited to the free stock (stock minus what is already in the cart); sold-out products have no add button. The header shows the unit count and follows other tabs (`storage` event).
+- Known quirk: the header counter comes from storage, so it also counts lines that turn out to be unavailable until the customer opens the cart and removes them.
+- Money: a cart can reach 50 lines x 99 units x 10 000 000 major units, so **order totals must be stored as bigint**, not PostgreSQL `integer`.
+
 ### Store branding (decided 2026-10)
 - Per store: a **logo** (`store.logo_key`, storage key under `tenants/<tenantId>/stores/<storeId>/logo/`), a **primary color** and an **accent color** (`#rrggbb`, lowercase, enforced by DB CHECKs; null = platform default `DEFAULT_PRIMARY` / `DEFAULT_ACCENT` in `src/lib/color.ts`). Edited at `/dashboard/branding` with a live preview; needs `store:update` (owner, manager).
 - **Logo upload** reuses the product-image pipeline (browser compression, server re-check, real-type sniffing, < 1 MB) with a 512 px limit; where the browser cannot encode WebP the fallback is **PNG, not JPEG**, so transparent logos do not get a black background. Replacing or removing a logo deletes the old file after the row is updated.
@@ -229,7 +236,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 
 ### Phase 3 — Public storefront
 - [x] Catalog and product page (public, branded)
-- [ ] Cart
+- [x] Cart (browser cart, server-priced)
 - [ ] Checkout that creates an order (pickup only for now)
 - [ ] Customer accounts: branded login/signup on the store subdomain (global account + per-store `customer` record)
 
