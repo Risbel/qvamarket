@@ -284,6 +284,7 @@
     "nav": {
       "label": "Navigation",
       "home": "Home",
+      "orders": "Orders",
       "products": "Products",
       "categories": "Categories",
       "settings": "Settings",
@@ -698,5 +699,88 @@
     "toggle": "Show or hide the menu",
     "title": "Menu",
     "description": "Panel navigation"
+  },
+  "Orders": {
+    "title": "Orders",
+    "empty": "No orders yet. They will appear here when customers buy from your store.",
+    "noMatches": "No orders match the search.",
+    "back": "Orders",
+    "filters": {
+      "label": "Filter by status",
+      "all": "All"
+    },
+    "search": {
+      "label": "Search orders",
+      "placeholder": "Number, name or phone",
+      "submit": "Search"
+    },
+    "columns": {
+      "number": "Order",
+      "date": "Date",
+      "customer": "Customer",
+      "units": "Items",
+      "total": "Total",
+      "status": "Status",
+      "payment": "Payment"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "preparing": "Preparing",
+      "ready": "Ready",
+      "out_for_delivery": "Out for delivery",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment": {
+      "unpaid": "Unpaid",
+      "partial": "Partially paid",
+      "paid": "Paid",
+      "refunded": "Refunded"
+    },
+    "fulfillment": {
+      "pickup": "In-store pickup",
+      "delivery": "Home delivery"
+    },
+    "pagination": {
+      "label": "Pages",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}"
+    },
+    "detail": {
+      "title": "Order {number}",
+      "items": "Products",
+      "product": "Product",
+      "quantity": "Qty",
+      "unitPrice": "Price",
+      "lineTotal": "Amount",
+      "sku": "SKU: {sku}",
+      "productDeleted": "This product no longer exists in your catalog.",
+      "subtotal": "Subtotal",
+      "deliveryFee": "Delivery",
+      "total": "Total",
+      "customer": "Customer",
+      "note": "Customer note",
+      "payments": "Payments",
+      "noPayments": "No payments recorded.",
+      "paymentKind": {
+        "payment": "Payment",
+        "refund": "Refund"
+      },
+      "method": {
+        "cash": "Cash",
+        "transfer": "Transfer",
+        "other": "Other"
+      },
+      "history": "History",
+      "placed": "Order placed",
+      "changed": "{from} → {to}",
+      "actor": {
+        "customer": "Customer",
+        "merchant": "Store",
+        "system": "System"
+      }
+    }
   }
 }

@@ -284,6 +284,7 @@
     "nav": {
       "label": "Navegación",
       "home": "Inicio",
+      "orders": "Pedidos",
       "products": "Productos",
       "categories": "Categorías",
       "settings": "Ajustes",
@@ -698,5 +699,88 @@
     "toggle": "Mostrar u ocultar el menú",
     "title": "Menú",
     "description": "Navegación del panel"
+  },
+  "Orders": {
+    "title": "Pedidos",
+    "empty": "Aún no tienes pedidos. Aparecerán aquí cuando tus clientes compren en tu tienda.",
+    "noMatches": "Ningún pedido coincide con la búsqueda.",
+    "back": "Pedidos",
+    "filters": {
+      "label": "Filtrar por estado",
+      "all": "Todos"
+    },
+    "search": {
+      "label": "Buscar pedidos",
+      "placeholder": "Número, nombre o teléfono",
+      "submit": "Buscar"
+    },
+    "columns": {
+      "number": "Pedido",
+      "date": "Fecha",
+      "customer": "Cliente",
+      "units": "Artículos",
+      "total": "Total",
+      "status": "Estado",
+      "payment": "Pago"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "confirmed": "Confirmado",
+      "preparing": "En preparación",
+      "ready": "Listo",
+      "out_for_delivery": "En reparto",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    },
+    "payment": {
+      "unpaid": "Sin pagar",
+      "partial": "Pago parcial",
+      "paid": "Pagado",
+      "refunded": "Reembolsado"
+    },
+    "fulfillment": {
+      "pickup": "Recogida en tienda",
+      "delivery": "Entrega a domicilio"
+    },
+    "pagination": {
+      "label": "Páginas",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {page} de {pages}"
+    },
+    "detail": {
+      "title": "Pedido {number}",
+      "items": "Productos",
+      "product": "Producto",
+      "quantity": "Cant.",
+      "unitPrice": "Precio",
+      "lineTotal": "Importe",
+      "sku": "SKU: {sku}",
+      "productDeleted": "Este producto ya no existe en tu catálogo.",
+      "subtotal": "Subtotal",
+      "deliveryFee": "Envío",
+      "total": "Total",
+      "customer": "Cliente",
+      "note": "Nota del cliente",
+      "payments": "Pagos",
+      "noPayments": "No hay pagos registrados.",
+      "paymentKind": {
+        "payment": "Pago",
+        "refund": "Reembolso"
+      },
+      "method": {
+        "cash": "Efectivo",
+        "transfer": "Transferencia",
+        "other": "Otro"
+      },
+      "history": "Historial",
+      "placed": "Pedido realizado",
+      "changed": "{from} → {to}",
+      "actor": {
+        "customer": "Cliente",
+        "merchant": "Tienda",
+        "system": "Sistema"
+      }
+    }
   }
 }

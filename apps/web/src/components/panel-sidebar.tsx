@@ -10,6 +10,7 @@ import {
   LogOut,
   Package,
   Settings,
+  ShoppingBag,
   Store,
   UserPlus,
 } from "lucide-react";
@@ -43,6 +44,7 @@ import {
 
 const ITEMS = {
   home: { href: "/dashboard", icon: LayoutDashboard, exact: true },
+  orders: { href: "/dashboard/orders", icon: ShoppingBag, exact: false },
   products: { href: "/dashboard/products", icon: Package, exact: false },
   categories: { href: "/dashboard/categories", icon: FolderTree, exact: false },
   promotions: { href: "/dashboard/promotions", icon: BadgePercent, exact: false },

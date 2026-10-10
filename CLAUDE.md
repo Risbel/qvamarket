@@ -134,7 +134,7 @@ qvashop/
 - Session cookies stay **host-only** (no `crossSubDomainCookies`): a session on one store is not sent to another store or to `app.`/`admin.`. The same person signs in once per store with the same credentials.
 - Open technical point to verify when building it: Better Auth `baseURL`/trusted origins must accept every store subdomain (wildcard `*.<root domain>`).
 
-### Orders (schema done 2026-10, migration `0011`; checkout built, merchant panel not yet)
+### Orders (schema done 2026-10, migration `0011`; checkout and merchant list/detail built; status changes and payments next)
 Orders are created at storefront checkout (guest checkout, no customer account). Merchants manage them in the panel. Tables in `app-schema.ts` (singular names like the rest; `order` is a reserved word, so raw SQL must quote it: `"order"`):
 
 | Table | Purpose / key fields |
@@ -153,6 +153,7 @@ Orders are created at storefront checkout (guest checkout, no customer account).
 - Hand edit in `0011`: the three `SET NULL` FKs use a column list (same reason as `0008`).
 - **Order status:** `pending → confirmed → preparing → ready → out_for_delivery → completed`, plus `cancelled` from any non-final state. `out_for_delivery` only applies to `delivery` orders (DB check).
 - **Payment status:** `unpaid | partial | paid | refunded` — a cache of `order_payment` (net = payments − refunds; `refunded` when there are refunds and net ≤ 0), recomputed by the app in the same transaction that adds/removes a payment, never edited directly.
+- **Merchant panel (read-only so far):** `/dashboard/orders` (permission `order:read`, all three roles; "Pedidos" is the second sidebar item) lists the store's orders newest first, 50 per page, with status filter chips (with counts) and a search (`?q=`: `12` / `#12` = order number, otherwise part of the name, or 3+ digits of the phone; a GET form on purpose, the search belongs in the URL). Filters live in the URL and bad values are ignored. `/dashboard/orders/[id]`: items (snapshot, SKU, struck-through compare-at, "product deleted" note), totals, customer with `tel:` / WhatsApp (`wa.me`, only for numbers with `+`) / `mailto:` links and note, payments, history (who and when). Queries in `src/server/orders.ts` (tenant + store scoped; another company's order is a 404); client-safe enums and badge styles in `src/lib/orders.ts` (`satisfies` the schema lists). Dates use `<LocalDateTime>` (browser timezone).
 - **Money:** integer minor units (e.g. cents) + currency code, `bigint` columns (currencies like CUP reach large amounts). Never floats.
 - Order totals are computed server-side at checkout; the client never sends prices.
 
@@ -272,7 +273,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 
 ### Phase 4 — Orders management
 - [x] Orders schema (customers, orders, items, status history, payments) — built early, checkout needs it
-- [ ] Merchant order list + detail
+- [x] Merchant order list + detail
 - [ ] Status changes with history
 - [ ] Manual payment recording
 

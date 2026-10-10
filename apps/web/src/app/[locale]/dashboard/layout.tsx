@@ -35,7 +35,7 @@ export default async function DashboardLayout({
   // Only show what the member's role allows (the pages enforce it again on the server)
   const allowed = (key: PanelNavKey, visible: boolean) => (visible ? [key] : []);
   const groups: PanelNavGroup[] = [
-    { items: ["home"] },
+    { items: ["home", ...allowed("orders", can(context.role, { order: ["read"] }))] },
     {
       label: "catalog",
       items: [
