@@ -1,4 +1,5 @@
-import { and, asc, category, count, db, eq, product, sql } from "@qvashop/db";
+import { and, asc, category, count, db, eq, product, sql, store } from "@qvashop/db";
+import { categorySlug } from "@/lib/slug";
 import type { CategoryValues } from "@/lib/validation/catalog-settings";
 
 // Store categories. Every function matches tenant_id AND store_id from requireMerchant().
@@ -25,46 +26,66 @@ export async function listCategories(scope: Scope) {
     .orderBy(asc(category.position), asc(category.name));
 }
 
-export type CategoryResult = { ok: true } | { ok: false; error: "notFound" | "slugTaken" };
+export type CategoryResult = { ok: true } | { ok: false; error: "notFound" };
 
-function slugTaken(error: unknown) {
-  const e = error as { code?: string; constraint?: string; cause?: { code?: string; constraint?: string } };
-  const inner = e?.cause ?? e;
-  return inner?.code === "23505" && inner?.constraint === "category_store_slug_unique";
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Locks the store row (NO KEY UPDATE: product and category inserts can still reference it) so
+ * two category saves of the same store run one after the other: identifiers and positions are
+ * computed from what is already there, and they cannot pick the same one.
+ */
+async function lockStore(tx: Tx, scope: Scope) {
+  await tx
+    .select({ id: store.id })
+    .from(store)
+    .where(and(eq(store.id, scope.storeId), eq(store.tenantId, scope.tenantId)))
+    .for("no key update");
 }
 
+/** Slugs of the store's other categories. */
+async function takenSlugs(tx: Tx, scope: Scope, exceptId?: string) {
+  const rows = await tx.select({ id: category.id, slug: category.slug }).from(category).where(inScope(scope));
+  return rows.filter((row) => row.id !== exceptId).map((row) => row.slug);
+}
+
+/** Creates a category at the end of the list; its identifier comes from the name. */
 export async function createCategory(scope: Scope, values: CategoryValues): Promise<CategoryResult> {
-  try {
-    await db.transaction(async (tx) => {
-      const [{ next }] = await tx
-        .select({ next: sql<number>`coalesce(max(${category.position}) + 1, 0)::int` })
-        .from(category)
-        .where(inScope(scope));
-      await tx.insert(category).values({ ...scope, ...values, position: next });
-    });
-    return { ok: true };
-  } catch (error) {
-    if (slugTaken(error)) return { ok: false, error: "slugTaken" };
-    throw error;
-  }
+  await db.transaction(async (tx) => {
+    await lockStore(tx, scope);
+    const [{ next }] = await tx
+      .select({ next: sql<number>`coalesce(max(${category.position}) + 1, 0)::int` })
+      .from(category)
+      .where(inScope(scope));
+    const slug = categorySlug(values.name, await takenSlugs(tx, scope));
+    await tx.insert(category).values({ ...scope, name: values.name, slug, position: next });
+  });
+  return { ok: true };
 }
 
-export async function updateCategory(
-  scope: Scope,
-  id: string,
-  values: Partial<CategoryValues> & { isVisible?: boolean },
-): Promise<CategoryResult> {
-  try {
-    const rows = await db
-      .update(category)
-      .set(values)
-      .where(and(inScope(scope), eq(category.id, id)))
-      .returning({ id: category.id });
-    return rows.length === 1 ? { ok: true } : { ok: false, error: "notFound" };
-  } catch (error) {
-    if (slugTaken(error)) return { ok: false, error: "slugTaken" };
-    throw error;
-  }
+/** Renames a category; its identifier follows the new name (unchanged if the name is the same). */
+export async function renameCategory(scope: Scope, id: string, values: CategoryValues): Promise<CategoryResult> {
+  return db.transaction(async (tx) => {
+    await lockStore(tx, scope);
+    const [current] = await tx
+      .select({ name: category.name })
+      .from(category)
+      .where(and(inScope(scope), eq(category.id, id)));
+    if (!current) return { ok: false, error: "notFound" } as const;
+    if (current.name === values.name) return { ok: true } as const;
+    const slug = categorySlug(values.name, await takenSlugs(tx, scope, id));
+    await tx.update(category).set({ name: values.name, slug }).where(and(inScope(scope), eq(category.id, id)));
+    return { ok: true } as const;
+  });
+}
+
+export async function setCategoryVisibility(scope: Scope, id: string, isVisible: boolean): Promise<CategoryResult> {
+  const rows = await db
+    .update(category)
+    .set({ isVisible })
+    .where(and(inScope(scope), eq(category.id, id)))
+    .returning({ id: category.id });
+  return rows.length === 1 ? { ok: true } : { ok: false, error: "notFound" };
 }
 
 /** Moves a category one place up or down (swaps positions with its neighbour). */

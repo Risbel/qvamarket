@@ -11,6 +11,7 @@ import {
 import {
   createProduct,
   deleteProduct,
+  productHasOptions,
   updateProduct,
   type SaveProductResult,
 } from "./products";
@@ -32,14 +33,14 @@ export type ProductActionResult =
 type Merchant = NonNullable<Awaited<ReturnType<typeof getMerchantOrNull>>>;
 
 /** Validates the raw form values with the same schema as the client (never trusted). */
-async function parseValues(values: unknown, locale: string, merchant: Merchant) {
+async function parseValues(values: unknown, locale: string, merchant: Merchant, simple = true) {
   const t = await getTranslations({
     locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale,
     namespace: "Validation",
   });
   // The store's own currencies: a price in any other currency is rejected here
   const currencies = merchant.store.currencies;
-  const parsed = createProductSchema(t, currencies).safeParse(values);
+  const parsed = createProductSchema(t, currencies, { simple }).safeParse(values);
   if (!parsed.success) {
     return {
       error: {
@@ -87,11 +88,15 @@ export async function updateProductAction(
     return { ok: false, error: "forbidden" };
   }
   if (!parsedId.success) return { ok: false, error: "notFound" };
-  const { data, error } = await parseValues(values, locale, merchant);
+  const scope = scopeOf(merchant);
+  // A product with options has no price/stock fields here (its variants have their own form)
+  const hasOptions = await productHasOptions(scope, parsedId.data);
+  if (hasOptions === null) return { ok: false, error: "notFound" };
+  const { data, error } = await parseValues(values, locale, merchant, !hasOptions);
   if (error) return error;
 
   try {
-    return await updateProduct(scopeOf(merchant), parsedId.data, data);
+    return await updateProduct(scope, parsedId.data, data);
   } catch (e) {
     console.error("updateProductAction failed", e);
     return { ok: false, error: "failed" };

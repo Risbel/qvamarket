@@ -1,5 +1,23 @@
 import { minorToInput } from "@/lib/money";
-import type { FormCurrency, ProductFormValues } from "@/lib/validation/product";
+import type { FormCurrency, PricesFormValues, ProductFormValues } from "@/lib/validation/product";
+
+type SavedPrice = { currencyCode: string; minQuantity: number; amountMinor: number; compareAtMinor: number | null };
+
+/** Saved regular price rows -> one form entry per currency the store sells in. */
+export function pricesToFormValues(rows: SavedPrice[], currencies: FormCurrency[]): PricesFormValues {
+  return currencies.map((c) => {
+    const own = rows.filter((p) => p.currencyCode === c.code);
+    const regular = own.find((p) => p.minQuantity === 1);
+    return {
+      currency: c.code,
+      price: regular ? minorToInput(regular.amountMinor, c.digits) : "",
+      compareAt: regular?.compareAtMinor != null ? minorToInput(regular.compareAtMinor, c.digits) : "",
+      tiers: own
+        .filter((p) => p.minQuantity > 1)
+        .map((p) => ({ minQuantity: String(p.minQuantity), price: minorToInput(p.amountMinor, c.digits) })),
+    };
+  });
+}
 
 const emptyPrices = (currencies: FormCurrency[]): ProductFormValues["prices"] =>
   currencies.map((c) => ({ currency: c.code, price: "", compareAt: "", tiers: [] }));
@@ -30,10 +48,14 @@ type SavedProduct = {
   metaTitle: string | null;
   metaDescription: string | null;
   defaultVariant: { sku: string | null; stock: number | null } | null;
-  prices: { currencyCode: string; minQuantity: number; amountMinor: number; compareAtMinor: number | null }[];
+  hasOptions: boolean;
+  prices: SavedPrice[];
 };
 
-/** Saved product -> form strings. One prices entry per currency the store sells in. */
+/**
+ * Saved product -> form strings. One prices entry per currency the store sells in; none for a
+ * product with options (its prices belong to the variants form).
+ */
 export function productToFormValues(saved: SavedProduct, currencies: FormCurrency[]): ProductFormValues {
   return {
     name: saved.name,
@@ -46,17 +68,6 @@ export function productToFormValues(saved: SavedProduct, currencies: FormCurrenc
     metaDescription: saved.metaDescription ?? "",
     sku: saved.defaultVariant?.sku ?? "",
     stock: saved.defaultVariant?.stock == null ? "" : String(saved.defaultVariant.stock),
-    prices: currencies.map((c) => {
-      const rows = saved.prices.filter((p) => p.currencyCode === c.code);
-      const regular = rows.find((p) => p.minQuantity === 1);
-      return {
-        currency: c.code,
-        price: regular ? minorToInput(regular.amountMinor, c.digits) : "",
-        compareAt: regular?.compareAtMinor != null ? minorToInput(regular.compareAtMinor, c.digits) : "",
-        tiers: rows
-          .filter((p) => p.minQuantity > 1)
-          .map((p) => ({ minQuantity: String(p.minQuantity), price: minorToInput(p.amountMinor, c.digits) })),
-      };
-    }),
+    prices: saved.hasOptions ? [] : pricesToFormValues(saved.prices, currencies),
   };
 }

@@ -6,9 +6,12 @@ import { listProductImages } from "@/server/product-images";
 import { getProduct } from "@/server/products";
 import { publicUrl } from "@/server/storage";
 import { requireMerchantPermission } from "@/server/tenant";
+import { getProductVariants } from "@/server/variants";
 import { productToFormValues } from "../../form-values";
 import { ProductForm } from "../../product-form";
+import { OptionsEditor } from "./options-editor";
 import { ProductImages } from "./product-images";
+import { VariantsEditor } from "./variants-editor";
 
 export default async function EditProductPage({
   params,
@@ -25,7 +28,11 @@ export default async function EditProductPage({
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
   const product = await getProduct(scope, id);
   if (!product) notFound();
-  const [images, categories] = await Promise.all([listProductImages(scope, id), listCategories(scope)]);
+  const [images, categories, { options, variants }] = await Promise.all([
+    listProductImages(scope, id),
+    listCategories(scope),
+    getProductVariants(scope, id),
+  ]);
   const t = await getTranslations("Products");
 
   return (
@@ -38,17 +45,15 @@ export default async function EditProductPage({
           </p>
         )}
       </div>
-      {product.variantCount > 1 ? (
-        // Products with options are edited by the variant editor (next step of the roadmap)
-        <p className="rounded-md bg-muted p-3 text-sm">{t("hasVariantsNotice")}</p>
-      ) : (
-        <ProductForm
-          productId={product.id}
-          currencies={merchant.store.currencies}
-          categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-          initialValues={productToFormValues(product, merchant.store.currencies)}
-        />
-      )}
+      {/* Remounted when the product gains or loses options (its fields change) */}
+      <ProductForm
+        key={product.hasOptions ? "with-options" : "simple"}
+        productId={product.id}
+        simple={!product.hasOptions}
+        currencies={merchant.store.currencies}
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        initialValues={productToFormValues(product, merchant.store.currencies)}
+      />
       <ProductImages
         productId={product.id}
         productName={product.name}
@@ -58,6 +63,10 @@ export default async function EditProductPage({
           sizeBytes: image.sizeBytes,
         }))}
       />
+      <OptionsEditor productId={product.id} options={options} />
+      {product.hasOptions && (
+        <VariantsEditor productId={product.id} variants={variants} currencies={merchant.store.currencies} />
+      )}
     </main>
   );
 }

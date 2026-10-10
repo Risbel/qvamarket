@@ -9,9 +9,12 @@ import {
   or,
   product,
   productImage,
+  productOption,
+  productOptionValue,
   productVariant,
   sql,
   store,
+  variantOptionValue,
 } from "@qvashop/db";
 import { resolvePrice, volumeTiers, type ResolvedPrice, type VolumeTier } from "@/lib/pricing";
 import { loadPriceRows } from "./pricing";
@@ -127,6 +130,8 @@ export type PublicVariant = {
   id: string;
   title: string | null;
   isDefault: boolean;
+  /** one value per option of the product (empty for a simple product) */
+  optionValueIds: string[];
   stock: number | null;
   /** null = not sold in this currency */
   price: ResolvedPrice | null;
@@ -143,6 +148,8 @@ export type PublicProduct = {
   category: { name: string; slug: string } | null;
   /** storage keys, main image first */
   imageKeys: string[];
+  /** e.g. Talla: S, M, L (empty for a simple product) */
+  options: { id: string; name: string; values: { id: string; value: string }[] }[];
   variants: PublicVariant[];
 };
 
@@ -184,6 +191,26 @@ export async function getPublicProduct(
   const variants = (await variantsOf([row.id])).get(row.id) ?? [];
   const prices = await loadPriceRows(storeId, variants.map((v) => v.id), currencyCode);
 
+  const options = await db
+    .select({ id: productOption.id, name: productOption.name })
+    .from(productOption)
+    .where(and(eq(productOption.productId, row.id), eq(productOption.tenantId, row.tenantId)))
+    .orderBy(asc(productOption.position));
+  const values = options.length
+    ? await db
+        .select({ id: productOptionValue.id, optionId: productOptionValue.optionId, value: productOptionValue.value })
+        .from(productOptionValue)
+        .where(and(inArray(productOptionValue.optionId, options.map((o) => o.id)), eq(productOptionValue.tenantId, row.tenantId)))
+        .orderBy(asc(productOptionValue.position))
+    : [];
+  const links = options.length && variants.length
+    ? await db
+        .select({ variantId: variantOptionValue.variantId, valueId: variantOptionValue.optionValueId })
+        .from(variantOptionValue)
+        .where(and(inArray(variantOptionValue.variantId, variants.map((v) => v.id)), eq(variantOptionValue.tenantId, row.tenantId)))
+    : [];
+  const optionOrder = new Map(values.map((v) => [v.id, options.findIndex((o) => o.id === v.optionId)]));
+
   return {
     id: row.id,
     slug: row.slug,
@@ -193,10 +220,19 @@ export async function getPublicProduct(
     metaDescription: row.metaDescription,
     category: row.categoryName && row.categorySlug && row.categoryVisible ? { name: row.categoryName, slug: row.categorySlug } : null,
     imageKeys: images.map((image) => image.key),
+    options: options.map((o) => ({
+      id: o.id,
+      name: o.name,
+      values: values.filter((v) => v.optionId === o.id).map(({ id, value }) => ({ id, value })),
+    })),
     variants: variants.map((v) => ({
       id: v.id,
       title: v.title,
       isDefault: v.isDefault,
+      optionValueIds: links
+        .filter((l) => l.variantId === v.id)
+        .map((l) => l.valueId)
+        .sort((a, b) => (optionOrder.get(a) ?? 0) - (optionOrder.get(b) ?? 0)),
       stock: v.stock,
       price: resolvePrice(prices.get(v.id) ?? [], 1),
       tiers: volumeTiers(prices.get(v.id) ?? []),

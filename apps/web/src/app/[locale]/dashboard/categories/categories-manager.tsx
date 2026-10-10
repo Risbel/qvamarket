@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { slugify } from "@/lib/slug";
+import { categorySlug } from "@/lib/slug";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createCategorySchema, type CategoryValues } from "@/lib/validation/catalog-settings";
 import {
@@ -65,7 +65,9 @@ export function CategoriesManager({
 
   return (
     <div className="flex flex-col gap-6">
-      {canCreate && <CategoryForm mode="create" onDone={() => router.refresh()} />}
+      {canCreate && (
+        <CategoryForm mode="create" takenSlugs={categories.map((c) => c.slug)} onDone={() => router.refresh()} />
+      )}
 
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -83,6 +85,7 @@ export function CategoriesManager({
                 <CategoryForm
                   mode="edit"
                   category={category}
+                  takenSlugs={categories.filter((c) => c.id !== category.id).map((c) => c.slug)}
                   onDone={() => {
                     setEditing(null);
                     router.refresh();
@@ -180,11 +183,14 @@ export function CategoriesManager({
 function CategoryForm({
   mode,
   category,
+  takenSlugs,
   onDone,
   onCancel,
 }: {
   mode: "create" | "edit";
   category?: Category;
+  /** identifiers of the store's other categories, for the preview */
+  takenSlugs: string[];
   onDone: () => void;
   onCancel?: () => void;
 }) {
@@ -196,15 +202,12 @@ function CategoryForm({
   const schema = useMemo(() => createCategorySchema(tv), [tv]);
   const form = useForm<CategoryValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: category?.name ?? "", slug: category?.slug ?? "" },
+    defaultValues: { name: category?.name ?? "" },
   });
 
-  // New categories: the anchor follows the name until it is edited
-  const name = form.watch("name");
-  const slugDirty = form.formState.dirtyFields.slug;
-  useEffect(() => {
-    if (mode === "create" && !slugDirty) form.setValue("slug", slugify(name));
-  }, [name, slugDirty, mode, form]);
+  // Preview of the identifier the server will generate from the name (same rule)
+  const name = form.watch("name").trim();
+  const preview = name === category?.name ? category.slug : categorySlug(name, takenSlugs);
 
   async function onSubmit(values: CategoryValues) {
     setFormError(null);
@@ -213,12 +216,11 @@ function CategoryForm({
         ? await createCategoryAction(values, locale)
         : await updateCategoryAction(category!.id, values, locale);
     if (result.ok) {
-      if (mode === "create") form.reset({ name: "", slug: "" });
+      if (mode === "create") form.reset({ name: "" });
       onDone();
       return;
     }
-    if (result.error === "slugTaken") form.setError("slug", { message: tv("categorySlugTaken") });
-    else if (result.error === "invalid") {
+    if (result.error === "invalid") {
       for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
         form.setError(field as keyof CategoryValues, { message: messages[0] });
       }
@@ -228,31 +230,18 @@ function CategoryForm({
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate aria-label={mode === "create" ? t("new") : t("rename")}>
       <FieldGroup className="gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Controller
-            name="name"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${mode}-${category?.id ?? "new"}-name`}>{t("name")}</FieldLabel>
-                <Input {...field} id={`${mode}-${category?.id ?? "new"}-name`} aria-invalid={fieldState.invalid} />
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="slug"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${mode}-${category?.id ?? "new"}-slug`}>{t("slug")}</FieldLabel>
-                <Input {...field} id={`${mode}-${category?.id ?? "new"}-slug`} autoCapitalize="none" aria-invalid={fieldState.invalid} />
-                <FieldDescription>{t("slugHelp")}</FieldDescription>
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
-          />
-        </div>
+        <Controller
+          name="name"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={`${mode}-${category?.id ?? "new"}-name`}>{t("name")}</FieldLabel>
+              <Input {...field} id={`${mode}-${category?.id ?? "new"}-name`} aria-invalid={fieldState.invalid} />
+              {name !== "" && <FieldDescription>{t("anchorPreview", { anchor: `#${preview}` })}</FieldDescription>}
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
         {formError && <FieldError>{formError}</FieldError>}
         <div className="flex gap-2">
           <Button type="submit" size="sm" disabled={!hydrated || form.formState.isSubmitting}>

@@ -22,8 +22,8 @@ import { deleteObject } from "./storage";
 //
 // Model: a product is what the customer sees; what is sold is a variant. A simple product
 // has exactly one variant, the default one (no options), and the merchant edits its SKU,
-// stock and prices as if they were the product's. Products with options/variants are edited
-// by the variant editor (not here).
+// stock and prices as if they were the product's. A product with options has no default
+// variant: its variants are edited in src/server/variants.ts, and here only its own fields.
 
 type Scope = { tenantId: string; storeId: string };
 
@@ -76,7 +76,10 @@ export async function countProductsByStatus(scope: Scope) {
   >;
 }
 
-/** Product + its default variant + that variant's regular prices (for the edit form). */
+/**
+ * Product + its default variant + that variant's regular prices (for the edit form).
+ * `hasOptions`: the product has options, so it has no default variant.
+ */
 export async function getProduct(scope: Scope, id: string) {
   const [row] = await db
     .select({
@@ -121,7 +124,21 @@ export async function getProduct(scope: Scope, id: string) {
         .orderBy(asc(variantPrice.currencyCode), asc(variantPrice.minQuantity))
     : [];
 
-  return { ...row, variantCount: variants.length, defaultVariant: defaultVariant ?? null, prices };
+  const hasOptions = variants.length > 0 && !variants.some((v) => v.isDefault);
+  if (hasOptions) return { ...row, variantCount: variants.length, hasOptions, defaultVariant: null, prices: [] };
+  return { ...row, variantCount: variants.length, hasOptions, defaultVariant: defaultVariant ?? null, prices };
+}
+
+/** Does the product have options? null when it is not this store's product. */
+export async function productHasOptions(scope: Scope, id: string): Promise<boolean | null> {
+  const [row] = await db
+    .select({ id: product.id, hasDefault: sql<boolean>`bool_or(${productVariant.isDefault})` })
+    .from(product)
+    .leftJoin(productVariant, and(eq(productVariant.productId, product.id), eq(productVariant.tenantId, product.tenantId)))
+    .where(and(inScope(scope), eq(product.id, id)))
+    .groupBy(product.id);
+  if (!row) return null;
+  return row.hasDefault === false;
 }
 
 export type SaveProductResult =
@@ -189,8 +206,9 @@ export async function createProduct(scope: Scope, input: ProductInput): Promise<
 }
 
 /**
- * Updates a simple product: product fields, the default variant's SKU/stock, and its regular
- * prices (replaced as a whole; promotion prices are left alone).
+ * Updates a product's own fields. For a simple product also its default variant's SKU/stock
+ * and regular prices (replaced as a whole; promotion prices are left alone). For a product with
+ * options `input.variant` / `input.prices` are ignored: its variants have their own form.
  */
 export async function updateProduct(scope: Scope, id: string, input: ProductInput): Promise<SaveProductResult> {
   if (!(await categoryInStore(scope, input.product.categoryId))) {
@@ -209,8 +227,10 @@ export async function updateProduct(scope: Scope, id: string, input: ProductInpu
         .select({ id: productVariant.id, isDefault: productVariant.isDefault })
         .from(productVariant)
         .where(and(eq(productVariant.productId, id), eq(productVariant.tenantId, scope.tenantId)));
+      const defaultVariant = variants.find((v) => v.isDefault);
+      if (!defaultVariant) return { ok: true as const, id };
       if (variants.length !== 1) return { ok: false as const, error: "hasVariants" as const };
-      const variantId = variants[0].id;
+      const variantId = defaultVariant.id;
 
       await tx
         .update(productVariant)

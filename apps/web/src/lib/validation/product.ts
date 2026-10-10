@@ -8,6 +8,10 @@ export const MAX_STOCK = 1_000_000_000;
 export const MAX_TIERS = 5;
 export const MAX_TIER_QUANTITY = 100_000;
 export const MAX_TAGS = 20;
+export const MAX_OPTIONS = 3;
+export const MAX_OPTION_VALUES = 20;
+/** Combinations of option values a product may have (also keeps the variants form light). */
+export const MAX_VARIANTS = 50;
 /** Product and category URLs: lowercase, digits and hyphens, at most 80 characters. */
 export const URL_SLUG = /^[a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?$/;
 
@@ -27,18 +31,102 @@ export function parseTags(input: string): string[] {
   ];
 }
 
+const priceMessage = (t: Translator, digits: number) =>
+  t(digits === 0 ? "priceInvalidWhole" : "priceInvalid", { digits });
+
+/** SKU field (empty = none). */
+export const skuSchema = (t: Translator) => z.string().trim().max(64, t("tooLong", { max: 64 }));
+
+/** Stock field (empty = not tracked). */
+export const stockSchema = (t: Translator) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => value === "" || /^\d+$/.test(value), t("stockInvalid"))
+    .refine((value) => value === "" || Number(value) <= MAX_STOCK, t("stockInvalid"));
+
 /**
- * Form values are strings (what the inputs hold). There is one `prices` entry per currency the
- * store sells in: the default currency's price is required, the others are optional (empty =
- * not sold in that currency). Each currency can have a compare-at ("was") price and volume
- * tiers ("from 10 units: ..."). The server converts everything with `toProductInput`.
+ * The prices of one variant, as form strings: one entry per currency the store sells in. The
+ * default currency's price is required (with `requireDefault`), the others are optional (empty
+ * = not sold in that currency). Each currency can have a compare-at ("was") price and volume
+ * tiers ("from 10 units: ..."). Converted to rows by `pricesToRows`.
  */
-export function createProductSchema(t: Translator, currencies: FormCurrency[]) {
+export function createPricesSchema(t: Translator, currencies: FormCurrency[], { requireDefault = true } = {}) {
   const digitsOf = new Map(currencies.map((c) => [c.code, c.digits]));
   const defaultCode = currencies.find((c) => c.isDefault)?.code;
-  const priceMessage = (digits: number) =>
-    t(digits === 0 ? "priceInvalidWhole" : "priceInvalid", { digits });
 
+  return z
+    .array(
+      z.object({
+        currency: z.string().refine((code) => digitsOf.has(code)),
+        price: z.string().trim(),
+        compareAt: z.string().trim(),
+        tiers: z
+          .array(z.object({ minQuantity: z.string().trim(), price: z.string().trim() }))
+          .max(MAX_TIERS, t("tooManyTiers", { max: MAX_TIERS })),
+      }),
+    )
+    .superRefine((prices, ctx) => {
+      if (requireDefault && !prices.some((entry) => entry.currency === defaultCode)) {
+        ctx.addIssue({ code: "custom", path: [], message: t("required") });
+      }
+      prices.forEach((entry, i) => {
+        const digits = digitsOf.get(entry.currency) ?? 2;
+        const isDefault = entry.currency === defaultCode;
+
+        if (entry.price === "") {
+          if (isDefault && requireDefault) {
+            ctx.addIssue({ code: "custom", path: [i, "price"], message: t("required") });
+          } else if (entry.compareAt !== "" || entry.tiers.length > 0) {
+            ctx.addIssue({ code: "custom", path: [i, "price"], message: t("priceNeededFirst") });
+          }
+          return;
+        }
+        const price = parsePriceToMinor(entry.price, digits);
+        if (price === null) {
+          ctx.addIssue({ code: "custom", path: [i, "price"], message: priceMessage(t, digits) });
+          return;
+        }
+
+        if (entry.compareAt !== "") {
+          const compareAt = parsePriceToMinor(entry.compareAt, digits);
+          if (compareAt === null) {
+            ctx.addIssue({ code: "custom", path: [i, "compareAt"], message: priceMessage(t, digits) });
+          } else if (compareAt <= price) {
+            ctx.addIssue({ code: "custom", path: [i, "compareAt"], message: t("compareAtHigher") });
+          }
+        }
+
+        const seen = new Set<number>();
+        entry.tiers.forEach((tier, k) => {
+          const quantity = Number(tier.minQuantity);
+          if (!/^\d+$/.test(tier.minQuantity) || quantity < 2 || quantity > MAX_TIER_QUANTITY) {
+            ctx.addIssue({ code: "custom", path: [i, "tiers", k, "minQuantity"], message: t("tierQuantity", { max: MAX_TIER_QUANTITY }) });
+          } else if (seen.has(quantity)) {
+            ctx.addIssue({ code: "custom", path: [i, "tiers", k, "minQuantity"], message: t("tierRepeated") });
+          } else {
+            seen.add(quantity);
+          }
+          const tierPrice = parsePriceToMinor(tier.price, digits);
+          if (tierPrice === null) {
+            ctx.addIssue({ code: "custom", path: [i, "tiers", k, "price"], message: priceMessage(t, digits) });
+          } else if (tierPrice >= price) {
+            ctx.addIssue({ code: "custom", path: [i, "tiers", k, "price"], message: t("tierCheaper") });
+          }
+        });
+      });
+    });
+}
+
+export type PricesFormValues = z.infer<ReturnType<typeof createPricesSchema>>;
+export type PriceRowInput = { currencyCode: string; minQuantity: number; amountMinor: number; compareAtMinor: number | null };
+
+/**
+ * Product form. `simple`: the product has no options, so the SKU, stock and prices of its
+ * (default) variant are edited here. A product with options sends empty variant fields
+ * (`prices: []`) that the server ignores: its variants have their own form.
+ */
+export function createProductSchema(t: Translator, currencies: FormCurrency[], { simple = true } = {}) {
   return z.object({
     name: z.string().trim().min(1, t("required")).max(120, t("tooLong", { max: 120 })),
     description: z.string().trim().max(5000, t("tooLong", { max: 5000 })),
@@ -51,71 +139,9 @@ export function createProductSchema(t: Translator, currencies: FormCurrency[]) {
       .refine((value) => parseTags(value).every((tag) => tag.length <= 40), t("tagTooLong", { max: 40 })),
     metaTitle: z.string().trim().max(70, t("tooLong", { max: 70 })),
     metaDescription: z.string().trim().max(160, t("tooLong", { max: 160 })),
-    sku: z.string().trim().max(64, t("tooLong", { max: 64 })),
-    // empty = stock not tracked
-    stock: z
-      .string()
-      .trim()
-      .refine((value) => value === "" || /^\d+$/.test(value), t("stockInvalid"))
-      .refine((value) => value === "" || Number(value) <= MAX_STOCK, t("stockInvalid")),
-    prices: z
-      .array(
-        z.object({
-          currency: z.string().refine((code) => digitsOf.has(code)),
-          price: z.string().trim(),
-          compareAt: z.string().trim(),
-          tiers: z
-            .array(z.object({ minQuantity: z.string().trim(), price: z.string().trim() }))
-            .max(MAX_TIERS, t("tooManyTiers", { max: MAX_TIERS })),
-        }),
-      )
-      .superRefine((prices, ctx) => {
-        prices.forEach((entry, i) => {
-          const digits = digitsOf.get(entry.currency) ?? 2;
-          const isDefault = entry.currency === defaultCode;
-
-          if (entry.price === "") {
-            if (isDefault) {
-              ctx.addIssue({ code: "custom", path: [i, "price"], message: t("required") });
-            } else if (entry.compareAt !== "" || entry.tiers.length > 0) {
-              ctx.addIssue({ code: "custom", path: [i, "price"], message: t("priceNeededFirst") });
-            }
-            return;
-          }
-          const price = parsePriceToMinor(entry.price, digits);
-          if (price === null) {
-            ctx.addIssue({ code: "custom", path: [i, "price"], message: priceMessage(digits) });
-            return;
-          }
-
-          if (entry.compareAt !== "") {
-            const compareAt = parsePriceToMinor(entry.compareAt, digits);
-            if (compareAt === null) {
-              ctx.addIssue({ code: "custom", path: [i, "compareAt"], message: priceMessage(digits) });
-            } else if (compareAt <= price) {
-              ctx.addIssue({ code: "custom", path: [i, "compareAt"], message: t("compareAtHigher") });
-            }
-          }
-
-          const seen = new Set<number>();
-          entry.tiers.forEach((tier, k) => {
-            const quantity = Number(tier.minQuantity);
-            if (!/^\d+$/.test(tier.minQuantity) || quantity < 2 || quantity > MAX_TIER_QUANTITY) {
-              ctx.addIssue({ code: "custom", path: [i, "tiers", k, "minQuantity"], message: t("tierQuantity", { max: MAX_TIER_QUANTITY }) });
-            } else if (seen.has(quantity)) {
-              ctx.addIssue({ code: "custom", path: [i, "tiers", k, "minQuantity"], message: t("tierRepeated") });
-            } else {
-              seen.add(quantity);
-            }
-            const tierPrice = parsePriceToMinor(tier.price, digits);
-            if (tierPrice === null) {
-              ctx.addIssue({ code: "custom", path: [i, "tiers", k, "price"], message: priceMessage(digits) });
-            } else if (tierPrice >= price) {
-              ctx.addIssue({ code: "custom", path: [i, "tiers", k, "price"], message: t("tierCheaper") });
-            }
-          });
-        });
-      }),
+    sku: skuSchema(t),
+    stock: stockSchema(t),
+    prices: createPricesSchema(t, currencies, { requireDefault: simple }),
   });
 }
 
@@ -134,19 +160,38 @@ export type ProductInput = {
   };
   variant: { sku: string | null; stock: number | null };
   /** regular prices of the (default) variant: one row per currency and tier */
-  prices: { currencyCode: string; minQuantity: number; amountMinor: number; compareAtMinor: number | null }[];
+  prices: PriceRowInput[];
 };
 
-/** Validated form values -> database values (minor units, nulls for empty fields). */
-export function toProductInput(values: ProductFormValues, currencies: FormCurrency[]): ProductInput {
+/** Validated price entries -> variant_price rows (minor units). */
+export function pricesToRows(prices: PricesFormValues, currencies: FormCurrency[]): PriceRowInput[] {
   const digitsOf = new Map(currencies.map((c) => [c.code, c.digits]));
   const minor = (text: string, code: string) => {
     const value = parsePriceToMinor(text, digitsOf.get(code) ?? 2);
     if (value === null) throw new Error("price was not validated");
     return value;
   };
-  const orNull = (text: string) => (text === "" ? null : text);
+  return prices
+    .filter((entry) => entry.price !== "")
+    .flatMap((entry) => [
+      {
+        currencyCode: entry.currency,
+        minQuantity: 1,
+        amountMinor: minor(entry.price, entry.currency),
+        compareAtMinor: entry.compareAt === "" ? null : minor(entry.compareAt, entry.currency),
+      },
+      ...entry.tiers.map((tier) => ({
+        currencyCode: entry.currency,
+        minQuantity: Number(tier.minQuantity),
+        amountMinor: minor(tier.price, entry.currency),
+        compareAtMinor: null,
+      })),
+    ]);
+}
 
+/** Validated form values -> database values (minor units, nulls for empty fields). */
+export function toProductInput(values: ProductFormValues, currencies: FormCurrency[]): ProductInput {
+  const orNull = (text: string) => (text === "" ? null : text);
   return {
     product: {
       name: values.name,
@@ -162,21 +207,99 @@ export function toProductInput(values: ProductFormValues, currencies: FormCurren
       sku: orNull(values.sku),
       stock: values.stock === "" ? null : Number(values.stock),
     },
-    prices: values.prices
-      .filter((entry) => entry.price !== "")
-      .flatMap((entry) => [
-        {
-          currencyCode: entry.currency,
-          minQuantity: 1,
-          amountMinor: minor(entry.price, entry.currency),
-          compareAtMinor: entry.compareAt === "" ? null : minor(entry.compareAt, entry.currency),
-        },
-        ...entry.tiers.map((tier) => ({
-          currencyCode: entry.currency,
-          minQuantity: Number(tier.minQuantity),
-          amountMinor: minor(tier.price, entry.currency),
-          compareAtMinor: null,
-        })),
-      ]),
+    prices: pricesToRows(values.prices, currencies),
   };
+}
+
+// ---- options and variants
+
+const optionalId = z.string().refine((value) => value === "" || UUID.test(value));
+const sameText = (a: string, b: string) => a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase();
+
+/**
+ * Options of a product ("Talla": S, M, L). `id` is "" for new options and values; existing ones
+ * keep their id, so renaming a value keeps its variant (prices, stock). The number of
+ * combinations is capped at MAX_VARIANTS. No options = simple product.
+ */
+export function createOptionsSchema(t: Translator) {
+  return z
+    .object({
+      options: z
+        .array(
+          z.object({
+            id: optionalId,
+            name: z.string().trim().min(1, t("required")).max(30, t("tooLong", { max: 30 })),
+            values: z
+              .array(
+                z.object({
+                  id: optionalId,
+                  value: z.string().trim().min(1, t("required")).max(40, t("tooLong", { max: 40 })),
+                }),
+              )
+              .min(1, t("optionValuesRequired"))
+              .max(MAX_OPTION_VALUES, t("tooManyOptionValues", { max: MAX_OPTION_VALUES })),
+          }),
+        )
+        .max(MAX_OPTIONS, t("tooManyOptions", { max: MAX_OPTIONS })),
+    })
+    .superRefine(({ options }, ctx) => {
+      options.forEach((option, i) => {
+        if (options.slice(0, i).some((other) => sameText(other.name, option.name))) {
+          ctx.addIssue({ code: "custom", path: ["options", i, "name"], message: t("optionNameRepeated") });
+        }
+        option.values.forEach((entry, k) => {
+          if (option.values.slice(0, k).some((other) => sameText(other.value, entry.value))) {
+            ctx.addIssue({ code: "custom", path: ["options", i, "values", k, "value"], message: t("optionValueRepeated") });
+          }
+        });
+      });
+      const combinations = options.reduce((total, option) => total * Math.max(option.values.length, 1), 1);
+      if (options.length > 0 && combinations > MAX_VARIANTS) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["options"],
+          message: t("tooManyVariants", { max: MAX_VARIANTS, count: combinations }),
+        });
+      }
+    });
+}
+
+export type OptionsFormValues = z.infer<ReturnType<typeof createOptionsSchema>>;
+
+/** Variants form: SKU, stock and prices of every variant of a product with options. */
+export function createVariantsSchema(t: Translator, currencies: FormCurrency[]) {
+  return z
+    .object({
+      variants: z
+        .array(
+          z.object({
+            id: z.string().refine((value) => UUID.test(value)),
+            sku: skuSchema(t),
+            stock: stockSchema(t),
+            prices: createPricesSchema(t, currencies),
+          }),
+        )
+        .min(1)
+        .max(MAX_VARIANTS),
+    })
+    .superRefine(({ variants }, ctx) => {
+      variants.forEach((variant, i) => {
+        if (variant.sku !== "" && variants.slice(0, i).some((other) => other.sku === variant.sku)) {
+          ctx.addIssue({ code: "custom", path: ["variants", i, "sku"], message: t("skuRepeated") });
+        }
+      });
+    });
+}
+
+export type VariantsFormValues = z.infer<ReturnType<typeof createVariantsSchema>>;
+
+export type VariantInput = { id: string; sku: string | null; stock: number | null; prices: PriceRowInput[] };
+
+export function toVariantsInput(values: VariantsFormValues, currencies: FormCurrency[]): VariantInput[] {
+  return values.variants.map((variant) => ({
+    id: variant.id,
+    sku: variant.sku === "" ? null : variant.sku,
+    stock: variant.stock === "" ? null : Number(variant.stock),
+    prices: pricesToRows(variant.prices, currencies),
+  }));
 }

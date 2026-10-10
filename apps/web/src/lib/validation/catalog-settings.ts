@@ -1,11 +1,10 @@
 import { z } from "zod";
-import { URL_SLUG } from "./product";
 import type { Translator } from "./types";
 
+/** Category form: only the name; its identifier (#anchor) is generated from it on the server. */
 export function createCategorySchema(t: Translator) {
   return z.object({
     name: z.string().trim().min(1, t("required")).max(60, t("tooLong", { max: 60 })),
-    slug: z.string().trim().toLowerCase().regex(URL_SLUG, t("urlSlugFormat")),
   });
 }
 export type CategoryValues = z.infer<ReturnType<typeof createCategorySchema>>;

@@ -53,7 +53,8 @@
       "was": "Antes",
       "tiersTitle": "Precio por cantidad",
       "tierLine": "Desde {count} unidades: {price} c/u",
-      "notInCurrency": "Este producto no está disponible en {currency}. Elige otra moneda arriba."
+      "notInCurrency": "Este producto no está disponible en {currency}. Elige otra moneda arriba.",
+      "variantNotInCurrency": "Esta variante no está disponible en {currency}. Elige otra variante u otra moneda."
     },
     "cart": {
       "title": "Tu carrito",
@@ -110,9 +111,15 @@
     "tooManyTags": "Máximo {max} etiquetas",
     "tooManyTiers": "Máximo {max} precios por volumen",
     "urlSlugFormat": "Solo minúsculas, números y guiones (no al inicio ni al final)",
-    "categorySlugTaken": "Ya hay una categoría con este identificador",
     "productSlugTaken": "Ya hay un producto con esta dirección",
-    "skuTaken": "Ya hay un producto con este SKU"
+    "skuTaken": "Ya hay un producto con este SKU",
+    "optionValuesRequired": "Añade al menos un valor",
+    "tooManyOptionValues": "Máximo {max} valores por opción",
+    "tooManyOptions": "Máximo {max} opciones",
+    "optionNameRepeated": "Ya hay una opción con este nombre",
+    "optionValueRepeated": "Este valor está repetido",
+    "tooManyVariants": "Serían {count} combinaciones; el máximo es {max}. Quita algunos valores.",
+    "skuRepeated": "Este SKU está repetido en otra variante"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -313,7 +320,8 @@
       "metaTitle": "Título para buscadores",
       "metaTitleHelp": "{count}/70. Si lo dejas vacío se usa el nombre.",
       "metaDescription": "Descripción para buscadores",
-      "metaDescriptionHelp": "{count}/160. Si la dejas vacía se usa la descripción."
+      "metaDescriptionHelp": "{count}/160. Si la dejas vacía se usa la descripción.",
+      "pricesInVariants": "Este producto tiene opciones: el precio, el SKU y el stock se editan en cada variante, más abajo."
     },
     "delete": {
       "button": "Eliminar",
@@ -327,7 +335,7 @@
         "failed": "No se pudo eliminar el producto. Inténtalo de nuevo."
       }
     },
-    "createdNotice": "Producto creado. Ahora puedes añadir imágenes.",
+    "createdNotice": "Producto creado. Ahora puedes añadir imágenes y, si viene en varias tallas o colores, sus opciones.",
     "images": {
       "title": "Imágenes",
       "count": "{count}/{max}",
@@ -356,7 +364,50 @@
     },
     "fromPrefix": "desde",
     "noPrice": "Sin precio",
-    "hasVariantsNotice": "Este producto tiene variantes. Aquí puedes editar sus datos generales; el precio y el stock de cada variante se editarán en el editor de variantes."
+    "options": {
+      "title": "Opciones",
+      "help": "Si el producto viene en varias tallas, colores, etc. Cada combinación de valores es una variante con su propio precio y stock.",
+      "addFirst": "Añadir opciones (talla, color...)",
+      "add": "Añadir otra opción",
+      "optionLegend": "Opción {number}",
+      "name": "Nombre de la opción",
+      "namePlaceholder": "Ej. Talla",
+      "remove": "Quitar opción",
+      "values": "Valores",
+      "valueLabel": "Valor {number}",
+      "valuePlaceholder": "Ej. M",
+      "removeValue": "Quitar {value}",
+      "addValue": "+ Valor",
+      "combinations": "{count, plural, one {# variante} other {# variantes}}",
+      "backToSimple": "Sin opciones, el producto vuelve a ser simple: se conserva la primera variante con su precio y su stock.",
+      "save": "Guardar opciones",
+      "saving": "Guardando...",
+      "saved": "Opciones guardadas. Revisa el precio y el stock de cada variante.",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se encontró el producto.",
+        "stale": "El producto cambió mientras lo editabas. Hemos recargado los datos: revisa y vuelve a guardar.",
+        "failed": "No se pudieron guardar las opciones. Inténtalo de nuevo."
+      }
+    },
+    "variants": {
+      "title": "{count, plural, one {Variante} other {Variantes (#)}}",
+      "help": "Pulsa una variante para editar su SKU, stock y precios. Las variantes nuevas copian el precio de la primera y empiezan sin stock si controlas el stock.",
+      "noPrice": "Sin precio",
+      "stockUntracked": "Sin control de stock",
+      "stock": "Stock: {count}",
+      "fixErrors": "Revisa los campos marcados.",
+      "save": "Guardar variantes",
+      "saving": "Guardando...",
+      "saved": "Variantes guardadas.",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se encontró el producto.",
+        "stale": "Las opciones cambiaron mientras editabas. Hemos recargado las variantes: revisa y vuelve a guardar.",
+        "skuTaken": "Algún SKU ya lo usa otro producto.",
+        "failed": "No se pudieron guardar las variantes. Inténtalo de nuevo."
+      }
+    }
   },
   "Branding": {
     "title": "Marca",
@@ -431,8 +482,6 @@
     "description": "Organizan tu tienda: aparecen arriba como un índice y cada una lleva a su sección de productos. En este orden se muestran.",
     "new": "Nueva categoría",
     "name": "Nombre",
-    "slug": "Identificador",
-    "slugHelp": "Se usa en el enlace a la sección (#identificador).",
     "create": "Crear categoría",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -450,7 +499,8 @@
     "errors": {
       "forbidden": "No tienes permiso para hacer esto.",
       "failed": "No se pudo completar la operación. Inténtalo de nuevo."
-    }
+    },
+    "anchorPreview": "Enlace a su sección en la tienda: {anchor}"
   },
   "Settings": {
     "title": "Ajustes de la tienda",

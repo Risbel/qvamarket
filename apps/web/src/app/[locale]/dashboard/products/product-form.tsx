@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  type Control,
-  type Path,
-} from "react-hook-form";
+import { Controller, useForm, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -15,7 +9,6 @@ import { slugify } from "@/lib/slug";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
   createProductSchema,
-  MAX_TIERS,
   PRODUCT_STATUS_VALUES,
   type FormCurrency,
   type ProductFormValues,
@@ -32,9 +25,9 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { CurrencyPrices, TextField } from "./price-fields";
 
 type Props = {
   /** edit mode when `productId` is given */
@@ -42,6 +35,8 @@ type Props = {
   initialValues: ProductFormValues;
   currencies: FormCurrency[];
   categories: { id: string; name: string }[];
+  /** false: the product has options; its price and stock are edited per variant, not here */
+  simple?: boolean;
 };
 
 const selectClass = cn(
@@ -50,7 +45,7 @@ const selectClass = cn(
   "aria-invalid:border-destructive dark:bg-input/30",
 );
 
-export function ProductForm({ productId, initialValues, currencies, categories }: Props) {
+export function ProductForm({ productId, initialValues, currencies, categories, simple = true }: Props) {
   const t = useTranslations("Products.form");
   const tv = useTranslations("Validation");
   const locale = useLocale();
@@ -58,7 +53,7 @@ export function ProductForm({ productId, initialValues, currencies, categories }
   const hydrated = useHydrated();
   const [formError, setFormError] = useState<string | null>(null);
 
-  const schema = useMemo(() => createProductSchema(tv, currencies), [tv, currencies]);
+  const schema = useMemo(() => createProductSchema(tv, currencies, { simple }), [tv, currencies, simple]);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(schema),
     defaultValues: initialValues,
@@ -166,38 +161,39 @@ export function ProductForm({ productId, initialValues, currencies, categories }
           />
         </div>
 
-        {/* ---- prices, one card per currency of the store */}
-        <section className="flex flex-col gap-3" aria-labelledby="prices-title">
-          <div>
-            <h2 id="prices-title" className="text-base font-semibold">
-              {t("pricesTitle")}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {currencies.length > 1 ? t("pricesHelpMulti") : t("pricesHelp")}
-            </p>
-          </div>
-          {currencies.map((currency, index) => (
-            <CurrencyPrices
-              key={currency.code}
-              control={form.control}
-              index={index}
-              currency={currency}
-            />
-          ))}
-        </section>
+        {simple ? (
+          <>
+            {/* ---- prices, one card per currency of the store */}
+            <section className="flex flex-col gap-3" aria-labelledby="prices-title">
+              <div>
+                <h2 id="prices-title" className="text-base font-semibold">
+                  {t("pricesTitle")}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {currencies.length > 1 ? t("pricesHelpMulti") : t("pricesHelp")}
+                </p>
+              </div>
+              {currencies.map((currency, index) => (
+                <CurrencyPrices key={currency.code} control={form.control} base={`prices.${index}`} currency={currency} />
+              ))}
+            </section>
 
-        {/* ---- inventory */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField control={form.control} name="sku" label={t("sku")} description={t("skuHelp")} autoComplete="off" />
-          <TextField
-            control={form.control}
-            name="stock"
-            label={t("stock")}
-            description={t("stockHelp")}
-            inputMode="numeric"
-            autoComplete="off"
-          />
-        </div>
+            {/* ---- inventory */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField control={form.control} name="sku" label={t("sku")} description={t("skuHelp")} autoComplete="off" />
+              <TextField
+                control={form.control}
+                name="stock"
+                label={t("stock")}
+                description={t("stockHelp")}
+                inputMode="numeric"
+                autoComplete="off"
+              />
+            </div>
+          </>
+        ) : (
+          <p className="rounded-md bg-muted p-3 text-sm">{t("pricesInVariants")}</p>
+        )}
 
         {/* ---- search and SEO */}
         <section className="flex flex-col gap-4" aria-labelledby="seo-title">
@@ -248,124 +244,5 @@ export function ProductForm({ productId, initialValues, currencies, categories }
         </div>
       </FieldGroup>
     </form>
-  );
-}
-
-/** Regular price, compare-at price and volume tiers in one currency. */
-function CurrencyPrices({
-  control,
-  index,
-  currency,
-}: {
-  control: Control<ProductFormValues>;
-  index: number;
-  currency: FormCurrency;
-}) {
-  const t = useTranslations("Products.form");
-  const tiers = useFieldArray({ control, name: `prices.${index}.tiers` });
-
-  return (
-    <fieldset className="flex flex-col gap-3 rounded-lg border p-4" data-currency={currency.code}>
-      <legend className="px-1 text-sm font-medium">
-        {currency.code} {currency.isDefault && <span className="text-muted-foreground">· {t("defaultCurrency")}</span>}
-      </legend>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          control={control}
-          name={`prices.${index}.price`}
-          label={t("price", { currency: currency.code })}
-          description={currency.isDefault ? undefined : t("priceOptional")}
-          inputMode="decimal"
-          autoComplete="off"
-        />
-        <TextField
-          control={control}
-          name={`prices.${index}.compareAt`}
-          label={t("compareAt", { currency: currency.code })}
-          description={t("compareAtHelp")}
-          inputMode="decimal"
-          autoComplete="off"
-        />
-      </div>
-
-      {tiers.fields.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">{t("tiersTitle")}</span>
-          {tiers.fields.map((tier, k) => (
-            <div key={tier.id} className="grid grid-cols-[1fr_1fr_auto] items-start gap-2">
-              <TextField
-                control={control}
-                name={`prices.${index}.tiers.${k}.minQuantity`}
-                label={t("tierFrom")}
-                inputMode="numeric"
-                autoComplete="off"
-              />
-              <TextField
-                control={control}
-                name={`prices.${index}.tiers.${k}.price`}
-                label={t("tierPrice", { currency: currency.code })}
-                inputMode="decimal"
-                autoComplete="off"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-6"
-                onClick={() => tiers.remove(k)}
-                aria-label={t("tierRemove")}
-              >
-                ×
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-      {tiers.fields.length < MAX_TIERS && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-fit"
-          onClick={() => tiers.append({ minQuantity: "", price: "" })}
-        >
-          {t("tierAdd")}
-        </Button>
-      )}
-    </fieldset>
-  );
-}
-
-function TextField({
-  control,
-  name,
-  label,
-  description,
-  ...inputProps
-}: {
-  control: Control<ProductFormValues>;
-  name: Path<ProductFormValues>;
-  label: string;
-  description?: string;
-} & Omit<React.ComponentProps<typeof Input>, "name">) {
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState }) => (
-        <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={name}>{label}</FieldLabel>
-          <Input
-            {...inputProps}
-            {...field}
-            value={(field.value as string | undefined) ?? ""}
-            id={name}
-            aria-invalid={fieldState.invalid}
-          />
-          {description && <FieldDescription>{description}</FieldDescription>}
-          <FieldError errors={[fieldState.error]} />
-        </Field>
-      )}
-    />
   );
 }

@@ -53,7 +53,8 @@
       "was": "Was",
       "tiersTitle": "Price by quantity",
       "tierLine": "From {count} units: {price} each",
-      "notInCurrency": "This product is not available in {currency}. Choose another currency above."
+      "notInCurrency": "This product is not available in {currency}. Choose another currency above.",
+      "variantNotInCurrency": "This variant is not available in {currency}. Choose another variant or currency."
     },
     "cart": {
       "title": "Your cart",
@@ -110,9 +111,15 @@
     "tooManyTags": "At most {max} tags",
     "tooManyTiers": "At most {max} volume prices",
     "urlSlugFormat": "Only lowercase letters, numbers and hyphens (not at the start or end)",
-    "categorySlugTaken": "A category already uses this identifier",
     "productSlugTaken": "A product already uses this address",
-    "skuTaken": "A product already uses this SKU"
+    "skuTaken": "A product already uses this SKU",
+    "optionValuesRequired": "Add at least one value",
+    "tooManyOptionValues": "At most {max} values per option",
+    "tooManyOptions": "At most {max} options",
+    "optionNameRepeated": "There is already an option with this name",
+    "optionValueRepeated": "This value is repeated",
+    "tooManyVariants": "That would be {count} combinations; the maximum is {max}. Remove some values.",
+    "skuRepeated": "This SKU is repeated in another variant"
   },
   "Admin": {
     "title": "Admin panel",
@@ -313,7 +320,8 @@
       "metaTitle": "Search engine title",
       "metaTitleHelp": "{count}/70. If empty, the name is used.",
       "metaDescription": "Search engine description",
-      "metaDescriptionHelp": "{count}/160. If empty, the description is used."
+      "metaDescriptionHelp": "{count}/160. If empty, the description is used.",
+      "pricesInVariants": "This product has options: price, SKU and stock are edited per variant, below."
     },
     "delete": {
       "button": "Delete",
@@ -327,7 +335,7 @@
         "failed": "The product could not be deleted. Please try again."
       }
     },
-    "createdNotice": "Product created. You can now add images.",
+    "createdNotice": "Product created. Now you can add images and, if it comes in several sizes or colors, its options.",
     "images": {
       "title": "Images",
       "count": "{count}/{max}",
@@ -356,7 +364,50 @@
     },
     "fromPrefix": "from",
     "noPrice": "No price",
-    "hasVariantsNotice": "This product has variants. You can edit its general details here; each variant's price and stock will be edited in the variants editor."
+    "options": {
+      "title": "Options",
+      "help": "If the product comes in several sizes, colors, etc. Each combination of values is a variant with its own price and stock.",
+      "addFirst": "Add options (size, color...)",
+      "add": "Add another option",
+      "optionLegend": "Option {number}",
+      "name": "Option name",
+      "namePlaceholder": "E.g. Size",
+      "remove": "Remove option",
+      "values": "Values",
+      "valueLabel": "Value {number}",
+      "valuePlaceholder": "E.g. M",
+      "removeValue": "Remove {value}",
+      "addValue": "+ Value",
+      "combinations": "{count, plural, one {# variant} other {# variants}}",
+      "backToSimple": "Without options the product becomes simple again: the first variant is kept, with its price and stock.",
+      "save": "Save options",
+      "saving": "Saving...",
+      "saved": "Options saved. Check each variant's price and stock.",
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "notFound": "Product not found.",
+        "stale": "The product changed while you were editing it. We reloaded it: check and save again.",
+        "failed": "The options could not be saved. Please try again."
+      }
+    },
+    "variants": {
+      "title": "{count, plural, one {Variant} other {Variants (#)}}",
+      "help": "Click a variant to edit its SKU, stock and prices. New variants copy the first one's price and start with no stock if you track stock.",
+      "noPrice": "No price",
+      "stockUntracked": "Stock not tracked",
+      "stock": "Stock: {count}",
+      "fixErrors": "Check the highlighted fields.",
+      "save": "Save variants",
+      "saving": "Saving...",
+      "saved": "Variants saved.",
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "notFound": "Product not found.",
+        "stale": "The options changed while you were editing. We reloaded the variants: check and save again.",
+        "skuTaken": "Another product already uses one of these SKUs.",
+        "failed": "The variants could not be saved. Please try again."
+      }
+    }
   },
   "Branding": {
     "title": "Branding",
@@ -431,8 +482,6 @@
     "description": "They organize your store: they appear at the top as an index and each one jumps to its product section. They are shown in this order.",
     "new": "New category",
     "name": "Name",
-    "slug": "Identifier",
-    "slugHelp": "Used in the link to the section (#identifier).",
     "create": "Create category",
     "save": "Save",
     "cancel": "Cancel",
@@ -450,7 +499,8 @@
     "errors": {
       "forbidden": "You don't have permission to do this.",
       "failed": "The operation could not be completed. Please try again."
-    }
+    },
+    "anchorPreview": "Link to its section in the store: {anchor}"
   },
   "Settings": {
     "title": "Store settings",

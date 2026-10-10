@@ -13,7 +13,8 @@ import {
   createCategory,
   deleteCategory,
   moveCategory,
-  updateCategory,
+  renameCategory,
+  setCategoryVisibility,
 } from "./categories";
 import { setStoreCurrencies } from "./currencies";
 import { updateStoreProfile } from "./store-settings";
@@ -24,7 +25,7 @@ export type CatalogActionResult =
   | { ok: true }
   | {
       ok: false;
-      error: "forbidden" | "notFound" | "failed" | "invalid" | "slugTaken" | "inUse";
+      error: "forbidden" | "notFound" | "failed" | "invalid" | "inUse";
       fieldErrors?: Record<string, string[]>;
       codes?: string[];
     };
@@ -72,7 +73,7 @@ export async function updateCategoryAction(id: unknown, values: unknown, locale:
   if (!parsedId.success) return { ok: false, error: "notFound" };
   const parsed = createCategorySchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
-  return guard(() => updateCategory(scope, parsedId.data, parsed.data)) as Promise<CatalogActionResult>;
+  return guard(() => renameCategory(scope, parsedId.data, parsed.data)) as Promise<CatalogActionResult>;
 }
 
 export async function setCategoryVisibilityAction(id: unknown, visible: unknown): Promise<CatalogActionResult> {
@@ -80,7 +81,7 @@ export async function setCategoryVisibilityAction(id: unknown, visible: unknown)
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success || typeof visible !== "boolean") return { ok: false, error: "notFound" };
-  return guard(() => updateCategory(scope, parsedId.data, { isVisible: visible })) as Promise<CatalogActionResult>;
+  return guard(() => setCategoryVisibility(scope, parsedId.data, visible)) as Promise<CatalogActionResult>;
 }
 
 export async function moveCategoryAction(id: unknown, direction: unknown): Promise<CatalogActionResult> {
