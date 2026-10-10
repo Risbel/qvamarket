@@ -703,7 +703,7 @@
   "Orders": {
     "title": "Pedidos",
     "empty": "Aún no tienes pedidos. Aparecerán aquí cuando tus clientes compren en tu tienda.",
-    "noMatches": "Ningún pedido coincide con la búsqueda.",
+    "noMatches": "Ningún pedido coincide con los filtros.",
     "back": "Pedidos",
     "filters": {
       "label": "Filtrar por estado",
@@ -781,6 +781,20 @@
         "merchant": "Tienda",
         "system": "Sistema"
       }
+    },
+    "dates": {
+      "label": "Fecha",
+      "from": "Desde",
+      "to": "Hasta",
+      "apply": "Aplicar",
+      "clear": "Quitar fechas",
+      "presets": {
+        "today": "Hoy",
+        "yesterday": "Ayer",
+        "last7": "Últimos 7 días",
+        "thisMonth": "Este mes"
+      },
+      "otherTimeZone": "Días según la zona horaria {timeZone}."
     }
   }
 }

@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { parseDateRange } from "@/lib/date-range";
 import { formatMoney } from "@/lib/money";
 import { ORDER_STATUSES, isOrderStatus, orderReference, orderStatusVariant, paymentStatusVariant } from "@/lib/orders";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ORDERS_PAGE_SIZE, countOrdersByStatus, listOrders } from "@/server/orders";
 import { requireMerchantPermission } from "@/server/tenant";
+import { DateFilter } from "./date-filter";
 
 export default async function OrdersPage({ params, searchParams }: PageProps<"/[locale]/dashboard/orders">) {
   const { locale } = await params;
@@ -25,15 +27,18 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
   const status = isOrderStatus(one(search.status)) ? (one(search.status) as (typeof ORDER_STATUSES)[number]) : null;
   const query = one(search.q).slice(0, 100);
   const page = Math.min(Math.max(Number.parseInt(one(search.page), 10) || 1, 1), 10_000);
+  // Days in the timezone the URL names (the viewer's browser sets it; see date-filter.tsx)
+  const range = parseDateRange(one(search.from), one(search.to), one(search.tz));
+  const rangeQuery: Record<string, string> = range ? { from: range.from, to: range.to, tz: range.timeZone } : {};
 
   const [{ orders, total }, counts] = await Promise.all([
-    listOrders(scope, { status, query, page }),
-    countOrdersByStatus(scope),
+    listOrders(scope, { status, range, query, page }),
+    countOrdersByStatus(scope, range),
   ]);
   const all = Object.values(counts).reduce((sum, n) => sum + n, 0);
   const pages = Math.max(1, Math.ceil(total / ORDERS_PAGE_SIZE));
   const href = (changes: { status?: string | null; page?: number }) => {
-    const next = { status: changes.status !== undefined ? changes.status : status, q: query, page: changes.page ?? 1 };
+    const next = { status: changes.status !== undefined ? changes.status : status, q: query, ...rangeQuery, page: changes.page ?? 1 };
     return {
       pathname: "/dashboard/orders",
       query: Object.fromEntries(
@@ -45,6 +50,11 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
+
+      <DateFilter
+        range={range}
+        keep={Object.fromEntries(Object.entries({ status: status ?? "", q: query }).filter(([, value]) => value))}
+      />
 
       <nav aria-label={t("filters.label")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {[null, ...ORDER_STATUSES].map((key) => {
@@ -70,6 +80,9 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
       {/* A GET search form on purpose: the search belongs in the URL and holds nothing private */}
       <form method="get" role="search" className="flex gap-2">
         {status && <input type="hidden" name="status" value={status} />}
+        {Object.entries(rangeQuery).map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={value} />
+        ))}
         <Input
           name="q"
           type="search"
@@ -84,7 +97,7 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
       </form>
 
       {orders.length === 0 ? (
-        <p className="text-muted-foreground">{all === 0 ? t("empty") : t("noMatches")}</p>
+        <p className="text-muted-foreground">{all === 0 && !range && !query ? t("empty") : t("noMatches")}</p>
       ) : (
         <Table>
           <TableHeader>

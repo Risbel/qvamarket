@@ -1,4 +1,5 @@
 import { and, asc, count, db, desc, eq, inArray, or, order, orderItem, orderPayment, orderStatusHistory, sql, user } from "@qvashop/db";
+import type { DateRange } from "@/lib/date-range";
 import type { OrderStatus } from "@/lib/orders";
 
 // Orders of the merchant's store. Every query matches tenant_id AND store_id (from
@@ -11,6 +12,8 @@ export const ORDERS_PAGE_SIZE = 50;
 
 export type OrderListFilter = {
   status: OrderStatus | null;
+  /** days in the viewer's timezone; null = any date */
+  range: DateRange | null;
   /** order number ("12" or "#12"), or part of the customer's name / phone */
   query: string;
   /** 1-based */
@@ -31,11 +34,28 @@ function searchCondition(query: string) {
   );
 }
 
+/**
+ * Orders placed on the calendar days `from`..`to` in the range's timezone. The exact test is
+ * the order's LOCAL date (instant -> local time always has one answer); converting a local
+ * midnight to an instant does not, because some zones change clocks at midnight (Cuba's
+ * Nov 1 starts with 00:00 twice). The wider instant bounds only let the index prune rows.
+ */
+function inDateRange(range: DateRange | null) {
+  if (!range) return undefined;
+  const { from, to, timeZone } = range;
+  return and(
+    sql`${order.createdAt} >= (${from}::date)::timestamp at time zone ${timeZone} - interval '1 day'`,
+    sql`${order.createdAt} < (${to}::date + 1)::timestamp at time zone ${timeZone} + interval '1 day'`,
+    sql`(${order.createdAt} at time zone ${timeZone})::date between ${from}::date and ${to}::date`,
+  );
+}
+
 /** A page of orders, newest first, with the number of units of each. */
 export async function listOrders(scope: Scope, filter: OrderListFilter) {
   const where = and(
     inScope(scope),
     filter.status ? eq(order.status, filter.status) : undefined,
+    inDateRange(filter.range),
     searchCondition(filter.query),
   );
   const [rows, [{ total }]] = await Promise.all([
@@ -83,12 +103,12 @@ export async function listOrders(scope: Scope, filter: OrderListFilter) {
   };
 }
 
-/** Number of orders in each status (for the filter chips). */
-export async function countOrdersByStatus(scope: Scope): Promise<Record<string, number>> {
+/** Number of orders in each status (for the filter chips), within the date range if any. */
+export async function countOrdersByStatus(scope: Scope, range: DateRange | null): Promise<Record<string, number>> {
   const rows = await db
     .select({ status: order.status, total: count() })
     .from(order)
-    .where(inScope(scope))
+    .where(and(inScope(scope), inDateRange(range)))
     .groupBy(order.status);
   return Object.fromEntries(rows.map((row) => [row.status, row.total]));
 }

@@ -85,6 +85,13 @@
       "when": 1791663403266,
       "tag": "0011_right_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791667917974,
+      "tag": "0012_nasty_captain_stacy",
+      "breakpoints": true
     }
   ]
 }

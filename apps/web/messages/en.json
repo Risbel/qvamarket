@@ -703,7 +703,7 @@
   "Orders": {
     "title": "Orders",
     "empty": "No orders yet. They will appear here when customers buy from your store.",
-    "noMatches": "No orders match the search.",
+    "noMatches": "No orders match the filters.",
     "back": "Orders",
     "filters": {
       "label": "Filter by status",
@@ -781,6 +781,20 @@
         "merchant": "Store",
         "system": "System"
       }
+    },
+    "dates": {
+      "label": "Date",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply",
+      "clear": "Clear dates",
+      "presets": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last7": "Last 7 days",
+        "thisMonth": "This month"
+      },
+      "otherTimeZone": "Days in the {timeZone} timezone."
     }
   }
 }

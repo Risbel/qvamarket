@@ -21,6 +21,9 @@ import { organization, user } from "./auth-schema.ts";
 // Every tenant-owned table carries `tenant_id`, and every query must filter by it.
 // Child rows carry a composite FK to their parent's (id, tenant_id) so a row can never point
 // at another tenant's parent.
+//
+// Every timestamp is `timestamptz` (withTimezone: true): an absolute instant, independent of
+// the database server's timezone. Each viewer's browser shows it in their own timezone.
 
 const SLUG_CHECK = "'^[a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?$'";
 
@@ -89,8 +92,8 @@ export const store = pgTable(
     // Counter behind order.number: checkout increments it with UPDATE ... RETURNING inside the
     // order's transaction (the row lock serializes checkouts; a rollback leaves no gap).
     lastOrderNumber: integer("last_order_number").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -131,7 +134,7 @@ export const storeCurrency = pgTable(
       .references(() => currency.code),
     isDefault: boolean("is_default").default(false).notNull(),
     position: integer("position").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ name: "store_currency_pk", columns: [table.storeId, table.currencyCode] }),
@@ -170,8 +173,8 @@ export const category = pgTable(
     isVisible: boolean("is_visible").default(true).notNull(),
     metaTitle: text("meta_title"),
     metaDescription: text("meta_description"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -225,8 +228,8 @@ export const product = pgTable(
     tags: text("tags").array().default(sql`'{}'::text[]`).notNull(),
     metaTitle: text("meta_title"),
     metaDescription: text("meta_description"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -331,8 +334,8 @@ export const productVariant = pgTable(
     stock: integer("stock"),
     weightGrams: integer("weight_grams"),
     optionKey: text("option_key").default("").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -408,8 +411,8 @@ export const priceList = pgTable(
     status: text("status").default("draft").notNull(),
     startsAt: timestamp("starts_at", { withTimezone: true }),
     endsAt: timestamp("ends_at", { withTimezone: true }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -452,8 +455,8 @@ export const variantPrice = pgTable(
     amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
     compareAtMinor: bigint("compare_at_minor", { mode: "number" }),
     priceListId: uuid("price_list_id"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -509,7 +512,7 @@ export const productImage = pgTable(
     // 0 is the main image
     position: integer("position").default(0).notNull(),
     altText: text("alt_text"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     foreignKey({
@@ -550,8 +553,8 @@ export const customer = pgTable(
     name: text("name").notNull(),
     phone: text("phone"),
     email: text("email"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -615,8 +618,8 @@ export const order = pgTable(
     // Sent by the browser once per checkout attempt, so a retried submit cannot create a
     // second order
     idempotencyKey: text("idempotency_key"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -750,7 +753,7 @@ export const orderStatusHistory = pgTable(
     // account is deleted)
     actorUserId: uuid("actor_user_id").references(() => user.id, { onDelete: "set null" }),
     note: text("note"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     foreignKey({
@@ -792,7 +795,7 @@ export const orderPayment = pgTable(
     paidAt: timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
     recordedByUserId: uuid("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
     note: text("note"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     foreignKey({
@@ -830,7 +833,7 @@ export const impersonationLog = pgTable(
     }),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("impersonation_log_adminUserId_idx").on(table.adminUserId),
