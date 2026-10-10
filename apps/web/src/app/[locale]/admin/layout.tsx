@@ -1,7 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
+import { PanelShell } from "@/components/panel-shell";
 import { requireAdminPage } from "@/server/admin";
-import { SignOutButton } from "../dashboard/sign-out-button";
 
 export default async function AdminLayout({
   children,
@@ -11,23 +10,17 @@ export default async function AdminLayout({
   setRequestLocale(locale);
   const session = await requireAdminPage(locale);
   const t = await getTranslations("Admin");
+  const tMeta = await getTranslations("Metadata");
 
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="border-b">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 p-4">
-          <Link href="/admin" className="font-semibold">
-            {t("title")}
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {session.user.email}
-            </span>
-            <SignOutButton />
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 p-4">{children}</main>
-    </div>
+    <PanelShell
+      groups={[{ label: "platform", items: ["stores", "newMerchant"] }]}
+      brand={{ title: tMeta("title"), subtitle: t("title"), logoUrl: null, href: "/admin" }}
+      user={{ name: session.user.name, email: session.user.email }}
+      // An impersonated session never reaches /admin (it is a merchant session)
+      impersonating={false}
+    >
+      <div className="mx-auto w-full max-w-5xl flex-1 p-4">{children}</div>
+    </PanelShell>
   );
 }

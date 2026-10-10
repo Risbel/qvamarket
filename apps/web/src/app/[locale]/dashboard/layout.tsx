@@ -1,12 +1,14 @@
+import { headers } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
-import { PanelNav, type PanelNavKey } from "@/components/panel-nav";
+import { PanelShell } from "@/components/panel-shell";
+import type { PanelNavGroup, PanelNavKey } from "@/components/panel-sidebar";
 import { StoreStatusBanner } from "@/components/store-status-banner";
 import { can } from "@/lib/permissions";
+import { buildStoreUrl } from "@/lib/tenancy";
 import { getMerchantContext } from "@/server/tenant";
 import { requireUser } from "@/server/session";
 import { publicUrl } from "@/server/storage";
-import { SignOutButton } from "./sign-out-button";
 
 export default async function DashboardLayout({
   children,
@@ -18,51 +20,59 @@ export default async function DashboardLayout({
   const session = await requireUser(locale);
   const context = await getMerchantContext(session.user.id);
   const impersonating = Boolean(session.session.impersonatedBy);
+  const banner = impersonating && <ImpersonationBanner targetEmail={session.user.email} />;
+
+  // Users without a company (the superadmin) get the plain welcome page, no panel
+  if (!context) {
+    return (
+      <div className="flex flex-1 flex-col">
+        {banner}
+        {children}
+      </div>
+    );
+  }
+
   // Only show what the member's role allows (the pages enforce it again on the server)
-  const visibleNav: PanelNavKey[] = ["home"];
-  if (context && can(context.role, { product: ["read"] })) visibleNav.push("products");
-  if (context && can(context.role, { category: ["update"] })) visibleNav.push("categories");
-  if (context && can(context.role, { promotion: ["update"] })) visibleNav.push("promotions");
-  if (context && can(context.role, { store: ["update"] })) visibleNav.push("branding", "settings");
+  const allowed = (key: PanelNavKey, visible: boolean) => (visible ? [key] : []);
+  const groups: PanelNavGroup[] = [
+    { items: ["home"] },
+    {
+      label: "catalog",
+      items: [
+        ...allowed("products", can(context.role, { product: ["read"] })),
+        ...allowed("categories", can(context.role, { category: ["update"] })),
+        ...allowed("promotions", can(context.role, { promotion: ["update"] })),
+      ],
+    },
+    {
+      label: "store",
+      items: [
+        ...allowed("branding", can(context.role, { store: ["update"] })),
+        ...allowed("settings", can(context.role, { store: ["update"] })),
+      ],
+    },
+  ].filter((group): group is PanelNavGroup => group.items.length > 0);
 
   return (
-    <div className="flex flex-1 flex-col">
-      {impersonating && <ImpersonationBanner targetEmail={session.user.email} />}
-      {context && context.store.status !== "active" && (
-        <StoreStatusBanner status={context.store.status} />
-      )}
-      {context && (
-        <header className="border-b">
-          <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 p-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3">
-                {context.store.logoKey && (
-                  // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
-                  <img
-                    src={publicUrl(context.store.logoKey)}
-                    alt=""
-                    width={36}
-                    height={36}
-                    className="size-9 rounded-md object-contain"
-                  />
-                )}
-                <div className="leading-tight">
-                  <div className="font-semibold">{context.store.name}</div>
-                  <div className="text-xs text-muted-foreground">{context.companyName}</div>
-                </div>
-              </div>
-              <PanelNav visible={visibleNav} />
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden text-sm text-muted-foreground sm:inline">
-                {session.user.email}
-              </span>
-              {!impersonating && <SignOutButton />}
-            </div>
-          </div>
-        </header>
-      )}
+    <PanelShell
+      groups={groups}
+      brand={{
+        title: context.store.name,
+        subtitle: context.companyName,
+        logoUrl: context.store.logoKey ? publicUrl(context.store.logoKey) : null,
+        href: "/dashboard",
+      }}
+      user={{ name: session.user.name, email: session.user.email }}
+      storeUrl={buildStoreUrl(context.store.slug, (await headers()).get("host"))}
+      impersonating={impersonating}
+      banners={
+        <>
+          {banner}
+          {context.store.status !== "active" && <StoreStatusBanner status={context.store.status} />}
+        </>
+      }
+    >
       {children}
-    </div>
+    </PanelShell>
   );
 }

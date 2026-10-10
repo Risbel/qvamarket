@@ -40,7 +40,7 @@ export default async function ProductsPage({
   const showActions = canUpdate || canDelete;
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         {canCreate && (
@@ -121,6 +121,6 @@ export default async function ProductsPage({
           </TableBody>
         </Table>
       )}
-    </main>
+    </div>
   );
 }

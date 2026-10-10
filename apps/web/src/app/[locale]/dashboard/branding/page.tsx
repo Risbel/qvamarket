@@ -17,7 +17,7 @@ export default async function BrandingPage({
   const logoUrl = store.logoKey ? publicUrl(store.logoKey) : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 p-4">
+    <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 p-4">
       <div>
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
@@ -36,6 +36,6 @@ export default async function BrandingPage({
           }}
         />
       </section>
-    </main>
+    </div>
   );
 }

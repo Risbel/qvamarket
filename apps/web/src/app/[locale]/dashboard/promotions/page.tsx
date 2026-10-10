@@ -24,7 +24,7 @@ export default async function PromotionsPage({ params }: PageProps<"/[locale]/da
   const now = new Date();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
@@ -82,6 +82,6 @@ export default async function PromotionsPage({ params }: PageProps<"/[locale]/da
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

@@ -18,7 +18,7 @@ export default async function SettingsPage({
   const names = new Intl.DisplayNames(locale, { type: "currency" });
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 p-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 p-4">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
 
       <section className="flex flex-col gap-3" aria-labelledby="currencies-title">
@@ -55,6 +55,6 @@ export default async function SettingsPage({
           }}
         />
       </section>
-    </main>
+    </div>
   );
 }

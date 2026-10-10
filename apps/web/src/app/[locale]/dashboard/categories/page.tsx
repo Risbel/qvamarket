@@ -14,7 +14,7 @@ export default async function CategoriesPage({
   const categories = await listCategories({ tenantId: merchant.tenantId, storeId: merchant.store.id });
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
       <div>
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
@@ -24,6 +24,6 @@ export default async function CategoriesPage({
         canCreate={merchant.can({ category: ["create"] })}
         canDelete={merchant.can({ category: ["delete"] })}
       />
-    </main>
+    </div>
   );
 }

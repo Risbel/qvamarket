@@ -15,13 +15,13 @@ export default async function NewProductPage({
   const categories = await listCategories({ tenantId: merchant.tenantId, storeId: merchant.store.id });
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
       <h1 className="text-2xl font-semibold">{t("new")}</h1>
       <ProductForm
         currencies={merchant.store.currencies}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         initialValues={emptyProductValues(merchant.store.currencies)}
       />
-    </main>
+    </div>
   );
 }

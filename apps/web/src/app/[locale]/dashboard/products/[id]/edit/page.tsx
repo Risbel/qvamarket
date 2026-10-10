@@ -36,7 +36,7 @@ export default async function EditProductPage({
   const t = await getTranslations("Products");
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 p-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 p-4">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold">{t("edit")}</h1>
         {created && (
@@ -67,6 +67,6 @@ export default async function EditProductPage({
       {product.hasOptions && (
         <VariantsEditor productId={product.id} variants={variants} currencies={merchant.store.currencies} />
       )}
-    </main>
+    </div>
   );
 }

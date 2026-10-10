@@ -32,7 +32,7 @@ export default async function EditPromotionPage({ params }: PageProps<"/[locale]
   }));
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
       <h1 className="text-2xl font-semibold">{t("edit")}</h1>
       <PromotionForm
         promotionId={promotion.id}
@@ -47,6 +47,6 @@ export default async function EditPromotionPage({ params }: PageProps<"/[locale]
           items,
         }}
       />
-    </main>
+    </div>
   );
 }
