@@ -1,8 +1,11 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { UserIcon } from "lucide-react";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { auth } from "@/lib/auth";
 import {
   DEFAULT_ACCENT,
   DEFAULT_PRIMARY,
@@ -41,6 +44,9 @@ export default async function StoreLayout({
   if (!store) notFound();
 
   const currency = await selectedCurrency(store.currencies);
+  // Host-only cookie: a session here is this store's alone
+  const session = await auth.api.getSession({ headers: await headers() });
+  const t = await getTranslations("Store.account");
   const primary = store.primaryColor ?? DEFAULT_PRIMARY;
   const accent = store.accentColor ?? DEFAULT_ACCENT;
   const brand = {
@@ -74,6 +80,16 @@ export default async function StoreLayout({
               {store.currencies.length > 1 && (
                 <CurrencySwitcher codes={store.currencies.map((c) => c.code)} current={currency.code} />
               )}
+              <Link
+                href={session ? "/account" : "/login"}
+                aria-label={session ? t("title") : t("login.title")}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium hover:opacity-80"
+              >
+                <UserIcon className="size-4" aria-hidden />
+                <span className="hidden max-w-32 truncate sm:inline">
+                  {session ? session.user.name.split(" ")[0] : t("signInShort")}
+                </span>
+              </Link>
               <CartLink />
             </div>
           </div>

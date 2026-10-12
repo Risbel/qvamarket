@@ -129,6 +129,47 @@
       "total": "Total",
       "yourDetails": "Your details",
       "continueShopping": "Continue shopping"
+    },
+    "account": {
+      "title": "My account",
+      "profile": "Your details",
+      "signInShort": "Sign in",
+      "signOut": "Sign out",
+      "continueShopping": "Continue shopping",
+      "sharedAccount": "Your account is a QvaShop account: the same email and password work in other stores on the platform. You sign in to each store separately, and {store} only sees your orders in this store.",
+      "login": {
+        "title": "Sign in",
+        "description": "Use your QvaShop account to shop at {store}.",
+        "email": "Email",
+        "password": "Password",
+        "submit": "Sign in",
+        "submitting": "Signing in...",
+        "noAccount": "No account yet?",
+        "signUp": "Create one",
+        "errors": {
+          "invalidCredentials": "Wrong email or password.",
+          "tooManyAttempts": "Too many attempts. Wait a few minutes and try again.",
+          "failed": "Could not sign in. Try again."
+        }
+      },
+      "signup": {
+        "title": "Create your account",
+        "description": "To shop at {store} and follow your orders. It also works in other QvaShop stores.",
+        "name": "Your name",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Repeat the password",
+        "submit": "Create account",
+        "submitting": "Creating your account...",
+        "haveAccount": "Already have an account?",
+        "signIn": "Sign in",
+        "errors": {
+          "emailTaken": "There is already an account with this email. Sign in with it.",
+          "tooManyAttempts": "Too many attempts from your connection. Try again later.",
+          "rejected": "Signup could not be completed. Wait a few seconds and try again.",
+          "failed": "Could not create the account. Try again."
+        }
+      }
     }
   },
   "Validation": {

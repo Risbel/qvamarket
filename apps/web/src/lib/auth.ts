@@ -5,9 +5,25 @@ import { admin, organization } from "better-auth/plugins";
 import { db } from "@qvashop/db";
 import { ac, companyRoles } from "./permissions";
 
+// Auth runs on the platform's own host and on every store subdomain (customers sign in on
+// <slug>.<root>, with host-only cookies). The base URL is resolved per request from the
+// Host header, which must be the root domain or one of its subdomains (same port as
+// BETTER_AUTH_URL); these hosts are also the trusted origins.
+const authUrl = new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3000");
+const rootHost = `${process.env.ROOT_DOMAIN ?? "localhost"}${authUrl.port ? `:${authUrl.port}` : ""}`;
+
 export const auth = betterAuth({
+  baseURL: {
+    allowedHosts: [authUrl.host, rootHost, `*.${rootHost}`],
+    fallback: authUrl.origin,
+    protocol: authUrl.protocol === "https:" ? "https" : "http",
+  },
   database: drizzleAdapter(db, { provider: "pg" }),
   emailAndPassword: { enabled: true },
+  // Accounts are only created by our own server code (merchant signup, customer signup,
+  // the superadmin), which applies rate limits and creates the matching records. The public
+  // endpoint would let anyone create bare accounts around those checks.
+  disabledPaths: ["/sign-up/email"],
   user: {
     additionalFields: {
       // Set by the superadmin when creating a merchant with a temporary password.

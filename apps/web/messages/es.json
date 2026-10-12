@@ -129,6 +129,47 @@
       "total": "Total",
       "yourDetails": "Tus datos",
       "continueShopping": "Seguir comprando"
+    },
+    "account": {
+      "title": "Mi cuenta",
+      "profile": "Tus datos",
+      "signInShort": "Entrar",
+      "signOut": "Cerrar sesión",
+      "continueShopping": "Seguir comprando",
+      "sharedAccount": "Tu cuenta es de QvaShop: con el mismo correo y contraseña puedes entrar en otras tiendas de la plataforma. En cada tienda inicias sesión por separado, y {store} solo ve tus pedidos en esta tienda.",
+      "login": {
+        "title": "Inicia sesión",
+        "description": "Entra con tu cuenta de QvaShop para comprar en {store}.",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "submit": "Entrar",
+        "submitting": "Entrando...",
+        "noAccount": "¿No tienes cuenta?",
+        "signUp": "Crea una",
+        "errors": {
+          "invalidCredentials": "Correo o contraseña incorrectos.",
+          "tooManyAttempts": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+          "failed": "No se pudo iniciar sesión. Inténtalo de nuevo."
+        }
+      },
+      "signup": {
+        "title": "Crea tu cuenta",
+        "description": "Para comprar en {store} y seguir tus pedidos. Sirve también en otras tiendas de QvaShop.",
+        "name": "Tu nombre",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "confirmPassword": "Repite la contraseña",
+        "submit": "Crear cuenta",
+        "submitting": "Creando tu cuenta...",
+        "haveAccount": "¿Ya tienes cuenta?",
+        "signIn": "Inicia sesión",
+        "errors": {
+          "emailTaken": "Ya existe una cuenta con este correo. Inicia sesión con ella.",
+          "tooManyAttempts": "Demasiados intentos desde tu conexión. Inténtalo de nuevo más tarde.",
+          "rejected": "No se pudo completar el registro. Espera unos segundos e inténtalo de nuevo.",
+          "failed": "No se pudo crear la cuenta. Inténtalo de nuevo."
+        }
+      }
     }
   },
   "Validation": {
