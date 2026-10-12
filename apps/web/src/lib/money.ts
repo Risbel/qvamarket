@@ -20,15 +20,16 @@ export const MAX_PRICE_MINOR = 1_000_000_000;
 /**
  * What a merchant types ("19.99", "19,99", "1500") -> integer minor units, or null when
  * invalid. Plain decimal only (no thousands separators), at most `digits` decimals, done
- * with string arithmetic so there is no floating point rounding.
+ * with string arithmetic so there is no floating point rounding. Prices are capped at
+ * MAX_PRICE_MINOR; other amounts (e.g. a payment of a large order) pass their own `max`.
  */
-export function parsePriceToMinor(input: string, digits: number): number | null {
+export function parsePriceToMinor(input: string, digits: number, max = MAX_PRICE_MINOR): number | null {
   const text = input.trim();
   const pattern = digits === 0 ? /^\d+$/ : new RegExp(`^\\d+([.,]\\d{1,${digits}})?$`);
   if (!pattern.test(text)) return null;
   const [whole, fraction = ""] = text.replace(",", ".").split(".");
   const minor = Number(whole) * 10 ** digits + Number(fraction.padEnd(digits, "0") || 0);
-  return Number.isSafeInteger(minor) && minor <= MAX_PRICE_MINOR ? minor : null;
+  return Number.isSafeInteger(minor) && minor <= max ? minor : null;
 }
 
 /** Integer minor units -> the plain decimal string shown in the price input ("19.99"). */

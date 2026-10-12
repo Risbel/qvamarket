@@ -170,7 +170,12 @@
     "dateInvalid": "Introduce una fecha válida",
     "endsBeforeStart": "La fecha de fin debe ser posterior a la de inicio",
     "tooManyPromotionItems": "Máximo {max} variantes por promoción",
-    "promotionNotCheaper": "Debe ser menor que el precio normal; si no, la rebaja no se aplica"
+    "promotionNotCheaper": "Debe ser menor que el precio normal; si no, la rebaja no se aplica",
+    "amountInvalid": "Introduce un importe mayor que cero, con hasta {digits} decimales (ej. 19,99)",
+    "amountInvalidWhole": "Introduce un importe mayor que cero, sin decimales (ej. 1500)",
+    "paymentExceedsDue": "No puede superar lo pendiente ({amount})",
+    "refundExceedsPaid": "No puede superar lo cobrado ({amount})",
+    "dateInFuture": "La fecha no puede ser futura"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -767,17 +772,6 @@
       "total": "Total",
       "customer": "Cliente",
       "note": "Nota del cliente",
-      "payments": "Pagos",
-      "noPayments": "No hay pagos registrados.",
-      "paymentKind": {
-        "payment": "Pago",
-        "refund": "Reembolso"
-      },
-      "method": {
-        "cash": "Efectivo",
-        "transfer": "Transferencia",
-        "other": "Otro"
-      },
       "history": "Historial",
       "placed": "Pedido realizado",
       "changed": "{from} → {to}",
@@ -811,6 +805,47 @@
         "stale": "El pedido cambió mientras lo veías. Revisa su estado actual.",
         "forbidden": "No tienes permiso para cambiar pedidos.",
         "failed": "No se pudo cambiar el estado. Inténtalo de nuevo."
+      }
+    },
+    "payments": {
+      "title": "Pagos",
+      "collected": "Cobrado",
+      "refunded": "Reembolsado",
+      "due": "Pendiente",
+      "none": "No hay pagos registrados.",
+      "kind": {
+        "payment": "Pago",
+        "refund": "Reembolso"
+      },
+      "method": {
+        "cash": "Efectivo",
+        "transfer": "Transferencia",
+        "other": "Otro"
+      },
+      "kindLabel": "Tipo",
+      "methodLabel": "Forma de pago",
+      "amount": "Importe ({currency})",
+      "paidAt": "Fecha del pago",
+      "refundedAt": "Fecha del reembolso",
+      "paidAtHelp": "Déjala vacía para usar la fecha y hora actuales.",
+      "note": "Nota (opcional)",
+      "noteHelp": "Por ejemplo, el número de la transferencia. Solo la ve tu equipo.",
+      "record": "Registrar pago",
+      "recordRefund": "Registrar reembolso",
+      "recordHelp": "Anota el dinero que recibiste o devolviste fuera de la plataforma, en la moneda del pedido.",
+      "save": "Guardar pago",
+      "saveRefund": "Guardar reembolso",
+      "back": "Volver",
+      "remove": "Quitar",
+      "removeTitle": "¿Quitar el pago de {amount}?",
+      "removeRefundTitle": "¿Quitar el reembolso de {amount}?",
+      "removeConfirm": "Úsalo solo para corregir un error. Lo cobrado y el estado del pago se vuelven a calcular.",
+      "errors": {
+        "forbidden": "No tienes permiso para registrar pagos.",
+        "notFound": "Este registro ya no existe. Recarga la página.",
+        "cancelled": "El pedido está cancelado: solo admite reembolsos.",
+        "unbalanced": "No se puede quitar: lo cobrado quedaría por debajo de cero o por encima del total. Quita antes el reembolso o el pago que lo compensa.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
       }
     },
     "dates": {

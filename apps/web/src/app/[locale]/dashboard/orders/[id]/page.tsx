@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getOrder } from "@/server/orders";
 import { requireMerchantPermission } from "@/server/tenant";
+import { PaymentsSection } from "./payments-section";
 import { StatusActions } from "./status-actions";
 
 export default async function OrderPage({ params }: PageProps<"/[locale]/dashboard/orders/[id]">) {
@@ -21,6 +22,7 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   if (!placed) notFound();
 
   const t = await getTranslations("Orders");
+  const canUpdate = merchant.can({ order: ["update"] });
   const money = (minor: number) => formatMoney(minor, placed.currencyCode, locale);
   const status = (value: string) => t(`status.${value as OrderStatus}`);
   // wa.me wants the number with its country code and no "+"; only offered for a full number
@@ -43,7 +45,7 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
           <LocalDateTime iso={placed.createdAt.toISOString()} locale={locale} /> ·{" "}
           {t(`fulfillment.${placed.fulfillmentType as "pickup" | "delivery"}`)}
         </p>
-        {merchant.can({ order: ["update"] }) && (
+        {canUpdate && (
           <StatusActions
             orderId={placed.id}
             reference={orderReference(placed.number)}
@@ -142,33 +144,14 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
             )}
           </section>
 
-          <section className="flex flex-col gap-2 rounded-lg border p-4 text-sm" aria-labelledby="payments-title">
-            <h2 id="payments-title" className="font-semibold">
-              {t("detail.payments")}
-            </h2>
-            {placed.payments.length === 0 ? (
-              <p className="text-muted-foreground">{t("detail.noPayments")}</p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {placed.payments.map((p) => (
-                  <li key={p.id} className="flex justify-between gap-3">
-                    <span>
-                      {t(`detail.paymentKind.${p.kind as "payment" | "refund"}`)} ·{" "}
-                      {t(`detail.method.${p.method as "cash" | "transfer" | "other"}`)}
-                      <span className="block text-xs text-muted-foreground">
-                        <LocalDateTime iso={p.paidAt.toISOString()} locale={locale} />
-                        {p.recordedByName && ` · ${p.recordedByName}`}
-                      </span>
-                    </span>
-                    <span className="tabular-nums">
-                      {p.kind === "refund" ? "−" : ""}
-                      {money(p.amountMinor)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <PaymentsSection
+            orderId={placed.id}
+            currency={placed.currencyCode}
+            totalMinor={placed.totalMinor}
+            cancelled={placed.status === "cancelled"}
+            canUpdate={canUpdate}
+            payments={placed.payments.map((p) => ({ ...p, paidAt: p.paidAt.toISOString() }))}
+          />
 
           <section className="flex flex-col gap-2 rounded-lg border p-4 text-sm" aria-labelledby="history-title">
             <h2 id="history-title" className="font-semibold">

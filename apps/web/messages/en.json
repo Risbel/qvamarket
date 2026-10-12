@@ -170,7 +170,12 @@
     "dateInvalid": "Enter a valid date",
     "endsBeforeStart": "The end date must be after the start date",
     "tooManyPromotionItems": "At most {max} variants per promotion",
-    "promotionNotCheaper": "It must be lower than the regular price, otherwise the sale does not apply"
+    "promotionNotCheaper": "It must be lower than the regular price, otherwise the sale does not apply",
+    "amountInvalid": "Enter an amount above zero, with up to {digits} decimals (e.g. 19.99)",
+    "amountInvalidWhole": "Enter an amount above zero, without decimals (e.g. 1500)",
+    "paymentExceedsDue": "It cannot be more than what is due ({amount})",
+    "refundExceedsPaid": "It cannot be more than what was collected ({amount})",
+    "dateInFuture": "The date cannot be in the future"
   },
   "Admin": {
     "title": "Admin panel",
@@ -767,17 +772,6 @@
       "total": "Total",
       "customer": "Customer",
       "note": "Customer note",
-      "payments": "Payments",
-      "noPayments": "No payments recorded.",
-      "paymentKind": {
-        "payment": "Payment",
-        "refund": "Refund"
-      },
-      "method": {
-        "cash": "Cash",
-        "transfer": "Transfer",
-        "other": "Other"
-      },
       "history": "History",
       "placed": "Order placed",
       "changed": "{from} → {to}",
@@ -811,6 +805,47 @@
         "stale": "The order changed while you were looking at it. Check its current status.",
         "forbidden": "You are not allowed to change orders.",
         "failed": "The status could not be changed. Try again."
+      }
+    },
+    "payments": {
+      "title": "Payments",
+      "collected": "Collected",
+      "refunded": "Refunded",
+      "due": "Due",
+      "none": "No payments recorded.",
+      "kind": {
+        "payment": "Payment",
+        "refund": "Refund"
+      },
+      "method": {
+        "cash": "Cash",
+        "transfer": "Transfer",
+        "other": "Other"
+      },
+      "kindLabel": "Type",
+      "methodLabel": "Payment method",
+      "amount": "Amount ({currency})",
+      "paidAt": "Payment date",
+      "refundedAt": "Refund date",
+      "paidAtHelp": "Leave it empty to use the current date and time.",
+      "note": "Note (optional)",
+      "noteHelp": "For example, the transfer number. Only your team sees it.",
+      "record": "Record payment",
+      "recordRefund": "Record refund",
+      "recordHelp": "Write down money you received or gave back outside the platform, in the order currency.",
+      "save": "Save payment",
+      "saveRefund": "Save refund",
+      "back": "Back",
+      "remove": "Remove",
+      "removeTitle": "Remove the payment of {amount}?",
+      "removeRefundTitle": "Remove the refund of {amount}?",
+      "removeConfirm": "Use it only to fix a mistake. The amount collected and the payment status are recalculated.",
+      "errors": {
+        "forbidden": "You are not allowed to record payments.",
+        "notFound": "This record no longer exists. Reload the page.",
+        "cancelled": "The order is cancelled: it only takes refunds.",
+        "unbalanced": "It cannot be removed: the amount collected would go below zero or above the total. Remove the refund or payment that offsets it first.",
+        "failed": "It could not be saved. Try again."
       }
     },
     "dates": {

@@ -1,5 +1,7 @@
 import type {
   ORDER_STATUSES as DB_ORDER_STATUSES,
+  PAYMENT_KINDS as DB_PAYMENT_KINDS,
+  PAYMENT_METHODS as DB_PAYMENT_METHODS,
   PAYMENT_STATUSES as DB_PAYMENT_STATUSES,
 } from "@qvashop/db/schema";
 
@@ -45,6 +47,35 @@ export function nextStatuses(status: string, fulfillmentType: string): OrderStat
 
 export function canChangeStatus(from: string, to: string, fulfillmentType: string): boolean {
   return (nextStatuses(from, fulfillmentType) as string[]).includes(to);
+}
+
+export const PAYMENT_KINDS = ["payment", "refund"] as const satisfies typeof DB_PAYMENT_KINDS;
+export type PaymentKind = (typeof PAYMENT_KINDS)[number];
+export const PAYMENT_METHODS = ["cash", "transfer", "other"] as const satisfies typeof DB_PAYMENT_METHODS;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/**
+ * Money of an order from its payment records: `net` = payments - refunds (what the store
+ * keeps), `due` = what is still owed (never negative).
+ */
+export function paymentTotals(totalMinor: number, payments: { kind: string; amountMinor: number }[]) {
+  let paid = 0;
+  let refunded = 0;
+  for (const p of payments) {
+    if (p.kind === "refund") refunded += p.amountMinor;
+    else paid += p.amountMinor;
+  }
+  const net = paid - refunded;
+  return { paid, refunded, net, due: Math.max(totalMinor - net, 0) };
+}
+
+/** The cached `order.payment_status`, always derived from the payment records. */
+export function paymentStatusOf(totalMinor: number, payments: { kind: string; amountMinor: number }[]): PaymentStatus {
+  const { refunded, net } = paymentTotals(totalMinor, payments);
+  if (refunded > 0 && net <= 0) return "refunded";
+  if (net > 0 && net >= totalMinor) return "paid";
+  if (net > 0) return "partial";
+  return "unpaid";
 }
 
 /** Badge look per status: new orders stand out, finished ones fade. */
