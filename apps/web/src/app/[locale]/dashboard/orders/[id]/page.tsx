@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getOrder } from "@/server/orders";
 import { requireMerchantPermission } from "@/server/tenant";
+import { StatusActions } from "./status-actions";
 
 export default async function OrderPage({ params }: PageProps<"/[locale]/dashboard/orders/[id]">) {
   const { locale, id } = await params;
@@ -42,6 +43,14 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
           <LocalDateTime iso={placed.createdAt.toISOString()} locale={locale} /> ·{" "}
           {t(`fulfillment.${placed.fulfillmentType as "pickup" | "delivery"}`)}
         </p>
+        {merchant.can({ order: ["update"] }) && (
+          <StatusActions
+            orderId={placed.id}
+            reference={orderReference(placed.number)}
+            status={placed.status as OrderStatus}
+            fulfillmentType={placed.fulfillmentType}
+          />
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start">

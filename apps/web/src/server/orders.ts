@@ -1,6 +1,22 @@
-import { and, asc, count, db, desc, eq, inArray, or, order, orderItem, orderPayment, orderStatusHistory, sql, user } from "@qvashop/db";
+import {
+  and,
+  asc,
+  count,
+  db,
+  desc,
+  eq,
+  inArray,
+  or,
+  order,
+  orderItem,
+  orderPayment,
+  orderStatusHistory,
+  productVariant,
+  sql,
+  user,
+} from "@qvashop/db";
 import type { DateRange } from "@/lib/date-range";
-import type { OrderStatus } from "@/lib/orders";
+import { canChangeStatus, type OrderStatus } from "@/lib/orders";
 
 // Orders of the merchant's store. Every query matches tenant_id AND store_id (from
 // requireMerchant(), never from client input).
@@ -165,4 +181,96 @@ export async function getOrder(scope: Scope, id: string) {
   ]);
 
   return { ...row, items, history, payments };
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export type ChangeOrderStatusResult =
+  | { ok: true; restockedUnits: number }
+  | { ok: false; error: "notFound" | "stale" | "notAllowed" };
+
+/**
+ * Moves an order to `to` and records it in the history, in one transaction. The order row
+ * is locked, so two team members cannot change it at the same time; `from` must still be
+ * its status (otherwise `stale`: the page the merchant acted on is out of date). Cancelling
+ * gives back the stock that checkout took (see restock).
+ */
+export async function changeOrderStatus(
+  scope: Scope,
+  input: { orderId: string; from: OrderStatus; to: OrderStatus; note: string; userId: string },
+): Promise<ChangeOrderStatusResult> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ status: order.status, fulfillmentType: order.fulfillmentType })
+      .from(order)
+      .where(and(inScope(scope), eq(order.id, input.orderId)))
+      .for("no key update");
+    if (!row) return { ok: false, error: "notFound" };
+    if (row.status !== input.from) return { ok: false, error: "stale" };
+    if (!canChangeStatus(input.from, input.to, row.fulfillmentType)) return { ok: false, error: "notAllowed" };
+
+    await tx.update(order).set({ status: input.to }).where(and(inScope(scope), eq(order.id, input.orderId)));
+    const restockedUnits = input.to === "cancelled" ? await restock(tx, scope, input.orderId) : 0;
+    await tx.insert(orderStatusHistory).values({
+      tenantId: scope.tenantId,
+      orderId: input.orderId,
+      fromStatus: input.from,
+      toStatus: input.to,
+      actor: "merchant",
+      actorUserId: input.userId,
+      note: input.note || null,
+    });
+    return { ok: true, restockedUnits };
+  });
+}
+
+/**
+ * Gives back the units of the lines where checkout took stock (`stock_deducted`) and clears
+ * the flag, so it can never happen twice. A variant that was deleted or no longer tracks
+ * stock gets nothing back. Returns the number of units given back.
+ */
+async function restock(tx: Tx, scope: Scope, orderId: string): Promise<number> {
+  const lines = await tx
+    .select({ variantId: orderItem.variantId, quantity: orderItem.quantity })
+    .from(orderItem)
+    .where(
+      and(
+        eq(orderItem.orderId, orderId),
+        eq(orderItem.tenantId, scope.tenantId),
+        eq(orderItem.storeId, scope.storeId),
+        eq(orderItem.stockDeducted, true),
+      ),
+    );
+  const variantIds = [...new Set(lines.flatMap((line) => (line.variantId ? [line.variantId] : [])))];
+  if (variantIds.length === 0) return 0;
+
+  // Locked in id order, like checkout, so a cancel and a checkout cannot deadlock
+  const tracked = await tx
+    .select({ id: productVariant.id, stock: productVariant.stock })
+    .from(productVariant)
+    .where(
+      and(
+        eq(productVariant.tenantId, scope.tenantId),
+        eq(productVariant.storeId, scope.storeId),
+        inArray(productVariant.id, variantIds),
+      ),
+    )
+    .orderBy(asc(productVariant.id))
+    .for("no key update");
+  const tracking = new Set(tracked.filter((variant) => variant.stock !== null).map((variant) => variant.id));
+
+  let units = 0;
+  for (const line of lines) {
+    if (!line.variantId || !tracking.has(line.variantId)) continue;
+    await tx
+      .update(productVariant)
+      .set({ stock: sql`${productVariant.stock} + ${line.quantity}` })
+      .where(and(eq(productVariant.id, line.variantId), eq(productVariant.tenantId, scope.tenantId)));
+    units += line.quantity;
+  }
+  await tx
+    .update(orderItem)
+    .set({ stockDeducted: false })
+    .where(and(eq(orderItem.orderId, orderId), eq(orderItem.tenantId, scope.tenantId), eq(orderItem.stockDeducted, true)));
+  return units;
 }

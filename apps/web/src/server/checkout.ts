@@ -94,6 +94,8 @@ export async function placeOrder(input: {
             inArray(productVariant.id, cart.lines.map((line) => line.variantId)),
           ),
         )
+        // locked in id order, like cancelling an order, so the two cannot deadlock
+        .orderBy(asc(productVariant.id))
         .for("no key update");
       const byId = new Map(variants.map((variant) => [variant.id, variant]));
 

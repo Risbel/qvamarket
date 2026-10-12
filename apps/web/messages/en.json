@@ -787,6 +787,32 @@
         "system": "System"
       }
     },
+    "actions": {
+      "to": {
+        "confirmed": "Confirm",
+        "preparing": "Start preparing",
+        "ready": "Mark as ready",
+        "out_for_delivery": "Send out for delivery",
+        "completed": "Mark as completed",
+        "cancelled": "Cancel order"
+      },
+      "other": "Other status",
+      "final": "This order is finished: its status can no longer change.",
+      "restocked": "{count, plural, one {# unit was} other {# units were}} returned to stock.",
+      "confirmTitle": "Mark order {reference} as {status}?",
+      "confirmFinal": "Use it once the customer has their order. It cannot be changed afterwards.",
+      "confirmCancelTitle": "Cancel order {reference}?",
+      "confirmCancel": "The units go back to your stock (for products that track stock). A cancelled order cannot be reopened.",
+      "note": "Note (optional)",
+      "reason": "Reason (optional)",
+      "noteHelp": "Kept in the order history. Only your team sees it.",
+      "back": "Back",
+      "errors": {
+        "stale": "The order changed while you were looking at it. Check its current status.",
+        "forbidden": "You are not allowed to change orders.",
+        "failed": "The status could not be changed. Try again."
+      }
+    },
     "dates": {
       "label": "Date",
       "from": "From",

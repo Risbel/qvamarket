@@ -787,6 +787,32 @@
         "system": "Sistema"
       }
     },
+    "actions": {
+      "to": {
+        "confirmed": "Confirmar",
+        "preparing": "Empezar a preparar",
+        "ready": "Marcar como listo",
+        "out_for_delivery": "Enviar a reparto",
+        "completed": "Marcar como completado",
+        "cancelled": "Cancelar pedido"
+      },
+      "other": "Otro estado",
+      "final": "Este pedido ya terminó: su estado no puede cambiar.",
+      "restocked": "{count, plural, one {Se devolvió # unidad} other {Se devolvieron # unidades}} al inventario.",
+      "confirmTitle": "¿Marcar el pedido {reference} como {status}?",
+      "confirmFinal": "Úsalo cuando el cliente ya tiene su pedido. Después no se puede cambiar.",
+      "confirmCancelTitle": "¿Cancelar el pedido {reference}?",
+      "confirmCancel": "Las unidades vuelven a tu inventario (en los productos que controlan stock). Un pedido cancelado no se puede reactivar.",
+      "note": "Nota (opcional)",
+      "reason": "Motivo (opcional)",
+      "noteHelp": "Queda en el historial del pedido. Solo la ve tu equipo.",
+      "back": "Volver",
+      "errors": {
+        "stale": "El pedido cambió mientras lo veías. Revisa su estado actual.",
+        "forbidden": "No tienes permiso para cambiar pedidos.",
+        "failed": "No se pudo cambiar el estado. Inténtalo de nuevo."
+      }
+    },
     "dates": {
       "label": "Fecha",
       "from": "Desde",

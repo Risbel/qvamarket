@@ -24,6 +24,29 @@ export function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && (ORDER_STATUSES as readonly string[]).includes(value);
 }
 
+/** The normal path of an order (`out_for_delivery` only applies to delivery orders). */
+const FLOW = ["pending", "confirmed", "preparing", "ready", "out_for_delivery", "completed"] as const;
+
+/** `completed` and `cancelled` never change again. */
+export function isFinalStatus(status: string): boolean {
+  return status === "completed" || status === "cancelled";
+}
+
+/**
+ * Where the merchant can move an order from `status`: any later step of its path (steps may
+ * be skipped, e.g. a pickup completed on the spot), or `cancelled` while it is not final.
+ * Never backwards. The first entry is the next step.
+ */
+export function nextStatuses(status: string, fulfillmentType: string): OrderStatus[] {
+  if (!isOrderStatus(status) || isFinalStatus(status)) return [];
+  const flow = FLOW.filter((step) => step !== "out_for_delivery" || fulfillmentType === "delivery");
+  return [...flow.slice(flow.indexOf(status as (typeof FLOW)[number]) + 1), "cancelled"];
+}
+
+export function canChangeStatus(from: string, to: string, fulfillmentType: string): boolean {
+  return (nextStatuses(from, fulfillmentType) as string[]).includes(to);
+}
+
 /** Badge look per status: new orders stand out, finished ones fade. */
 export function orderStatusVariant(status: string): "default" | "secondary" | "outline" | "destructive" {
   if (status === "pending") return "default";
