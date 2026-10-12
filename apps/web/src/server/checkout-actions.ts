@@ -5,9 +5,11 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
+import { auth } from "@/lib/auth";
 import { sanitizeCartItems } from "@/lib/cart";
 import { findPhoneCountry } from "@/lib/countries";
 import { normalizePhone } from "@/lib/phone";
+import { getStoreSlug } from "@/lib/tenancy";
 import { createCheckoutSchema } from "@/lib/validation/checkout";
 import { placeOrder } from "./checkout";
 import { getPublicStoreBySlug } from "./public-store";
@@ -45,7 +47,8 @@ export async function placeOrderAction(
   values: unknown,
   locale: string,
 ): Promise<PlaceOrderActionResult> {
-  if (!limiter.tryConsume(clientIp(await headers()))) return { ok: false, error: "tooManyRequests" };
+  const requestHeaders = await headers();
+  if (!limiter.tryConsume(clientIp(requestHeaders))) return { ok: false, error: "tooManyRequests" };
 
   const parsedRequest = requestSchema.safeParse(request);
   if (!parsedRequest.success) return { ok: false, error: "invalid" };
@@ -70,6 +73,11 @@ export async function placeOrderAction(
   const chosen = pickCurrency(store.currencies, currency);
   if (chosen.code !== currency) return { ok: false, error: "cartChanged" };
 
+  // A signed-in customer's order joins their account (history, customer record). Only the
+  // session of this store's own host counts: the slug in the request must be the host's.
+  const hostSlug = getStoreSlug(requestHeaders.get("host"), process.env.ROOT_DOMAIN ?? "localhost");
+  const session = hostSlug === store.slug ? await auth.api.getSession({ headers: requestHeaders }) : null;
+
   try {
     const result = await placeOrder({
       storeId: store.id,
@@ -77,6 +85,7 @@ export async function placeOrderAction(
       items: sanitizeCartItems(items),
       expectedSubtotalMinor,
       idempotencyKey: idempotencyKey.toLowerCase(),
+      accountUserId: session?.user.id ?? null,
       contact: {
         name: parsed.data.name,
         phone: normalizePhone(parsed.data.phone, findPhoneCountry(parsed.data.phoneCountry))!,

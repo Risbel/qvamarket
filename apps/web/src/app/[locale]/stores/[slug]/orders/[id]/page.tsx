@@ -1,7 +1,9 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
 import { Link } from "@/i18n/navigation";
+import { auth } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
 import { getPublicOrder } from "@/server/checkout";
 import { getPublicStoreBySlug } from "@/server/public-store";
@@ -28,6 +30,8 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/[loc
 
   const t = await getTranslations("Store.order");
   const money = (minor: number) => formatMoney(minor, placed.currencyCode, locale);
+  const session = placed.userId ? await auth.api.getSession({ headers: await headers() }) : null;
+  const mine = session?.user.id === placed.userId;
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
@@ -88,9 +92,16 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/[loc
         {placed.customerNote && <p className="whitespace-pre-line text-muted-foreground">{placed.customerNote}</p>}
       </section>
 
-      <Link href="/" className="w-fit text-sm font-medium underline underline-offset-4">
-        {t("continueShopping")}
-      </Link>
+      <div className="flex flex-wrap gap-4">
+        {mine && (
+          <Link href="/account" className="w-fit text-sm font-medium underline underline-offset-4">
+            {t("myOrders")}
+          </Link>
+        )}
+        <Link href="/" className="w-fit text-sm font-medium underline underline-offset-4">
+          {t("continueShopping")}
+        </Link>
+      </div>
     </main>
   );
 }

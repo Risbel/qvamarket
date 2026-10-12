@@ -29,11 +29,14 @@ export function CheckoutForm({
   pickup,
   countries,
   defaultCountry,
+  account,
 }: {
   pickup: { address: string | null; instructions: string | null };
   countries: CountryOption[];
   /** the store's country for phone numbers ("" = none) */
   defaultCountry: string;
+  /** the signed-in customer (prefills the contact form), or null for a guest */
+  account: { name: string; email: string; phone: string } | null;
 }) {
   const t = useTranslations("Store.checkout");
   const tv = useTranslations("Validation");
@@ -53,7 +56,13 @@ export function CheckoutForm({
   const schema = useMemo(() => createCheckoutSchema(tv), [tv]);
   const form = useForm<CheckoutValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", phoneCountry: defaultCountry, phone: "", email: "", note: "" },
+    defaultValues: {
+      name: account?.name ?? "",
+      phoneCountry: defaultCountry,
+      phone: account?.phone ?? "",
+      email: account?.email ?? "",
+      note: "",
+    },
   });
   const phoneCountry = useWatch({ control: form.control, name: "phoneCountry" });
 
@@ -142,6 +151,21 @@ export function CheckoutForm({
           <h2 id="contact-title" className="text-lg font-semibold">
             {t("contact.title")}
           </h2>
+          {account ? (
+            <p className="text-sm text-muted-foreground">
+              {t("account.signedIn", { name: account.name })}{" "}
+              <Link href="/account" className="underline underline-offset-4">
+                {t("account.myAccount")}
+              </Link>
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t("account.guest")}{" "}
+              <Link href={{ pathname: "/login", query: { next: "/checkout" } }} className="underline underline-offset-4">
+                {t("account.signIn")}
+              </Link>
+            </p>
+          )}
           <FieldGroup>
             <Text control={form.control} name="name" label={t("contact.name")} autoComplete="name" />
             <Controller

@@ -1,5 +1,5 @@
 import { isAPIError } from "better-auth/api";
-import { and, customer, db, eq, sql, store, user } from "@qvashop/db";
+import { and, customer, db, desc, eq, order, sql, store, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import type { LoginValues } from "@/lib/validation/auth";
 import type { CustomerSignupValues } from "@/lib/validation/customer-account";
@@ -30,8 +30,8 @@ export type CustomerLoginResult =
 
 /**
  * The company's customer record for this account, created if missing (an existing record
- * is never overwritten: the person may have edited it). Returns its id, or null when the
- * store is not active.
+ * is never overwritten: the person may have edited it). Returns it (id and the contact
+ * details checkout prefills), or null when the store is not active.
  */
 export async function ensureCustomer(storeId: string, account: { id: string; name: string; email: string }) {
   const [owner] = await db
@@ -49,8 +49,30 @@ export async function ensureCustomer(storeId: string, account: { id: string; nam
       // no change; only makes RETURNING give back the existing row
       set: { updatedAt: sql`${customer.updatedAt}` },
     })
-    .returning({ id: customer.id });
-  return row.id;
+    .returning({ id: customer.id, name: customer.name, phone: customer.phone, email: customer.email });
+  return row;
+}
+
+export const ACCOUNT_ORDERS_LIMIT = 50;
+
+/**
+ * The orders this account placed on this store while signed in (newest first). Guest orders
+ * are not included even when their phone matches: typing a phone proves nothing.
+ */
+export async function listAccountOrders(storeId: string, userId: string) {
+  return db
+    .select({
+      id: order.id,
+      number: order.number,
+      createdAt: order.createdAt,
+      status: order.status,
+      currencyCode: order.currencyCode,
+      totalMinor: order.totalMinor,
+    })
+    .from(order)
+    .where(and(eq(order.storeId, storeId), eq(order.userId, userId)))
+    .orderBy(desc(order.createdAt))
+    .limit(ACCOUNT_ORDERS_LIMIT);
 }
 
 /**

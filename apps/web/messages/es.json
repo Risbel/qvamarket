@@ -116,6 +116,12 @@
         "notFound": "Esta tienda no está aceptando pedidos ahora mismo.",
         "failed": "No se pudo enviar el pedido. Inténtalo de nuevo.",
         "priceFailed": "No se pudo cargar tu pedido. Recarga la página."
+      },
+      "account": {
+        "signedIn": "Compras como {name}. El pedido aparecerá en tu cuenta.",
+        "myAccount": "Mi cuenta",
+        "guest": "¿Tienes cuenta? Inicia sesión y el pedido quedará en tu historial.",
+        "signIn": "Iniciar sesión"
       }
     },
     "order": {
@@ -128,7 +134,8 @@
       "items": "Productos",
       "total": "Total",
       "yourDetails": "Tus datos",
-      "continueShopping": "Seguir comprando"
+      "continueShopping": "Seguir comprando",
+      "myOrders": "Ver mis pedidos"
     },
     "account": {
       "title": "Mi cuenta",
@@ -169,6 +176,13 @@
           "rejected": "No se pudo completar el registro. Espera unos segundos e inténtalo de nuevo.",
           "failed": "No se pudo crear la cuenta. Inténtalo de nuevo."
         }
+      },
+      "orders": {
+        "title": "Mis pedidos",
+        "empty": "Aún no has hecho pedidos en esta tienda con tu cuenta.",
+        "number": "Pedido {number}",
+        "limited": "Se muestran tus últimos {count} pedidos.",
+        "signedInOnly": "Aquí aparecen los pedidos hechos con la sesión iniciada. Los pedidos hechos sin cuenta no se añaden, aunque uses el mismo teléfono."
       }
     }
   },

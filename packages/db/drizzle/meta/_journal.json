@@ -99,6 +99,13 @@
       "when": 1791670270842,
       "tag": "0013_kind_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791843857930,
+      "tag": "0014_sharp_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

@@ -35,7 +35,8 @@ class CheckoutAbort extends Error {
  *   1. lock the store row (serializes this store's checkouts) and honor the idempotency key
  *   2. take the next order number
  *   3. lock the variants and take their stock (only where stock is tracked)
- *   4. find or create the customer by phone, insert order, items and the first history row
+ *   4. find the customer (the signed-in account's record, or by phone for a guest), insert
+ *      order, items and the first history row
  */
 export async function placeOrder(input: {
   storeId: string;
@@ -44,6 +45,8 @@ export async function placeOrder(input: {
   contact: CheckoutContact;
   expectedSubtotalMinor: number;
   idempotencyKey: string;
+  /** the customer account signed in on this store's host; null = guest checkout */
+  accountUserId: string | null;
 }): Promise<PlaceOrderResult> {
   const { storeId, currencyCode, contact, idempotencyKey } = input;
 
@@ -110,17 +113,9 @@ export async function placeOrder(input: {
           .where(and(eq(productVariant.id, variant.id), eq(productVariant.tenantId, tenantId)));
       }
 
-      // Found again by phone. Nothing typed here overwrites the existing record: each order
-      // keeps its own copy of the contact details.
-      const [buyer] = await tx
-        .insert(customer)
-        .values({ tenantId, name: contact.name, phone: contact.phone, email: contact.email })
-        .onConflictDoUpdate({
-          target: [customer.tenantId, customer.phone],
-          targetWhere: sql`${customer.phone} is not null`,
-          set: { updatedAt: sql`now()` },
-        })
-        .returning({ id: customer.id });
+      const customerId = input.accountUserId
+        ? await accountCustomer(tx, tenantId, input.accountUserId, contact)
+        : await guestCustomer(tx, tenantId, contact);
 
       const [created] = await tx
         .insert(order)
@@ -128,7 +123,8 @@ export async function placeOrder(input: {
           tenantId,
           storeId,
           number: counter.number,
-          customerId: buyer.id,
+          customerId,
+          userId: input.accountUserId,
           customerName: contact.name,
           customerPhone: contact.phone,
           customerEmail: contact.email,
@@ -181,6 +177,65 @@ export async function placeOrder(input: {
   }
 }
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Guest checkout: the customer is found again by phone. Nothing typed here overwrites the
+ * existing record: each order keeps its own copy of the contact details.
+ */
+async function guestCustomer(tx: Tx, tenantId: string, contact: CheckoutContact): Promise<string> {
+  const [buyer] = await tx
+    .insert(customer)
+    .values({ tenantId, name: contact.name, phone: contact.phone, email: contact.email })
+    .onConflictDoUpdate({
+      target: [customer.tenantId, customer.phone],
+      targetWhere: sql`${customer.phone} is not null`,
+      set: { updatedAt: sql`now()` },
+    })
+    .returning({ id: customer.id });
+  return buyer.id;
+}
+
+/**
+ * Signed-in checkout: the account's own record in this company (created if missing). It
+ * takes the phone of the order when it has none yet, unless another record of the company
+ * already has that number: that record may be someone else's (a typed phone proves
+ * nothing), so records are never merged and the guest record stays as it is.
+ */
+async function accountCustomer(tx: Tx, tenantId: string, userId: string, contact: CheckoutContact): Promise<string> {
+  const [mine] = await tx
+    .insert(customer)
+    .values({ tenantId, userId, name: contact.name, email: contact.email })
+    .onConflictDoUpdate({
+      target: [customer.tenantId, customer.userId],
+      targetWhere: sql`${customer.userId} is not null`,
+      set: { updatedAt: sql`now()` },
+    })
+    .returning({ id: customer.id, phone: customer.phone });
+  if (mine.phone === null) {
+    try {
+      // A savepoint: if a checkout of another store of the company takes the number at the
+      // same moment, only this optional step is undone, not the order
+      await tx.transaction(async (savepoint) => {
+        await savepoint
+          .update(customer)
+          .set({ phone: contact.phone })
+          .where(
+            and(
+              eq(customer.id, mine.id),
+              eq(customer.tenantId, tenantId),
+              sql`${customer.phone} is null`,
+              sql`not exists (select 1 from customer other where other.tenant_id = ${tenantId} and other.phone = ${contact.phone})`,
+            ),
+          );
+      });
+    } catch (error) {
+      console.warn("could not save the phone on the account's customer record", error);
+    }
+  }
+  return mine.id;
+}
+
 async function orderByIdempotencyKey(storeId: string, key: string) {
   const [row] = await db
     .select({ id: order.id })
@@ -204,6 +259,8 @@ export async function getPublicOrder(storeId: string, orderId: string) {
       customerPhone: order.customerPhone,
       customerEmail: order.customerEmail,
       customerNote: order.customerNote,
+      // only compared with the viewer's session (never shown)
+      userId: order.userId,
       fulfillmentType: order.fulfillmentType,
       currencyCode: order.currencyCode,
       subtotalMinor: order.subtotalMinor,

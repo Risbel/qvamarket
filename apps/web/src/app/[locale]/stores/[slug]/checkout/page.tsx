@@ -1,6 +1,9 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { auth } from "@/lib/auth";
 import { isPhoneCountryCode, phoneCountryOptions } from "@/lib/countries";
+import { ensureCustomer } from "@/server/customer-accounts";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { CheckoutForm } from "./checkout-form";
 
@@ -15,6 +18,9 @@ export default async function CheckoutPage({ params }: PageProps<"/[locale]/stor
   const store = await getPublicStoreBySlug(slug);
   if (!store) notFound();
   const t = await getTranslations("Store.checkout");
+  // Signed in on this store: prefill from the account's customer record
+  const session = await auth.api.getSession({ headers: await headers() });
+  const record = session ? await ensureCustomer(store.id, session.user) : null;
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
@@ -23,6 +29,11 @@ export default async function CheckoutPage({ params }: PageProps<"/[locale]/stor
         pickup={{ address: store.address, instructions: store.pickupInstructions }}
         countries={phoneCountryOptions(locale)}
         defaultCountry={isPhoneCountryCode(store.phoneCountry) ? store.phoneCountry : ""}
+        account={
+          session && record
+            ? { name: record.name, email: record.email ?? session.user.email, phone: record.phone ?? "" }
+            : null
+        }
       />
     </main>
   );

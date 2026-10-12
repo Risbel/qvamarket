@@ -606,6 +606,10 @@ export const order = pgTable(
     storeId: uuid("store_id").notNull(),
     number: integer("number").notNull(),
     customerId: uuid("customer_id"),
+    // The customer account that placed the order while signed in on the store (null = guest
+    // checkout). The customer's order history lists only these: a phone number typed at
+    // guest checkout proves nothing, so guest orders are never shown to an account.
+    userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
     // Snapshot of the contact the customer gave at checkout
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone").notNull(),
@@ -649,6 +653,7 @@ export const order = pgTable(
     index("order_storeId_createdAt_idx").on(table.storeId, table.createdAt),
     index("order_storeId_status_idx").on(table.storeId, table.status),
     index("order_customerId_idx").on(table.customerId),
+    index("order_storeId_userId_idx").on(table.storeId, table.userId, table.createdAt),
     check("order_number_positive", sql`${table.number} > 0`),
     check(
       "order_status",

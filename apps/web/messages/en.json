@@ -116,6 +116,12 @@
         "notFound": "This store is not taking orders right now.",
         "failed": "Could not place the order. Please try again.",
         "priceFailed": "Could not load your order. Reload the page."
+      },
+      "account": {
+        "signedIn": "You are buying as {name}. The order will appear in your account.",
+        "myAccount": "My account",
+        "guest": "Have an account? Sign in and the order will be kept in your history.",
+        "signIn": "Sign in"
       }
     },
     "order": {
@@ -128,7 +134,8 @@
       "items": "Products",
       "total": "Total",
       "yourDetails": "Your details",
-      "continueShopping": "Continue shopping"
+      "continueShopping": "Continue shopping",
+      "myOrders": "See my orders"
     },
     "account": {
       "title": "My account",
@@ -169,6 +176,13 @@
           "rejected": "Signup could not be completed. Wait a few seconds and try again.",
           "failed": "Could not create the account. Try again."
         }
+      },
+      "orders": {
+        "title": "My orders",
+        "empty": "You have not placed orders at this store with your account yet.",
+        "number": "Order {number}",
+        "limited": "Showing your latest {count} orders.",
+        "signedInOnly": "Orders placed while signed in appear here. Orders placed without an account are not added, even with the same phone."
       }
     }
   },
