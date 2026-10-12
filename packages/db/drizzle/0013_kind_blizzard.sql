@@ -1,0 +1,2 @@
+ALTER TABLE "store" ADD COLUMN "phone_country" text;--> statement-breakpoint
+ALTER TABLE "store" ADD CONSTRAINT "store_phone_country_format" CHECK ("store"."phone_country" is null or "store"."phone_country" ~ '^[A-Z]{2}$');

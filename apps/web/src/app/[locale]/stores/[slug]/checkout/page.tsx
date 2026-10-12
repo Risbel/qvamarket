@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { isPhoneCountryCode, phoneCountryOptions } from "@/lib/countries";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { CheckoutForm } from "./checkout-form";
 
@@ -18,7 +19,11 @@ export default async function CheckoutPage({ params }: PageProps<"/[locale]/stor
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      <CheckoutForm pickup={{ address: store.address, instructions: store.pickupInstructions }} />
+      <CheckoutForm
+        pickup={{ address: store.address, instructions: store.pickupInstructions }}
+        countries={phoneCountryOptions(locale)}
+        defaultCountry={isPhoneCountryCode(store.phoneCountry) ? store.phoneCountry : ""}
+      />
     </main>
   );
 }

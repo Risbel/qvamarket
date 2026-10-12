@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm, type Control } from "react-hook-form";
+import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -10,6 +10,8 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { createCheckoutSchema, type CheckoutValues } from "@/lib/validation/checkout";
 import { priceCartAction, type PriceCartActionResult } from "@/server/cart-actions";
 import { placeOrderAction } from "@/server/checkout-actions";
+import type { CountryOption } from "@/components/country-select";
+import { PhoneInput } from "@/components/phone-input";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +25,16 @@ type Message = "cartChanged" | "tooManyRequests" | "failed" | "notFound" | "pric
  * can be bought are ordered, and the subtotal shown is sent along so the server can refuse
  * the order if anything changed in the meantime (the customer then sees the new summary).
  */
-export function CheckoutForm({ pickup }: { pickup: { address: string | null; instructions: string | null } }) {
+export function CheckoutForm({
+  pickup,
+  countries,
+  defaultCountry,
+}: {
+  pickup: { address: string | null; instructions: string | null };
+  countries: CountryOption[];
+  /** the store's country for phone numbers ("" = none) */
+  defaultCountry: string;
+}) {
   const t = useTranslations("Store.checkout");
   const tv = useTranslations("Validation");
   const locale = useLocale();
@@ -42,8 +53,9 @@ export function CheckoutForm({ pickup }: { pickup: { address: string | null; ins
   const schema = useMemo(() => createCheckoutSchema(tv), [tv]);
   const form = useForm<CheckoutValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", phone: "", email: "", note: "" },
+    defaultValues: { name: "", phoneCountry: defaultCountry, phone: "", email: "", note: "" },
   });
+  const phoneCountry = useWatch({ control: form.control, name: "phoneCountry" });
 
   const signature = JSON.stringify(items);
   useEffect(() => {
@@ -132,13 +144,27 @@ export function CheckoutForm({ pickup }: { pickup: { address: string | null; ins
           </h2>
           <FieldGroup>
             <Text control={form.control} name="name" label={t("contact.name")} autoComplete="name" />
-            <Text
-              control={form.control}
+            <Controller
               name="phone"
-              label={t("contact.phone")}
-              help={t("contact.phoneHelp")}
-              type="tel"
-              autoComplete="tel"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="phone">{t("contact.phone")}</FieldLabel>
+                  <PhoneInput
+                    {...field}
+                    id="phone"
+                    autoComplete="tel"
+                    invalid={fieldState.invalid}
+                    country={phoneCountry}
+                    onCountryChange={(code) => form.setValue("phoneCountry", code, { shouldValidate: form.formState.isSubmitted })}
+                    options={countries}
+                    countryLabel={t("contact.country")}
+                    countryPlaceholder={t("contact.countryNone")}
+                  />
+                  <FieldDescription>{t("contact.phoneHelp")}</FieldDescription>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
             />
             <Text
               control={form.control}

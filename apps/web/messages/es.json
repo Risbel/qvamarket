@@ -96,7 +96,9 @@
         "phone": "Teléfono",
         "phoneHelp": "La tienda te contactará por este número.",
         "email": "Correo electrónico (opcional)",
-        "note": "Nota para la tienda (opcional)"
+        "note": "Nota para la tienda (opcional)",
+        "country": "País del teléfono",
+        "countryNone": "País"
       },
       "pickup": {
         "title": "Recogida en tienda",
@@ -609,7 +611,10 @@
       "errors": {
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo guardar. Inténtalo de nuevo."
-      }
+      },
+      "phoneCountry": "País de los teléfonos",
+      "phoneCountryNone": "Ninguno (solo números con +)",
+      "phoneCountryHelp": "Se preselecciona al hacer un pedido: si el cliente escribe su número sin +, se le añade el código de este país (ej. 5 435 3930 → +53 5435 3930)."
     },
     "pickup": {
       "title": "Recogida en tienda",

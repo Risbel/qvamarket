@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { phoneCountrySchema } from "./checkout";
 import type { Translator } from "./types";
 
 /** Category form: only the name; its identifier (#anchor) is generated from it on the server. */
@@ -20,6 +21,7 @@ export function createStoreProfileSchema(t: Translator) {
     whatsapp: optionalText(t, 30).regex(/^[0-9+()\s-]*$/, t("phoneInvalid")),
     contactEmail: z.union([z.literal(""), z.email(t("emailInvalid"))]),
     address: optionalText(t, 300),
+    phoneCountry: phoneCountrySchema,
     metaTitle: optionalText(t, 70),
     metaDescription: optionalText(t, 160),
   });

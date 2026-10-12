@@ -12,6 +12,7 @@ export async function getStoreProfile(scope: Scope) {
       whatsapp: store.whatsapp,
       contactEmail: store.contactEmail,
       address: store.address,
+      phoneCountry: store.phoneCountry,
       pickupInstructions: store.pickupInstructions,
       metaTitle: store.metaTitle,
       metaDescription: store.metaDescription,
@@ -34,6 +35,7 @@ export async function updateStoreProfile(scope: Scope, values: StoreProfileValue
       whatsapp: orNull(values.whatsapp),
       contactEmail: orNull(values.contactEmail),
       address: orNull(values.address),
+      phoneCountry: orNull(values.phoneCountry),
       metaTitle: orNull(values.metaTitle),
       metaDescription: orNull(values.metaDescription),
     })

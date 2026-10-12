@@ -8,12 +8,19 @@ import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createStoreProfileSchema, type StoreProfileValues } from "@/lib/validation/catalog-settings";
 import { updateStoreProfileAction } from "@/server/catalog-actions";
+import { CountrySelect, type CountryOption } from "@/components/country-select";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export function StoreProfileForm({ initialValues }: { initialValues: StoreProfileValues }) {
+export function StoreProfileForm({
+  initialValues,
+  countries,
+}: {
+  initialValues: StoreProfileValues;
+  countries: CountryOption[];
+}) {
   const t = useTranslations("Settings.profile");
   const tv = useTranslations("Validation");
   const locale = useLocale();
@@ -46,6 +53,26 @@ export function StoreProfileForm({ initialValues }: { initialValues: StoreProfil
           <Text control={form.control} name="phone" label={t("phone")} type="tel" autoComplete="tel" />
           <Text control={form.control} name="whatsapp" label={t("whatsapp")} type="tel" />
         </div>
+        <Controller
+          name="phoneCountry"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="phoneCountry">{t("phoneCountry")}</FieldLabel>
+              <CountrySelect
+                id="phoneCountry"
+                value={field.value}
+                onValueChange={field.onChange}
+                options={countries}
+                placeholder={t("phoneCountryNone")}
+                noneLabel={t("phoneCountryNone")}
+                invalid={fieldState.invalid}
+              />
+              <FieldDescription>{t("phoneCountryHelp")}</FieldDescription>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
         <Text control={form.control} name="contactEmail" label={t("contactEmail")} type="email" autoComplete="email" />
         <Area control={form.control} name="address" label={t("address")} rows={2} />
         <Text control={form.control} name="metaTitle" label={t("metaTitle")} help={t("metaHelp")} />

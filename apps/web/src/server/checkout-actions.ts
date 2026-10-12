@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { sanitizeCartItems } from "@/lib/cart";
+import { findPhoneCountry } from "@/lib/countries";
 import { normalizePhone } from "@/lib/phone";
 import { createCheckoutSchema } from "@/lib/validation/checkout";
 import { placeOrder } from "./checkout";
@@ -78,7 +79,7 @@ export async function placeOrderAction(
       idempotencyKey: idempotencyKey.toLowerCase(),
       contact: {
         name: parsed.data.name,
-        phone: normalizePhone(parsed.data.phone)!,
+        phone: normalizePhone(parsed.data.phone, findPhoneCountry(parsed.data.phoneCountry))!,
         email: parsed.data.email === "" ? null : parsed.data.email.toLowerCase(),
         note: parsed.data.note === "" ? null : parsed.data.note,
       },

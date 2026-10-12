@@ -96,7 +96,9 @@
         "phone": "Phone",
         "phoneHelp": "The store will contact you on this number.",
         "email": "Email (optional)",
-        "note": "Note for the store (optional)"
+        "note": "Note for the store (optional)",
+        "country": "Phone country",
+        "countryNone": "Country"
       },
       "pickup": {
         "title": "In-store pickup",
@@ -609,7 +611,10 @@
       "errors": {
         "forbidden": "You don't have permission to do this.",
         "failed": "Could not save. Please try again."
-      }
+      },
+      "phoneCountry": "Country for phone numbers",
+      "phoneCountryNone": "None (only numbers with +)",
+      "phoneCountryHelp": "Preselected at checkout: when a customer types their number without +, this country's code is added (e.g. 5 435 3930 → +53 5435 3930)."
     },
     "pickup": {
       "title": "In-store pickup",

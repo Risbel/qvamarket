@@ -84,6 +84,10 @@ export const store = pgTable(
     whatsapp: text("whatsapp"),
     contactEmail: text("contact_email"),
     address: text("address"),
+    // ISO 3166-1 alpha-2 (e.g. "CU"): preselected country for phone numbers typed without a
+    // "+", whose calling code is then added. null = customers must type the international form.
+    // The supported list lives in the app (src/lib/countries.ts).
+    phoneCountry: text("phone_country"),
     pickupInstructions: text("pickup_instructions"),
     // e.g. { "mon": [["09:00","18:00"]], "sun": [] } (shape validated in the app)
     openingHours: jsonb("opening_hours"),
@@ -108,6 +112,7 @@ export const store = pgTable(
       sql`${table.slug} ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'`,
     ),
     check("store_status", sql`${table.status} in ('pending', 'active', 'suspended')`),
+    check("store_phone_country_format", sql`${table.phoneCountry} is null or ${table.phoneCountry} ~ '^[A-Z]{2}$'`),
     check(
       "store_primary_color_format",
       sql`${table.primaryColor} is null or ${table.primaryColor} ~ '^#[0-9a-f]{6}$'`,

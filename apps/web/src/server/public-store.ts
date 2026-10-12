@@ -23,6 +23,7 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
       whatsapp: store.whatsapp,
       contactEmail: store.contactEmail,
       address: store.address,
+      phoneCountry: store.phoneCountry,
       pickupInstructions: store.pickupInstructions,
       metaTitle: store.metaTitle,
       metaDescription: store.metaDescription,
