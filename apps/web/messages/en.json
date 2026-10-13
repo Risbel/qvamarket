@@ -601,15 +601,27 @@
     "title": "Branding",
     "description": "Your store's logo and colors. They are applied to your online store.",
     "logo": {
-      "title": "Logo",
-      "help": "JPG, PNG or WebP. It is reduced automatically (max {size} px and under {limit}); transparency is kept.",
+      "title": "Logo (icon)",
+      "help": "Your store's symbol, without text: shown next to the name. JPG, PNG or WebP. It is reduced automatically (max {size} px and under {limit}); transparency is kept.",
       "none": "You have not uploaded a logo yet.",
       "upload": "Upload logo",
       "replace": "Replace logo",
       "remove": "Remove logo",
-      "uploading": "Uploading...",
       "uploaded": "Logo updated ({from} → {to})",
-      "removed": "Logo removed",
+      "removed": "Logo removed"
+    },
+    "logotype": {
+      "title": "Logotype (logo with name)",
+      "help": "Your logo with the store's name written in it, ideally wide. If you upload one, your store's header shows it instead of the logo and the name. It sits on your primary color: use a transparent background. JPG, PNG or WebP. It is reduced automatically (max {size} px and under {limit}).",
+      "none": "You have not uploaded a logotype: the header shows the logo and the name.",
+      "upload": "Upload logotype",
+      "replace": "Replace logotype",
+      "remove": "Remove logotype",
+      "uploaded": "Logotype updated ({from} → {to})",
+      "removed": "Logotype removed"
+    },
+    "upload": {
+      "uploading": "Uploading...",
       "errors": {
         "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
         "originalTooLarge": "The file is too large (maximum {max}).",

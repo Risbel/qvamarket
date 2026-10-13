@@ -30,6 +30,7 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
       metaTitle: store.metaTitle,
       metaDescription: store.metaDescription,
       logoKey: store.logoKey,
+      logotypeKey: store.logotypeKey,
       primaryColor: store.primaryColor,
       accentColor: store.accentColor,
       secondaryBannerVisible: store.secondaryBannerVisible,

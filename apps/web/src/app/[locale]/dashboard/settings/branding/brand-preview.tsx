@@ -7,6 +7,7 @@ import { readableForeground } from "@/lib/color";
 export function BrandPreview({
   name,
   logoUrl,
+  logotypeUrl,
   primary,
   accent,
   buttonLabel,
@@ -14,6 +15,7 @@ export function BrandPreview({
 }: {
   name: string;
   logoUrl: string | null;
+  logotypeUrl: string | null;
   primary: string;
   accent: string;
   buttonLabel: string;
@@ -25,11 +27,19 @@ export function BrandPreview({
         className="flex items-center gap-3 px-4 py-3"
         style={{ backgroundColor: primary, color: readableForeground(primary) }}
       >
-        {logoUrl && (
+        {logotypeUrl ? (
+          // Same rule as the storefront header: the logotype replaces the logo + name
           // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
-          <img src={logoUrl} alt="" width={32} height={32} className="size-8 rounded object-contain" />
+          <img src={logotypeUrl} alt={name} className="h-8 w-auto max-w-56 object-contain object-left" />
+        ) : (
+          <>
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
+              <img src={logoUrl} alt="" width={32} height={32} className="size-8 rounded object-contain" />
+            )}
+            <span className="font-semibold">{name}</span>
+          </>
         )}
-        <span className="font-semibold">{name}</span>
       </div>
       <div className="flex items-center gap-3 p-4">
         <span

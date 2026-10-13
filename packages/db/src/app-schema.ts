@@ -77,6 +77,9 @@ export const store = pgTable(
     // Branding (null = platform default). Colors are lowercase #rrggbb; the logo is a key in
     // object storage (tenants/<tenant_id>/stores/<store_id>/logo/...), URL via publicUrl().
     logoKey: text("logo_key"),
+    // Logotype: the logo with the store's name in it (icon + letters, usually wide). When set,
+    // the storefront header shows it INSTEAD of the logo + name (stores/<store_id>/logotype/...).
+    logotypeKey: text("logotype_key"),
     primaryColor: text("primary_color"),
     accentColor: text("accent_color"),
     // Secondary banner (pairs of tiles under the hero) on/off: hides it without deleting images

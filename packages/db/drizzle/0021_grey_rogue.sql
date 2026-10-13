@@ -1,0 +1,1 @@
+ALTER TABLE "store" ADD COLUMN "logotype_key" text;

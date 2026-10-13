@@ -601,15 +601,27 @@
     "title": "Marca",
     "description": "El logo y los colores de tu tienda. Se aplican en tu tienda online.",
     "logo": {
-      "title": "Logo",
-      "help": "JPG, PNG o WebP. Se reduce automáticamente (máx. {size} px y menos de {limit}); la transparencia se conserva.",
+      "title": "Logo (icono)",
+      "help": "El símbolo de tu tienda, sin texto: se muestra junto al nombre. JPG, PNG o WebP. Se reduce automáticamente (máx. {size} px y menos de {limit}); la transparencia se conserva.",
       "none": "Aún no has subido un logo.",
       "upload": "Subir logo",
       "replace": "Cambiar logo",
       "remove": "Quitar logo",
-      "uploading": "Subiendo...",
       "uploaded": "Logo actualizado ({from} → {to})",
-      "removed": "Logo eliminado",
+      "removed": "Logo eliminado"
+    },
+    "logotype": {
+      "title": "Logotipo (logo con nombre)",
+      "help": "Tu logo con el nombre de la tienda escrito en él, mejor horizontal. Si lo subes, la cabecera de tu tienda lo muestra en lugar del logo y el nombre. Se ve sobre tu color principal: usa un fondo transparente. JPG, PNG o WebP. Se reduce automáticamente (máx. {size} px y menos de {limit}).",
+      "none": "Aún no has subido un logotipo: la cabecera muestra el logo y el nombre.",
+      "upload": "Subir logotipo",
+      "replace": "Cambiar logotipo",
+      "remove": "Quitar logotipo",
+      "uploaded": "Logotipo actualizado ({from} → {to})",
+      "removed": "Logotipo eliminado"
+    },
+    "upload": {
+      "uploading": "Subiendo...",
       "errors": {
         "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
         "originalTooLarge": "El archivo es demasiado grande (máximo {max}).",

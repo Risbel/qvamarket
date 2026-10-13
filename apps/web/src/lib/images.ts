@@ -50,6 +50,19 @@ export const SECONDARY_BANNER_FORMATS: Record<BannerDevice, ImageFormat> = {
   mobile: { width: 600, height: 600, maxDimension: 720 },
 };
 
+/**
+ * Store brand images. `logo`: the icon, shown next to the store's name. `logotype`: the logo
+ * with the name in it (usually wide); when set, the storefront header shows it alone.
+ * Longest side after compression: a logo is shown at 40 px, a logotype at 40 px tall but up
+ * to a few hundred wide, so it keeps more pixels for sharp letters on dense screens.
+ */
+export const BRAND_IMAGE_KINDS = ["logo", "logotype"] as const;
+export type BrandImageKind = (typeof BRAND_IMAGE_KINDS)[number];
+export const BRAND_IMAGE_MAX_DIMENSION: Record<BrandImageKind, number> = {
+  logo: 512,
+  logotype: 1024,
+};
+
 /** True when an image's shape is within 3% of the format's, so cropping is negligible. */
 export function fitsFormat(format: ImageFormat, width: number, height: number) {
   return Math.abs(width / height / (format.width / format.height) - 1) <= 0.03;

@@ -66,17 +66,30 @@ export default async function StoreLayout({
         >
           <div className="mx-auto flex h-(--store-header) w-full max-w-5xl items-center gap-3 px-4">
             <Link href="/" className="flex min-w-0 items-center gap-3">
-              {store.logoKey && (
+              {store.logotypeKey ? (
+                // The logotype already carries the name: it replaces the logo + name. Wide
+                // images shrink to the room left by the header's buttons, never cropped.
                 // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
                 <img
-                  src={publicUrl(store.logoKey)}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="size-10 shrink-0 rounded object-contain"
+                  src={publicUrl(store.logotypeKey)}
+                  alt={store.name}
+                  className="h-10 w-auto max-w-full min-w-0 object-contain object-left sm:max-w-64"
                 />
+              ) : (
+                <>
+                  {store.logoKey && (
+                    // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
+                    <img
+                      src={publicUrl(store.logoKey)}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="size-10 shrink-0 rounded object-contain"
+                    />
+                  )}
+                  <span className="truncate text-lg font-semibold">{store.name}</span>
+                </>
               )}
-              <span className="truncate text-lg font-semibold">{store.name}</span>
             </Link>
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
               {store.currencies.length > 1 && (

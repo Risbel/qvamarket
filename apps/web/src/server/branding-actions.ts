@@ -4,9 +4,9 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
-import { MAX_IMAGE_BYTES } from "@/lib/images";
+import { BRAND_IMAGE_KINDS, MAX_IMAGE_BYTES } from "@/lib/images";
 import { createBrandingSchema } from "@/lib/validation/branding";
-import { removeStoreLogo, setStoreLogo, updateBranding } from "./store-branding";
+import { removeStoreBrandImage, setStoreBrandImage, updateBranding } from "./store-branding";
 import { getMerchantOrNull } from "./tenant";
 
 export type BrandingActionResult =
@@ -52,30 +52,44 @@ export async function updateBrandingAction(
   }
 }
 
-export async function uploadLogoAction(formData: FormData): Promise<BrandingActionResult> {
+const kindSchema = z.enum(BRAND_IMAGE_KINDS);
+
+/** Uploads the logo or the logotype (`kind` is validated: it picks the column). */
+export async function uploadBrandImageAction(
+  kind: unknown,
+  formData: FormData,
+): Promise<BrandingActionResult> {
   const scope = await authorize();
   if (!scope) return { ok: false, error: "forbidden" };
+  const parsedKind = kindSchema.safeParse(kind);
+  if (!parsedKind.success) return { ok: false, error: "invalid" };
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "empty" };
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "tooLarge" };
 
   try {
-    const result = await setStoreLogo(scope, new Uint8Array(await file.arrayBuffer()));
+    const result = await setStoreBrandImage(
+      scope,
+      parsedKind.data,
+      new Uint8Array(await file.arrayBuffer()),
+    );
     return result.ok ? { ok: true } : result;
   } catch (error) {
-    console.error("uploadLogoAction failed", error);
+    console.error("uploadBrandImageAction failed", error);
     return { ok: false, error: "failed" };
   }
 }
 
-export async function removeLogoAction(): Promise<BrandingActionResult> {
+export async function removeBrandImageAction(kind: unknown): Promise<BrandingActionResult> {
   const scope = await authorize();
   if (!scope) return { ok: false, error: "forbidden" };
+  const parsedKind = kindSchema.safeParse(kind);
+  if (!parsedKind.success) return { ok: false, error: "invalid" };
   try {
-    return await removeStoreLogo(scope);
+    return await removeStoreBrandImage(scope, parsedKind.data);
   } catch (error) {
-    console.error("removeLogoAction failed", error);
+    console.error("removeBrandImageAction failed", error);
     return { ok: false, error: "failed" };
   }
 }

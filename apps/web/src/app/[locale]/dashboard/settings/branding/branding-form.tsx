@@ -24,10 +24,12 @@ export function BrandingForm({
   initialValues,
   storeName,
   logoUrl,
+  logotypeUrl,
 }: {
   initialValues: BrandingValues;
   storeName: string;
   logoUrl: string | null;
+  logotypeUrl: string | null;
 }) {
   const t = useTranslations("Branding");
   const tv = useTranslations("Validation");
@@ -87,6 +89,7 @@ export function BrandingForm({
           <BrandPreview
             name={storeName}
             logoUrl={logoUrl}
+            logotypeUrl={logotypeUrl}
             primary={validPrimary}
             accent={validAccent}
             buttonLabel={t("preview.button")}

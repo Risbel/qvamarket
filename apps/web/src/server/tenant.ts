@@ -17,6 +17,7 @@ export type MerchantStore = {
   /** pending (awaiting approval) | active | suspended */
   status: "pending" | "active" | "suspended";
   logoKey: string | null;
+  logotypeKey: string | null;
   primaryColor: string | null;
   accentColor: string | null;
 };
@@ -59,6 +60,7 @@ export const getMerchantContext = cache(
         slug: store.slug,
         status: store.status,
         logoKey: store.logoKey,
+        logotypeKey: store.logotypeKey,
         primaryColor: store.primaryColor,
         accentColor: store.accentColor,
       })
