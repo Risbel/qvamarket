@@ -84,7 +84,7 @@ export default async function StoreCatalogPage({
             // Index of the categories: jumps to each section of the page
             <nav
               aria-label={t("categoriesLabel")}
-              className="sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur"
+              className="sticky top-(--store-header) z-10 -mx-4 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur"
             >
               {sections.map((section) => (
                 <a
@@ -99,7 +99,7 @@ export default async function StoreCatalogPage({
           )}
 
           {sections.map((section) => (
-            <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`} className="flex scroll-mt-20 flex-col gap-4">
+            <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`} className="flex scroll-mt-[calc(var(--store-header)+5rem)] flex-col gap-4">
               <h2 id={`${section.id}-title`} className="text-xl font-semibold">
                 {section.title}
               </h2>

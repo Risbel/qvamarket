@@ -67,7 +67,6 @@
     },
     "cart": {
       "title": "Your cart",
-      "link": "Cart",
       "linkLabel": "Cart, {count} items",
       "empty": "Your cart is empty.",
       "continueShopping": "Continue shopping",
@@ -185,8 +184,13 @@
     },
     "account": {
       "title": "My account",
+      "menu": {
+        "label": "Account menu",
+        "profile": "My profile",
+        "signIn": "Sign in",
+        "signUp": "Create account"
+      },
       "profile": "Your details",
-      "signInShort": "Sign in",
       "signOut": "Sign out",
       "continueShopping": "Continue shopping",
       "sharedAccount": "Your account is a QvaShop account: the same email and password work in other stores on the platform. You sign in to each store separately, and {store} only sees your orders in this store.",
@@ -395,6 +399,7 @@
     "stop": "Back to the admin panel"
   },
   "Theme": {
+    "title": "Theme",
     "toggle": "Toggle theme",
     "light": "Light",
     "dark": "Dark",

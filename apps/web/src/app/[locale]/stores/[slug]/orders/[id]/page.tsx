@@ -112,7 +112,7 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/[loc
 
       <div className="flex flex-wrap gap-4">
         {mine && (
-          <Link href="/account" className="w-fit text-sm font-medium underline underline-offset-4">
+          <Link href="/account/orders" className="w-fit text-sm font-medium underline underline-offset-4">
             {t("myOrders")}
           </Link>
         )}

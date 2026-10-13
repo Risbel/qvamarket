@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import Fade from "embla-carousel-fade";
-import { PauseIcon, PlayIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { BANNER_FORMATS, SECONDARY_BANNER_FORMATS, type BannerDevice } from "@/lib/images";
+import {
+  BANNER_FORMATS,
+  SECONDARY_BANNER_FORMATS,
+  type BannerDevice,
+} from "@/lib/images";
 import { cn } from "@/lib/utils";
 import {
   Carousel,
@@ -33,7 +36,10 @@ const AUTOPLAY_DELAY_MS = 5000;
 // download images inside display:none (even lazy ones), and a phone must not pay for the
 // desktop banner. Literal class names: Tailwind only generates what it can read.
 const DEVICES: Record<BannerDevice, { root: string; otherScreens: string }> = {
-  desktop: { root: "hidden md:block", otherScreens: "not all and (min-width: 48rem)" },
+  desktop: {
+    root: "hidden md:block",
+    otherScreens: "not all and (min-width: 48rem)",
+  },
   mobile: { root: "md:hidden", otherScreens: "(min-width: 48rem)" },
 };
 const ASPECTS: Record<BannerKind, Record<BannerDevice, string>> = {
@@ -41,14 +47,16 @@ const ASPECTS: Record<BannerKind, Record<BannerDevice, string>> = {
   secondary: { desktop: "aspect-[48/13]", mobile: "aspect-square" },
 };
 const FORMATS = { hero: BANNER_FORMATS, secondary: SECONDARY_BANNER_FORMATS };
-const EMPTY_PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+const EMPTY_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
 /**
  * The autoplay plugin, if running. An inactive carousel (one slide: `active: false`) never
  * initializes its plugins, and then Embla's plugins() returns undefined despite its types.
  */
 function autoplayOf(api: CarouselApi) {
-  const plugins: ReturnType<NonNullable<CarouselApi>["plugins"]> | undefined = api?.plugins();
+  const plugins: ReturnType<NonNullable<CarouselApi>["plugins"]> | undefined =
+    api?.plugins();
   return plugins?.autoplay;
 }
 
@@ -73,14 +81,26 @@ export function BannerCarousel({
   // Created once (lazy state); Embla re-initializes when the plugin list changes identity
   const [plugins] = useState(() =>
     multiple
-      ? [Fade(), Autoplay({ delay: AUTOPLAY_DELAY_MS, playOnInit: false, stopOnInteraction: true, stopOnFocusIn: true })]
+      ? [
+          Fade(),
+          Autoplay({
+            delay: AUTOPLAY_DELAY_MS,
+            playOnInit: false,
+            stopOnInteraction: true,
+            stopOnFocusIn: true,
+          }),
+        ]
       : [],
   );
   const [api, setApi] = useState<CarouselApi>();
 
   useEffect(() => {
     const autoplay = autoplayOf(api);
-    if (autoplay && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) autoplay.play();
+    if (
+      autoplay &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      autoplay.play();
   }, [api]);
 
   const format = FORMATS[kind][device];
@@ -94,22 +114,37 @@ export function BannerCarousel({
       opts={{ loop: true, active: multiple }}
       plugins={plugins}
       aria-label={kind === "hero" ? t("label") : t("secondaryLabel")}
-      className={cn(kind === "hero" && "overflow-hidden rounded-lg border bg-muted", DEVICES[device].root)}
+      className={cn(
+        kind === "hero" && "overflow-hidden rounded-lg border bg-muted",
+        DEVICES[device].root,
+      )}
     >
       <CarouselContent className="ml-0">
         {slides.map((slide, index) => (
           <CarouselItem
             key={slide.id}
             className="pl-0"
-            aria-label={multiple ? t("slide", { index: index + 1, count: slides.length }) : undefined}
+            aria-label={
+              multiple
+                ? t("slide", { index: index + 1, count: slides.length })
+                : undefined
+            }
           >
-            <div className={cn(kind === "secondary" && "grid grid-cols-2 gap-3")}>
+            <div
+              className={cn(kind === "secondary" && "grid grid-cols-2 gap-3")}
+            >
               {slide.images.map((image) => (
                 <picture
                   key={image.id}
-                  className={cn(kind === "secondary" && "block overflow-hidden rounded-lg border bg-muted")}
+                  className={cn(
+                    kind === "secondary" &&
+                      "block overflow-hidden rounded-lg border bg-muted",
+                  )}
                 >
-                  <source media={DEVICES[device].otherScreens} srcSet={EMPTY_PIXEL} />
+                  <source
+                    media={DEVICES[device].otherScreens}
+                    srcSet={EMPTY_PIXEL}
+                  />
                   <img
                     src={image.url}
                     alt={kind === "hero" && index === 0 ? storeName : ""}
@@ -127,7 +162,9 @@ export function BannerCarousel({
         ))}
       </CarouselContent>
 
-      {kind === "hero" && multiple && <HeroControls api={api} count={slides.length} />}
+      {kind === "hero" && multiple && (
+        <HeroControls api={api} count={slides.length} />
+      )}
     </Carousel>
   );
 }
@@ -166,7 +203,11 @@ function HeroControls({ api, count }: { api: CarouselApi; count: number }) {
     },
     [api],
   );
-  const selected = useSyncExternalStore(subscribeSelect, () => api?.selectedScrollSnap() ?? 0, () => 0);
+  const selected = useSyncExternalStore(
+    subscribeSelect,
+    () => api?.selectedScrollSnap() ?? 0,
+    () => 0,
+  );
   const playing = useSyncExternalStore(
     subscribeAutoplay,
     () => autoplayOf(api)?.isPlaying() ?? false,
@@ -215,19 +256,12 @@ function HeroControls({ api, count }: { api: CarouselApi; count: number }) {
               <span
                 className={cn(
                   "block size-2 rounded-full bg-foreground/40 transition-all group-hover:bg-foreground/70",
-                  index === selected && "w-4 bg-foreground group-hover:bg-foreground",
+                  index === selected &&
+                    "w-4 bg-foreground group-hover:bg-foreground",
                 )}
               />
             </button>
           ))}
-          <button
-            type="button"
-            aria-label={playing ? t("pause") : t("play")}
-            onClick={togglePlaying}
-            className="flex size-6 items-center justify-center rounded-full text-foreground/80 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {playing ? <PauseIcon className="size-3.5" aria-hidden /> : <PlayIcon className="size-3.5" aria-hidden />}
-          </button>
         </div>
       </div>
     </>

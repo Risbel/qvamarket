@@ -1,10 +1,8 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { UserIcon } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ModeToggle } from "@/components/mode-toggle";
+import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import {
@@ -15,6 +13,7 @@ import {
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
+import { AccountMenu } from "./account-menu";
 import { CartLink } from "./cart-link";
 import { CartProvider } from "./cart-provider";
 import { CurrencySwitcher } from "./currency-switcher";
@@ -47,7 +46,6 @@ export default async function StoreLayout({
   const currency = await selectedCurrency(store.currencies);
   // Host-only cookie: a session here is this store's alone
   const session = await auth.api.getSession({ headers: await headers() });
-  const t = await getTranslations("Store.account");
   const primary = store.primaryColor ?? DEFAULT_PRIMARY;
   const accent = store.accentColor ?? DEFAULT_ACCENT;
   const brand = {
@@ -59,12 +57,15 @@ export default async function StoreLayout({
 
   return (
     <CartProvider storeId={store.id} storeSlug={store.slug} currency={currency.code}>
-      <div className="flex flex-1 flex-col" style={brand}>
+      {/* --store-header: the header's height, for whatever sticks or scrolls below it */}
+      <div className="flex flex-1 flex-col [--store-header:3.5rem]" style={brand}>
         <header
-          style={{ backgroundColor: "var(--brand)", color: "var(--brand-foreground)" }}
+          // The brand color, slightly see-through, blurring what scrolls under it
+          className="sticky top-0 z-40 bg-(--brand)/80 backdrop-blur-md backdrop-saturate-150"
+          style={{ color: "var(--brand-foreground)" }}
         >
-          <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-4">
-            <Link href="/" className="flex items-center gap-3">
+          <div className="mx-auto flex h-(--store-header) w-full max-w-5xl items-center gap-3 px-4">
+            <Link href="/" className="flex min-w-0 items-center gap-3">
               {store.logoKey && (
                 // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
                 <img
@@ -72,28 +73,23 @@ export default async function StoreLayout({
                   alt=""
                   width={40}
                   height={40}
-                  className="size-10 rounded object-contain"
+                  className="size-10 shrink-0 rounded object-contain"
                 />
               )}
-              <span className="text-lg font-semibold">{store.name}</span>
+              <span className="truncate text-lg font-semibold">{store.name}</span>
             </Link>
-            <div className="ml-auto flex items-center gap-3">
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
               {store.currencies.length > 1 && (
                 <CurrencySwitcher codes={store.currencies.map((c) => c.code)} current={currency.code} />
               )}
-              <Link
-                href={session ? "/account" : "/login"}
-                aria-label={session ? t("title") : t("login.title")}
-                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium hover:opacity-80"
-              >
-                <UserIcon className="size-4" aria-hidden />
-                <span className="hidden max-w-32 truncate sm:inline">
-                  {session ? session.user.name.split(" ")[0] : t("signInShort")}
-                </span>
-              </Link>
               <CartLink />
-              {/* On the brand color: keep its readable foreground, hover with a tint of it */}
-              <ModeToggle className="hover:bg-current/15 hover:text-inherit aria-expanded:bg-current/15 aria-expanded:text-inherit dark:hover:bg-current/15" />
+              <AccountMenu
+                user={
+                  session
+                    ? { name: session.user.name, email: session.user.email, image: session.user.image ?? null }
+                    : null
+                }
+              />
             </div>
           </div>
         </header>

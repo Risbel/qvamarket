@@ -17,6 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
+import { initials } from "@/lib/initials";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -96,11 +97,6 @@ function UserIdentity({ user }: { user: PanelSidebarProps["user"] }) {
       </span>
     </>
   );
-}
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase() || "?";
 }
 
 export function PanelSidebar({ groups, brand, user, storeUrl, impersonating }: PanelSidebarProps) {

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const THEMES = ["light", "dark", "system"] as const;
+export const THEMES = ["light", "dark", "system"] as const;
 
 /** Light / dark / system switch (shadcn "mode toggle"). The choice is kept in localStorage. */
 export function ModeToggle({ className }: { className?: string }) {

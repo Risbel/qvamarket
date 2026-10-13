@@ -67,7 +67,6 @@
     },
     "cart": {
       "title": "Tu carrito",
-      "link": "Carrito",
       "linkLabel": "Carrito, {count} artículos",
       "empty": "Tu carrito está vacío.",
       "continueShopping": "Seguir comprando",
@@ -185,8 +184,13 @@
     },
     "account": {
       "title": "Mi cuenta",
+      "menu": {
+        "label": "Menú de la cuenta",
+        "profile": "Mi perfil",
+        "signIn": "Iniciar sesión",
+        "signUp": "Crear cuenta"
+      },
       "profile": "Tus datos",
-      "signInShort": "Entrar",
       "signOut": "Cerrar sesión",
       "continueShopping": "Seguir comprando",
       "sharedAccount": "Tu cuenta es de QvaShop: con el mismo correo y contraseña puedes entrar en otras tiendas de la plataforma. En cada tienda inicias sesión por separado, y {store} solo ve tus pedidos en esta tienda.",
@@ -395,6 +399,7 @@
     "stop": "Volver al panel de administración"
   },
   "Theme": {
+    "title": "Tema",
     "toggle": "Cambiar tema",
     "light": "Claro",
     "dark": "Oscuro",

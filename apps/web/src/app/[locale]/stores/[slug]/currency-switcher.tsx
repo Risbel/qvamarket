@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { useHydrated } from "@/lib/use-hydrated";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /** Must match CURRENCY_COOKIE in src/server/storefront-currency.ts */
 const COOKIE = "qvashop_currency";
@@ -15,27 +15,31 @@ const COOKIE = "qvashop_currency";
 export function CurrencySwitcher({ codes, current }: { codes: string[]; current: string }) {
   const t = useTranslations("Store");
   const router = useRouter();
-  const hydrated = useHydrated();
 
   return (
-    <label className="flex items-center gap-1 text-sm">
-      <span className="sr-only">{t("currency")}</span>
-      <select
-        value={current}
-        disabled={!hydrated}
-        onChange={(event) => {
-          document.cookie = `${COOKIE}=${event.target.value}; path=/; max-age=31536000; samesite=lax`;
-          router.refresh();
-        }}
-        className="rounded-md border border-current/30 bg-transparent px-1.5 py-1 text-sm"
-        style={{ color: "inherit" }}
+    <Select
+      value={current}
+      onValueChange={(code) => {
+        if (typeof code !== "string" || code === current) return;
+        document.cookie = `${COOKIE}=${code}; path=/; max-age=31536000; samesite=lax`;
+        router.refresh();
+      }}
+    >
+      {/* On the brand color: keep its readable foreground (the chevron too) */}
+      <SelectTrigger
+        size="sm"
+        aria-label={t("currency")}
+        className="border-current/30 bg-transparent text-inherit hover:bg-current/15 dark:bg-transparent dark:hover:bg-current/15 [&_svg]:text-current"
       >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent alignItemWithTrigger={false} align="end" className="w-auto min-w-24">
         {codes.map((code) => (
-          <option key={code} value={code} className="bg-popover text-popover-foreground">
+          <SelectItem key={code} value={code}>
             {code}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-    </label>
+      </SelectContent>
+    </Select>
   );
 }
