@@ -214,6 +214,37 @@ export const storeDelivery = pgTable(
   ],
 );
 
+// Images of the storefront's hero banner (a carousel at the top of the home page). The
+// section only exists when a store has at least one. Files live under
+// tenants/<tenantId>/stores/<storeId>/banner/.
+export const storeBannerImage = pgTable(
+  "store_banner_image",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    storageKey: text("storage_key").notNull().unique(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    // 0 is shown first
+    position: integer("position").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "store_banner_image_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    index("store_banner_image_tenantId_idx").on(table.tenantId),
+    index("store_banner_image_storeId_position_idx").on(table.storeId, table.position),
+    check("store_banner_image_size_positive", sql`${table.sizeBytes} > 0`),
+    check("store_banner_image_position", sql`${table.position} >= 0`),
+  ],
+);
+
 /**
  * Delivery amounts of a store in one of its currencies (no conversion, like prices): the
  * base fee (flat mode: the whole fee; distance mode: covers the base distance), the charge

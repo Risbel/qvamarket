@@ -42,6 +42,14 @@
       "sale": "Sale",
       "was": "Was"
     },
+    "hero": {
+      "label": "Highlights",
+      "previous": "Previous image",
+      "next": "Next image",
+      "slide": "Image {index} of {count}",
+      "pause": "Pause",
+      "play": "Play"
+    },
     "product": {
       "back": "Back to the store",
       "soldOut": "Sold out",
@@ -629,6 +637,34 @@
       "failed": "The changes could not be saved. Please try again."
     }
   },
+  "Banner": {
+    "title": "Home banner",
+    "description": "Images that rotate at the top of your store. If you upload none, the section is not shown.",
+    "count": "{count}/{max}",
+    "help": "JPG, PNG or WebP. Shown landscape at 2:1 (2000 × 1000 px recommended) and cropped to fill, so keep the important part in the center. Automatically reduced to under {limit}.",
+    "empty": "No images yet: the banner does not appear in your store.",
+    "add": "Add images",
+    "position": "Image {position}",
+    "moveUp": "Move earlier",
+    "moveDown": "Move later",
+    "remove": "Remove",
+    "compressing": "Reducing {name}...",
+    "uploading": "Uploading {name}...",
+    "compressedInfo": "uploaded ({from} → {to})",
+    "tooMany": "You can only add {count} more image(s).",
+    "errors": {
+      "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
+      "originalTooLarge": "The file is too large (max {max}).",
+      "couldNotShrink": "Could not reduce it below {limit}. Try another image.",
+      "tooLarge": "The image is larger than {limit}.",
+      "empty": "The file is empty.",
+      "limit": "The banner already has the maximum of {count} images.",
+      "notFound": "The image was not found.",
+      "forbidden": "You do not have permission to do this.",
+      "failed": "The operation could not be completed. Please try again.",
+      "unreadable": "Could not read the image. Is it damaged or not an image?"
+    }
+  },
   "Signup": {
     "title": "Create your store",
     "description": "Sign up and start preparing your catalog. Your store goes public once we approve it.",
@@ -681,6 +717,7 @@
       "label": "Settings sections",
       "general": "General",
       "branding": "Branding",
+      "banner": "Banner",
       "currencies": "Currencies",
       "pickup": "Pickup",
       "delivery": "Home delivery"

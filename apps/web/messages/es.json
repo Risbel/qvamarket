@@ -42,6 +42,14 @@
       "sale": "Oferta",
       "was": "Antes"
     },
+    "hero": {
+      "label": "Destacados",
+      "previous": "Imagen anterior",
+      "next": "Imagen siguiente",
+      "slide": "Imagen {index} de {count}",
+      "pause": "Pausar",
+      "play": "Reproducir"
+    },
     "product": {
       "back": "Volver a la tienda",
       "soldOut": "Agotado",
@@ -629,6 +637,34 @@
       "failed": "No se pudieron guardar los cambios. Inténtalo de nuevo."
     }
   },
+  "Banner": {
+    "title": "Banner de portada",
+    "description": "Imágenes que se alternan en la parte superior de tu tienda. Si no subes ninguna, la sección no se muestra.",
+    "count": "{count}/{max}",
+    "help": "JPG, PNG o WebP. Se muestran en formato horizontal 2:1 (recomendado 2000 × 1000 px) y se recortan para llenar el espacio, así que deja el contenido importante en el centro. Se reducen automáticamente a menos de {limit}.",
+    "empty": "Aún no hay imágenes: la portada no aparece en tu tienda.",
+    "add": "Añadir imágenes",
+    "position": "Imagen {position}",
+    "moveUp": "Mover antes",
+    "moveDown": "Mover después",
+    "remove": "Eliminar",
+    "compressing": "Reduciendo {name}...",
+    "uploading": "Subiendo {name}...",
+    "compressedInfo": "subida ({from} → {to})",
+    "tooMany": "Solo puedes añadir {count} imagen(es) más.",
+    "errors": {
+      "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
+      "originalTooLarge": "El archivo es demasiado grande (máximo {max}).",
+      "couldNotShrink": "No se pudo reducir por debajo de {limit}. Prueba con otra imagen.",
+      "tooLarge": "La imagen supera {limit}.",
+      "empty": "El archivo está vacío.",
+      "limit": "El banner ya tiene el máximo de {count} imágenes.",
+      "notFound": "No se encontró la imagen.",
+      "forbidden": "No tienes permiso para hacer esto.",
+      "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
+      "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
+    }
+  },
   "Signup": {
     "title": "Crea tu tienda",
     "description": "Regístrate y empieza a preparar tu catálogo. Tu tienda se publicará cuando la aprobemos.",
@@ -681,6 +717,7 @@
       "label": "Secciones de ajustes",
       "general": "General",
       "branding": "Marca",
+      "banner": "Banner",
       "currencies": "Monedas",
       "pickup": "Recogida",
       "delivery": "Entrega a domicilio"

@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { and, db, eq, store } from "@qvashop/db";
+import { and, asc, db, eq, store, storeBannerImage } from "@qvashop/db";
 import { getStoreCurrencies } from "./currencies";
+import { publicUrl } from "./storage";
 
 /**
  * Public view of a store for the storefront, found by its globally unique subdomain slug.
@@ -39,4 +40,17 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
   const defaultCurrency = currencies.find((c) => c.isDefault) ?? currencies[0];
   if (!defaultCurrency) return null; // a store without currencies cannot sell anything
   return { ...row, currencies, defaultCurrency };
+});
+
+/**
+ * Hero banner images of a store, in display order. Only call it with the id of a store
+ * returned by getPublicStoreBySlug (so an active one). Returns public URLs only.
+ */
+export const listPublicBannerImages = cache(async (storeId: string) => {
+  const rows = await db
+    .select({ id: storeBannerImage.id, storageKey: storeBannerImage.storageKey })
+    .from(storeBannerImage)
+    .where(eq(storeBannerImage.storeId, storeId))
+    .orderBy(asc(storeBannerImage.position), asc(storeBannerImage.createdAt));
+  return rows.map((row) => ({ id: row.id, url: publicUrl(row.storageKey) }));
 });

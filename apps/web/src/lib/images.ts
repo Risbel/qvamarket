@@ -10,6 +10,10 @@ export const MAX_IMAGE_DIMENSION = 1600;
 /** Largest original we accept to try compressing in the browser (phone photos are 3–12 MB). */
 export const MAX_ORIGINAL_BYTES = 20_000_000;
 export const MAX_IMAGES_PER_PRODUCT = 6;
+/** Hero banner of the storefront: images shown 2:1, cropped to fill. */
+export const MAX_BANNER_IMAGES = 5;
+/** Banner longest side: the storefront is 1024 css px wide, so this stays sharp on 2x screens. */
+export const BANNER_MAX_DIMENSION = 2048;
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type ImageType = (typeof IMAGE_TYPES)[number];

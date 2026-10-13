@@ -3,9 +3,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PriceTag } from "@/components/price-tag";
 import { listPublicCatalog, type PublicListItem } from "@/server/public-catalog";
-import { getPublicStoreBySlug } from "@/server/public-store";
+import { getPublicStoreBySlug, listPublicBannerImages } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
+import { HeroCarousel } from "./hero-carousel";
 
 export default async function StoreCatalogPage({
   params,
@@ -17,7 +18,10 @@ export default async function StoreCatalogPage({
   if (!store) notFound();
   const currency = await selectedCurrency(store.currencies);
   const t = await getTranslations("Store.catalog");
-  const { categories, products } = await listPublicCatalog(store.id, currency.code);
+  const [{ categories, products }, banner] = await Promise.all([
+    listPublicCatalog(store.id, currency.code),
+    listPublicBannerImages(store.id),
+  ]);
 
   // One section per visible category (in the merchant's order), then everything else
   const known = new Set(categories.map((c) => c.id));
@@ -37,6 +41,8 @@ export default async function StoreCatalogPage({
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
+      {/* The hero only exists once the merchant has uploaded banner images */}
+      {banner.length > 0 && <HeroCarousel images={banner} storeName={store.name} />}
       {products.length === 0 ? (
         <>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>

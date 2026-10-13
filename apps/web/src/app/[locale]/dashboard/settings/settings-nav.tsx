@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Palette, Store, Truck, MapPin } from "lucide-react";
+import { Coins, GalleryHorizontal, MapPin, Palette, Store, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const SECTIONS = [
   { key: "general", href: "/dashboard/settings/general", icon: Store },
   { key: "branding", href: "/dashboard/settings/branding", icon: Palette },
+  { key: "banner", href: "/dashboard/settings/banner", icon: GalleryHorizontal },
   { key: "currencies", href: "/dashboard/settings/currencies", icon: Coins },
   { key: "pickup", href: "/dashboard/settings/pickup", icon: Truck },
   { key: "delivery", href: "/dashboard/settings/delivery", icon: MapPin },
