@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { ModeToggle } from "@/components/mode-toggle";
 import { PanelPageTitle } from "@/components/panel-page-title";
 import { PanelSidebar, type PanelSidebarProps } from "@/components/panel-sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -27,6 +28,7 @@ export async function PanelShell({
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-1 data-vertical:h-4 data-vertical:self-center" />
             <PanelPageTitle groups={sidebar.groups} />
+            <ModeToggle className="ml-auto" />
           </header>
           <div className="flex flex-1 flex-col">{children}</div>
         </SidebarInset>

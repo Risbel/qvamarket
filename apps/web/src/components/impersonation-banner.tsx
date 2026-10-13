@@ -31,7 +31,7 @@ export function ImpersonationBanner({ targetEmail }: { targetEmail: string }) {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-center gap-3 bg-amber-100 px-4 py-2 text-sm text-amber-950"
+      className="flex flex-wrap items-center justify-center gap-3 bg-amber-100 px-4 py-2 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100"
     >
       <span>{t("viewingAs", { email: targetEmail })}</span>
       <Button size="sm" variant="outline" disabled={!hydrated || pending} onClick={stop}>

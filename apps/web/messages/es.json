@@ -385,6 +385,12 @@
     "viewingAs": "Estás viendo la cuenta de {email} como superadministrador.",
     "stop": "Volver al panel de administración"
   },
+  "Theme": {
+    "toggle": "Cambiar tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
   "Panel": {
     "nav": {
       "label": "Navegación",

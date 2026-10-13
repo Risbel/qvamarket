@@ -4,6 +4,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { ThemeProvider } from "@/components/theme-provider";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -40,9 +41,13 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // next-themes sets the `dark` class on <html> before React hydrates
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

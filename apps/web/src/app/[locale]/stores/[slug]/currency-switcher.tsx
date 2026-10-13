@@ -31,7 +31,7 @@ export function CurrencySwitcher({ codes, current }: { codes: string[]; current:
         style={{ color: "inherit" }}
       >
         {codes.map((code) => (
-          <option key={code} value={code} className="text-black">
+          <option key={code} value={code} className="bg-popover text-popover-foreground">
             {code}
           </option>
         ))}

@@ -255,6 +255,10 @@ Orders are created at storefront checkout (guest checkout, no customer account).
 - Every form must use `method="post"` and keep its submit button disabled until hydrated (`useHydrated()` from `@/lib/use-hydrated`). Otherwise a submit before hydration is a native GET that puts the fields (including passwords) in the URL.
 - Existing forms written with plain state (e.g. login) should be migrated when they are next touched.
 
+### Light / dark theme (decided 2026-10)
+- `next-themes` (as in the shadcn docs): `<ThemeProvider attribute="class" defaultTheme="system">` in the root layout toggles the `dark` class on `<html>` (`suppressHydrationWarning` there is required); the choice is kept in `localStorage` per host. `<ModeToggle>` (`src/components/mode-toggle.tsx`: Light / Dark / System) sits in the panel header and the storefront header.
+- Use the semantic tokens (`bg-background`, `text-muted-foreground`, ...) so both themes work; a hard-coded color needs its `dark:` pair. Brand colors (`--brand`) are the same in both themes.
+
 ### i18n
 - Never hardcode UI text. All strings go in `apps/web/messages/es.json` and `en.json`, with the same keys in both.
 - Never put raw `<` or `>` in message strings: next-intl (ICU) parses `<name>` as a rich-text tag and throws `INVALID_MESSAGE`. Pass such text as a placeholder value (`{url}`) instead.

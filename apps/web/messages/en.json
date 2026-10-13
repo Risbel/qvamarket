@@ -385,6 +385,12 @@
     "viewingAs": "You are viewing {email}'s account as a superadmin.",
     "stop": "Back to the admin panel"
   },
+  "Theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
   "Panel": {
     "nav": {
       "label": "Navigation",

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { UserIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import {
@@ -91,6 +92,8 @@ export default async function StoreLayout({
                 </span>
               </Link>
               <CartLink />
+              {/* On the brand color: keep its readable foreground, hover with a tint of it */}
+              <ModeToggle className="hover:bg-current/15 hover:text-inherit aria-expanded:bg-current/15 aria-expanded:text-inherit dark:hover:bg-current/15" />
             </div>
           </div>
         </header>
