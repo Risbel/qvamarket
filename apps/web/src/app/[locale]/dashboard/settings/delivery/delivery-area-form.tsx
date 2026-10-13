@@ -143,7 +143,8 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
       const messages = Object.values(result.fieldErrors ?? {}).flat();
       setStatus({ ok: false, text: messages[0] ?? t("errors.failed") });
     } else {
-      setStatus({ ok: false, text: t(`errors.${result?.error === "forbidden" ? "forbidden" : "failed"}`) });
+      const key = result?.error === "forbidden" || result?.error === "deliveryNeedsArea" ? result.error : "failed";
+      setStatus({ ok: false, text: t(`errors.${key}`) });
     }
   }
 

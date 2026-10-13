@@ -158,8 +158,12 @@ export const storeCurrency = pgTable(
 /** Max corners of a delivery area (keeps the polygon light to store and to test against). */
 export const MAX_SERVICE_AREA_POINTS = 200;
 
+export const DELIVERY_FEE_MODES = ["free", "flat", "distance"] as const;
+
 /**
- * Home delivery settings of a store (1:1, created on first save). The store's location is
+ * Home delivery settings of a store (1:1, created on first save; without a row the store
+ * offers pickup only). `fee_mode`: free, flat (the rate's base fee) or distance (base fee
+ * covers `base_distance_m`, then the rate's per-km charge for each started km). The store's location is
  * where orders leave from (distance-based fees are measured from it, in a straight line); the
  * service area is a polygon drawn by the merchant on the map: [lng, lat] corners (GeoJSON
  * order), not closed (the first corner is not repeated). Coordinates are WGS84 degrees.
@@ -172,6 +176,10 @@ export const storeDelivery = pgTable(
     locationLat: doublePrecision("location_lat"),
     locationLng: doublePrecision("location_lng"),
     serviceArea: jsonb("service_area").$type<[number, number][]>(),
+    deliveryEnabled: boolean("delivery_enabled").default(false).notNull(),
+    pickupEnabled: boolean("pickup_enabled").default(true).notNull(),
+    feeMode: text("fee_mode").default("flat").notNull(),
+    baseDistanceM: integer("base_distance_m").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -193,6 +201,53 @@ export const storeDelivery = pgTable(
       sql.raw(
         `service_area is null or (jsonb_typeof(service_area) = 'array' and jsonb_array_length(service_area) between 3 and ${MAX_SERVICE_AREA_POINTS})`,
       ),
+    ),
+    check("store_delivery_fee_mode", sql.raw(`fee_mode in (${DELIVERY_FEE_MODES.map((m) => `'${m}'`).join(", ")})`)),
+    check("store_delivery_base_distance", sql`${table.baseDistanceM} between 0 and 1000000`),
+    // a store always offers at least one way to get the order
+    check("store_delivery_some_fulfillment", sql`${table.deliveryEnabled} or ${table.pickupEnabled}`),
+    // delivery needs somewhere to leave from and an area to deliver to
+    check(
+      "store_delivery_enabled_needs_area",
+      sql`not ${table.deliveryEnabled} or (${table.locationLat} is not null and ${table.serviceArea} is not null)`,
+    ),
+  ],
+);
+
+/**
+ * Delivery amounts of a store in one of its currencies (no conversion, like prices): the
+ * base fee (flat mode: the whole fee; distance mode: covers the base distance), the charge
+ * per started km beyond it (distance mode), free delivery from an order subtotal (null =
+ * never) and the minimum order for delivery (null = none). A currency without a row has no
+ * delivery fee set: delivery is not offered in it (except in free mode).
+ */
+export const storeDeliveryRate = pgTable(
+  "store_delivery_rate",
+  {
+    storeId: uuid("store_id").notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+    currencyCode: text("currency_code").notNull(),
+    baseFeeMinor: bigint("base_fee_minor", { mode: "number" }).default(0).notNull(),
+    perKmMinor: bigint("per_km_minor", { mode: "number" }).default(0).notNull(),
+    freeAboveMinor: bigint("free_above_minor", { mode: "number" }),
+    minOrderMinor: bigint("min_order_minor", { mode: "number" }),
+  },
+  (table) => [
+    primaryKey({ name: "store_delivery_rate_pk", columns: [table.storeId, table.currencyCode] }),
+    foreignKey({
+      name: "store_delivery_rate_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    // removing a currency from the store removes its delivery amounts
+    foreignKey({
+      name: "store_delivery_rate_store_currency_fk",
+      columns: [table.storeId, table.currencyCode],
+      foreignColumns: [storeCurrency.storeId, storeCurrency.currencyCode],
+    }).onDelete("cascade"),
+    check(
+      "store_delivery_rate_amounts",
+      sql`${table.baseFeeMinor} >= 0 and ${table.perKmMinor} >= 0 and (${table.freeAboveMinor} is null or ${table.freeAboveMinor} > 0) and (${table.minOrderMinor} is null or ${table.minOrderMinor} > 0)`,
     ),
   ],
 );

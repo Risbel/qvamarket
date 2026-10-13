@@ -232,7 +232,10 @@
     "refundExceedsPaid": "It cannot be more than what was collected ({amount})",
     "dateInFuture": "The date cannot be in the future",
     "areaTooFewPoints": "The area needs at least 3 points.",
-    "areaTooManyPoints": "The area can have at most {max} points."
+    "areaTooManyPoints": "The area can have at most {max} points.",
+    "fulfillmentRequired": "Turn on at least one way to get the order.",
+    "deliveryFeeRequired": "Enter an amount (it can be 0).",
+    "distanceInvalid": "Enter the km with up to 3 decimals, between 0 and {max}."
   },
   "Admin": {
     "title": "Admin panel",
@@ -694,7 +697,7 @@
     },
     "delivery": {
       "title": "Home delivery",
-      "description": "Mark where your store is and draw the area you deliver to on the map. Fees are set up in the next step.",
+      "description": "Mark where your store is, draw the area you deliver to and set what you charge for delivery.",
       "modeLabel": "What to do on the map",
       "mode": {
         "location": "Place the store",
@@ -716,9 +719,59 @@
       "saved": "Delivery area saved.",
       "errors": {
         "forbidden": "You are not allowed to change the settings.",
-        "failed": "Could not save. Try again."
+        "failed": "Could not save. Try again.",
+        "deliveryNeedsArea": "Home delivery is on: it needs the store and the area. Switch it off below before removing them."
       },
-      "tilesUnavailable": "The base map is not available right now. You can still place the store and draw the area."
+      "tilesUnavailable": "The base map is not available right now. You can still place the store and draw the area.",
+      "areaTitle": "Delivery area",
+      "charges": {
+        "title": "Delivery charges",
+        "description": "How customers get their order and what they pay for delivery. Amounts are set in each store currency (no conversion).",
+        "pickup": "Store pickup",
+        "pickupHelp": "The customer collects the order.",
+        "delivery": "Home delivery",
+        "deliveryHelp": "Only for addresses inside the area on the map.",
+        "deliveryNeedsArea": "First place the store and draw the area on the map above.",
+        "mode": "How delivery is charged",
+        "modes": {
+          "free": "Free",
+          "flat": "Flat fee",
+          "distance": "Distance-based"
+        },
+        "modeHelp": {
+          "free": "Delivery is not charged. You can still require a minimum order.",
+          "flat": "The same fee for any address inside the area.",
+          "distance": "A base price up to a distance, then a charge for every extra km (straight line from the store)."
+        },
+        "baseDistance": "Base distance (km)",
+        "baseDistanceHelp": "Kilometers covered by the base price. E.g. 1.5",
+        "currencyDefault": "{currency} (main currency)",
+        "currency": "{currency}",
+        "otherCurrencyHelp": "Leave it empty to not offer delivery when the customer shops in this currency.",
+        "fields": {
+          "baseFee": "Base price",
+          "flatFee": "Delivery fee",
+          "perKm": "Price per extra km",
+          "freeAbove": "Free delivery from",
+          "minOrder": "Minimum order"
+        },
+        "fieldHelp": {
+          "baseFee": "Covers the base distance.",
+          "flatFee": "What the customer pays for delivery.",
+          "perKm": "For every km (or part of one) beyond the base distance.",
+          "freeAbove": "Empty or 0 = never free.",
+          "minOrder": "Blocks delivery below this amount. Empty or 0 = no minimum."
+        },
+        "save": "Save charges",
+        "saving": "Saving...",
+        "saved": "Charges saved.",
+        "errors": {
+          "invalid": "Check the highlighted fields.",
+          "forbidden": "You are not allowed to change the settings.",
+          "deliveryNeedsArea": "To switch delivery on, first save the store location and the area on the map.",
+          "failed": "Could not save. Try again."
+        }
+      }
     }
   },
   "Promotions": {

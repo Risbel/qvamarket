@@ -232,7 +232,10 @@
     "refundExceedsPaid": "No puede superar lo cobrado ({amount})",
     "dateInFuture": "La fecha no puede ser futura",
     "areaTooFewPoints": "La zona necesita al menos 3 puntos.",
-    "areaTooManyPoints": "La zona puede tener como máximo {max} puntos."
+    "areaTooManyPoints": "La zona puede tener como máximo {max} puntos.",
+    "fulfillmentRequired": "Activa al menos una forma de entrega.",
+    "deliveryFeeRequired": "Indica un importe (puede ser 0).",
+    "distanceInvalid": "Introduce los km con hasta 3 decimales, entre 0 y {max}."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -694,7 +697,7 @@
     },
     "delivery": {
       "title": "Entrega a domicilio",
-      "description": "Marca dónde está tu tienda y dibuja en el mapa la zona a la que entregas. Las tarifas se configuran en el siguiente paso.",
+      "description": "Marca dónde está tu tienda, dibuja la zona a la que entregas y define cuánto cobras por el envío.",
       "modeLabel": "Qué quieres hacer en el mapa",
       "mode": {
         "location": "Ubicar la tienda",
@@ -716,9 +719,59 @@
       "saved": "Zona de entrega guardada.",
       "errors": {
         "forbidden": "No tienes permiso para cambiar los ajustes.",
-        "failed": "No se pudo guardar. Inténtalo de nuevo."
+        "failed": "No se pudo guardar. Inténtalo de nuevo.",
+        "deliveryNeedsArea": "La entrega a domicilio está activada: necesita la tienda y la zona. Desactívala abajo antes de quitarlas."
       },
-      "tilesUnavailable": "El mapa base no está disponible en este momento. Puedes seguir marcando la tienda y la zona."
+      "tilesUnavailable": "El mapa base no está disponible en este momento. Puedes seguir marcando la tienda y la zona.",
+      "areaTitle": "Zona de entrega",
+      "charges": {
+        "title": "Tarifas de envío",
+        "description": "Cómo recibe el cliente su pedido y cuánto paga por el envío. Los importes se ponen en cada moneda de tu tienda (no se convierten).",
+        "pickup": "Recogida en tienda",
+        "pickupHelp": "El cliente pasa a buscar su pedido.",
+        "delivery": "Entrega a domicilio",
+        "deliveryHelp": "Solo para direcciones dentro de la zona del mapa.",
+        "deliveryNeedsArea": "Primero marca la tienda y dibuja la zona en el mapa de arriba.",
+        "mode": "Cómo se cobra el envío",
+        "modes": {
+          "free": "Gratis",
+          "flat": "Precio fijo",
+          "distance": "Según la distancia"
+        },
+        "modeHelp": {
+          "free": "El envío no se cobra. Puedes exigir un pedido mínimo.",
+          "flat": "El mismo precio para cualquier dirección dentro de la zona.",
+          "distance": "Un precio base hasta cierta distancia y un cargo por cada km extra (en línea recta desde la tienda)."
+        },
+        "baseDistance": "Distancia base (km)",
+        "baseDistanceHelp": "Kilómetros incluidos en el precio base. Ej.: 1,5",
+        "currencyDefault": "{currency} (moneda principal)",
+        "currency": "{currency}",
+        "otherCurrencyHelp": "Déjala vacía si no quieres ofrecer entrega cuando el cliente compra en esta moneda.",
+        "fields": {
+          "baseFee": "Precio base",
+          "flatFee": "Precio del envío",
+          "perKm": "Precio por km extra",
+          "freeAbove": "Envío gratis desde",
+          "minOrder": "Pedido mínimo"
+        },
+        "fieldHelp": {
+          "baseFee": "Cubre la distancia base.",
+          "flatFee": "Lo que paga el cliente por el envío.",
+          "perKm": "Por cada km (o fracción) más allá de la distancia base.",
+          "freeAbove": "Vacío o 0 = nunca gratis.",
+          "minOrder": "Bloquea la entrega por debajo de este importe. Vacío o 0 = sin mínimo."
+        },
+        "save": "Guardar tarifas",
+        "saving": "Guardando...",
+        "saved": "Tarifas guardadas.",
+        "errors": {
+          "invalid": "Revisa los campos marcados.",
+          "forbidden": "No tienes permiso para cambiar los ajustes.",
+          "deliveryNeedsArea": "Para activar la entrega, primero guarda la ubicación de la tienda y la zona en el mapa.",
+          "failed": "No se pudo guardar. Inténtalo de nuevo."
+        }
+      }
     }
   },
   "Promotions": {
