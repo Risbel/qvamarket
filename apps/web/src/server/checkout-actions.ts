@@ -25,6 +25,8 @@ const requestSchema = z.object({
   slug: z.string().min(1).max(63),
   currency: z.string().regex(/^[A-Z]{3}$/),
   expectedSubtotalMinor: z.number().int().nonnegative(),
+  /** the delivery fee shown (delivery orders); compared, never used as an amount */
+  expectedDeliveryFeeMinor: z.number().int().nonnegative().optional(),
   idempotencyKey: z.uuid(),
 });
 
@@ -32,7 +34,18 @@ export type PlaceOrderActionResult =
   | { ok: true; orderId: string }
   | {
       ok: false;
-      error: "invalid" | "notFound" | "empty" | "cartChanged" | "tooManyRequests" | "failed";
+      error:
+        | "invalid"
+        | "notFound"
+        | "empty"
+        | "cartChanged"
+        | "tooManyRequests"
+        | "failed"
+        | "pickupUnavailable"
+        | "deliveryUnavailable"
+        | "outsideArea"
+        | "belowMinimum"
+        | "deliveryChanged";
       fieldErrors?: Record<string, string[]>;
     };
 
@@ -52,7 +65,7 @@ export async function placeOrderAction(
 
   const parsedRequest = requestSchema.safeParse(request);
   if (!parsedRequest.success) return { ok: false, error: "invalid" };
-  const { slug, currency, expectedSubtotalMinor, idempotencyKey } = parsedRequest.data;
+  const { slug, currency, expectedSubtotalMinor, expectedDeliveryFeeMinor, idempotencyKey } = parsedRequest.data;
 
   const t = await getTranslations({
     locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale,
@@ -86,6 +99,15 @@ export async function placeOrderAction(
       expectedSubtotalMinor,
       idempotencyKey: idempotencyKey.toLowerCase(),
       accountUserId: session?.user.id ?? null,
+      fulfillment:
+        parsed.data.fulfillment === "delivery"
+          ? {
+              type: "delivery",
+              location: parsed.data.location!,
+              address: parsed.data.address,
+              expectedFeeMinor: expectedDeliveryFeeMinor ?? -1,
+            }
+          : { type: "pickup" },
       contact: {
         name: parsed.data.name,
         phone: normalizePhone(parsed.data.phone, findPhoneCountry(parsed.data.phoneCountry))!,

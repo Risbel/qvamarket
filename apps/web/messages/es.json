@@ -115,13 +115,46 @@
         "tooManyRequests": "Demasiados intentos seguidos. Espera unos minutos.",
         "notFound": "Esta tienda no está aceptando pedidos ahora mismo.",
         "failed": "No se pudo enviar el pedido. Inténtalo de nuevo.",
-        "priceFailed": "No se pudo cargar tu pedido. Recarga la página."
+        "priceFailed": "No se pudo cargar tu pedido. Recarga la página.",
+        "pickupUnavailable": "La tienda ya no ofrece recogida. Elige otra forma de entrega.",
+        "deliveryUnavailable": "La entrega a domicilio ya no está disponible. Revisa las opciones.",
+        "outsideArea": "La ubicación marcada está fuera de la zona de entrega.",
+        "belowMinimum": "Tu pedido no llega al mínimo para entrega a domicilio.",
+        "deliveryChanged": "El costo del envío cambió. Revisa el nuevo total y confirma de nuevo."
       },
       "account": {
         "signedIn": "Compras como {name}. El pedido aparecerá en tu cuenta.",
         "myAccount": "Mi cuenta",
         "guest": "¿Tienes cuenta? Inicia sesión y el pedido quedará en tu historial.",
         "signIn": "Iniciar sesión"
+      },
+      "subtotal": "Subtotal",
+      "fulfillment": {
+        "title": "Entrega",
+        "pickup": "Recoger en la tienda",
+        "pickupHelp": "Pasas a buscar tu pedido.",
+        "delivery": "Entrega a domicilio",
+        "deliveryHelp": "Te lo llevamos a tu dirección.",
+        "notInCurrency": "La entrega a domicilio no está disponible pagando en {currency}.",
+        "none": "Esta tienda no tiene formas de entrega disponibles ahora mismo."
+      },
+      "delivery": {
+        "pinHelp": "Marca en el mapa dónde entregamos tu pedido (toca el mapa o arrastra el marcador). La zona azul es donde entrega la tienda.",
+        "useMyLocation": "Usar mi ubicación",
+        "locating": "Buscando tu ubicación...",
+        "locationFailed": "No pudimos obtener tu ubicación: márcala en el mapa.",
+        "mapLabel": "Mapa para marcar la dirección de entrega",
+        "mapError": "No se pudo cargar el mapa. Actualiza la página o prueba con otro navegador.",
+        "tilesUnavailable": "El mapa no está disponible en este momento.",
+        "outside": "Esa ubicación está fuera de la zona de entrega de la tienda.",
+        "belowMinimum": "El pedido mínimo para entrega a domicilio es {amount}.",
+        "free": "Envío gratis ({km} km).",
+        "freeAbove": "¡Envío gratis por el importe de tu pedido! ({km} km)",
+        "fee": "Envío: {fee} ({km} km).",
+        "address": "Dirección",
+        "addressHelp": "Calle, número, entre calles, apartamento y alguna referencia (ej. casa azul, al lado de la bodega).",
+        "summaryLabel": "Envío",
+        "summaryFree": "Gratis"
       }
     },
     "order": {
@@ -135,7 +168,11 @@
       "total": "Total",
       "yourDetails": "Tus datos",
       "continueShopping": "Seguir comprando",
-      "myOrders": "Ver mis pedidos"
+      "myOrders": "Ver mis pedidos",
+      "delivery": "Entrega a domicilio",
+      "subtotal": "Subtotal",
+      "deliveryFee": "Envío",
+      "free": "Gratis"
     },
     "account": {
       "title": "Mi cuenta",
@@ -235,7 +272,8 @@
     "areaTooManyPoints": "La zona puede tener como máximo {max} puntos.",
     "fulfillmentRequired": "Activa al menos una forma de entrega.",
     "deliveryFeeRequired": "Indica un importe (puede ser 0).",
-    "distanceInvalid": "Introduce los km con hasta 3 decimales, entre 0 y {max}."
+    "distanceInvalid": "Introduce los km con hasta 3 decimales, entre 0 y {max}.",
+    "deliveryPinRequired": "Marca en el mapa dónde entregamos el pedido."
   },
   "Admin": {
     "title": "Panel de administración",

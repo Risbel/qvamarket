@@ -115,13 +115,46 @@
         "tooManyRequests": "Too many attempts in a row. Please wait a few minutes.",
         "notFound": "This store is not taking orders right now.",
         "failed": "Could not place the order. Please try again.",
-        "priceFailed": "Could not load your order. Reload the page."
+        "priceFailed": "Could not load your order. Reload the page.",
+        "pickupUnavailable": "The store no longer offers pickup. Choose another option.",
+        "deliveryUnavailable": "Home delivery is no longer available. Check the options.",
+        "outsideArea": "The marked location is outside the delivery area.",
+        "belowMinimum": "Your order does not reach the minimum for home delivery.",
+        "deliveryChanged": "The delivery cost changed. Check the new total and confirm again."
       },
       "account": {
         "signedIn": "You are buying as {name}. The order will appear in your account.",
         "myAccount": "My account",
         "guest": "Have an account? Sign in and the order will be kept in your history.",
         "signIn": "Sign in"
+      },
+      "subtotal": "Subtotal",
+      "fulfillment": {
+        "title": "Delivery",
+        "pickup": "Pick up at the store",
+        "pickupHelp": "You collect your order.",
+        "delivery": "Home delivery",
+        "deliveryHelp": "We bring it to your address.",
+        "notInCurrency": "Home delivery is not available when paying in {currency}.",
+        "none": "This store has no way to deliver orders right now."
+      },
+      "delivery": {
+        "pinHelp": "Mark on the map where to deliver your order (tap the map or drag the marker). The blue area is where the store delivers.",
+        "useMyLocation": "Use my location",
+        "locating": "Finding your location...",
+        "locationFailed": "We could not get your location: mark it on the map.",
+        "mapLabel": "Map to mark the delivery address",
+        "mapError": "The map could not be loaded. Reload the page or try another browser.",
+        "tilesUnavailable": "The map is not available right now.",
+        "outside": "That location is outside the store’s delivery area.",
+        "belowMinimum": "The minimum order for home delivery is {amount}.",
+        "free": "Free delivery ({km} km).",
+        "freeAbove": "Free delivery for your order amount! ({km} km)",
+        "fee": "Delivery: {fee} ({km} km).",
+        "address": "Address",
+        "addressHelp": "Street, number, cross streets, apartment and a landmark (e.g. blue house next to the grocery).",
+        "summaryLabel": "Delivery",
+        "summaryFree": "Free"
       }
     },
     "order": {
@@ -135,7 +168,11 @@
       "total": "Total",
       "yourDetails": "Your details",
       "continueShopping": "Continue shopping",
-      "myOrders": "See my orders"
+      "myOrders": "See my orders",
+      "delivery": "Home delivery",
+      "subtotal": "Subtotal",
+      "deliveryFee": "Delivery",
+      "free": "Free"
     },
     "account": {
       "title": "My account",
@@ -235,7 +272,8 @@
     "areaTooManyPoints": "The area can have at most {max} points.",
     "fulfillmentRequired": "Turn on at least one way to get the order.",
     "deliveryFeeRequired": "Enter an amount (it can be 0).",
-    "distanceInvalid": "Enter the km with up to 3 decimals, between 0 and {max}."
+    "distanceInvalid": "Enter the km with up to 3 decimals, between 0 and {max}.",
+    "deliveryPinRequired": "Mark on the map where to deliver the order."
   },
   "Admin": {
     "title": "Admin panel",

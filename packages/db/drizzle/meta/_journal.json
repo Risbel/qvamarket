@@ -120,6 +120,13 @@
       "when": 1791852143672,
       "tag": "0016_clever_taskmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791853184696,
+      "tag": "0017_pale_mole_man",
+      "breakpoints": true
     }
   ]
 }

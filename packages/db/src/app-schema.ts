@@ -840,6 +840,40 @@ export const orderItem = pgTable(
   ],
 );
 
+/**
+ * Where a delivery order goes (1:1 with orders whose fulfillment_type is delivery): a
+ * snapshot taken at checkout, never re-read from the store settings. The customer's pin is
+ * what the server checked against the service area and measured the distance from (straight
+ * line from the store); the address is what they typed (street, number, reference). The fee
+ * itself is order.delivery_fee_minor.
+ */
+export const orderDelivery = pgTable(
+  "order_delivery",
+  {
+    orderId: uuid("order_id").primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    address: text("address").notNull(),
+    locationLat: doublePrecision("location_lat").notNull(),
+    locationLng: doublePrecision("location_lng").notNull(),
+    distanceM: integer("distance_m").notNull(),
+    // the store's fee mode when the order was placed (free / flat / distance)
+    feeMode: text("fee_mode").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "order_delivery_order_store_tenant_fk",
+      columns: [table.orderId, table.storeId, table.tenantId],
+      foreignColumns: [order.id, order.storeId, order.tenantId],
+    }).onDelete("cascade"),
+    check("order_delivery_address_not_empty", sql`length(trim(${table.address})) > 0`),
+    check("order_delivery_location", sql`${table.locationLat} between -90 and 90 and ${table.locationLng} between -180 and 180`),
+    check("order_delivery_distance", sql`${table.distanceM} >= 0`),
+    check("order_delivery_fee_mode", sql.raw(`fee_mode in (${DELIVERY_FEE_MODES.map((m) => `'${m}'`).join(", ")})`)),
+  ],
+);
+
 export const ORDER_ACTORS = ["customer", "merchant", "system"] as const;
 
 /**

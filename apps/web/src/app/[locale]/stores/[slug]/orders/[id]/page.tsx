@@ -41,13 +41,19 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/[loc
         <p className="text-muted-foreground">{t("intro", { store: store.name })}</p>
       </div>
 
-      <section className="flex flex-col gap-2 rounded-lg border p-4" aria-labelledby="pickup-title">
-        <h2 id="pickup-title" className="font-semibold">
-          {t("pickup")}
+      <section className="flex flex-col gap-2 rounded-lg border p-4" aria-labelledby="fulfillment-title">
+        <h2 id="fulfillment-title" className="font-semibold">
+          {placed.delivery ? t("delivery") : t("pickup")}
         </h2>
-        {store.address && <p className="text-sm whitespace-pre-line">{store.address}</p>}
-        {store.pickupInstructions && (
-          <p className="text-sm whitespace-pre-line text-muted-foreground">{store.pickupInstructions}</p>
+        {placed.delivery ? (
+          <p className="text-sm whitespace-pre-line">{placed.delivery.address}</p>
+        ) : (
+          <>
+            {store.address && <p className="text-sm whitespace-pre-line">{store.address}</p>}
+            {store.pickupInstructions && (
+              <p className="text-sm whitespace-pre-line text-muted-foreground">{store.pickupInstructions}</p>
+            )}
+          </>
         )}
         <p className="text-sm text-muted-foreground">{t("payment")}</p>
         {(store.phone || store.whatsapp) && (
@@ -76,6 +82,18 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/[loc
             </li>
           ))}
         </ul>
+        {placed.delivery && (
+          <div className="flex flex-col gap-1 border-t pt-3 text-sm">
+            <div className="flex justify-between">
+              <span>{t("subtotal")}</span>
+              <span className="tabular-nums">{money(placed.subtotalMinor)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>{t("deliveryFee")}</span>
+              <span className="tabular-nums">{placed.deliveryFeeMinor === 0 ? t("free") : money(placed.deliveryFeeMinor)}</span>
+            </div>
+          </div>
+        )}
         <div className="flex justify-between border-t pt-3 font-semibold">
           <span>{t("total")}</span>
           <span className="tabular-nums">{money(placed.totalMinor)}</span>

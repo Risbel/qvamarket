@@ -1,6 +1,9 @@
-import { and, asc, customer, db, eq, inArray, order, orderItem, orderStatusHistory, productVariant, sql, store } from "@qvashop/db";
+import { and, asc, customer, db, eq, inArray, order, orderDelivery, orderItem, orderStatusHistory, productVariant, sql, store } from "@qvashop/db";
 import type { CartItem } from "@/lib/cart";
+import { deliveryFee, distanceMeters, insideArea } from "@/lib/delivery";
+import type { LatLng } from "@/lib/map";
 import { priceCart } from "./cart";
+import { getPublicDelivery } from "./public-delivery";
 
 // Public writes of the storefront (checkout) and the order confirmation. Like
 // public-store.ts / public-catalog.ts they run for an anonymous visitor, so all safety is in
@@ -16,23 +19,47 @@ export type CheckoutContact = {
   note: string | null;
 };
 
-export type PlaceOrderResult =
-  | { ok: true; orderId: string }
-  | { ok: false; error: "empty" | "cartChanged" | "storeClosed" };
+/** How the order reaches the customer, as chosen at checkout. */
+export type CheckoutFulfillment =
+  | { type: "pickup" }
+  | {
+      type: "delivery";
+      /** the customer's pin */
+      location: LatLng;
+      /** street, number, references, as typed */
+      address: string;
+      /** the fee the customer saw (compared, never used as an amount) */
+      expectedFeeMinor: number;
+    };
+
+type AbortReason =
+  | "cartChanged"
+  | "storeClosed"
+  | "pickupUnavailable"
+  | "deliveryUnavailable"
+  | "outsideArea"
+  | "belowMinimum"
+  | "deliveryChanged";
+
+export type PlaceOrderResult = { ok: true; orderId: string } | { ok: false; error: "empty" | AbortReason };
 
 /** Thrown inside the transaction to roll it back (nothing is kept, not even the number). */
 class CheckoutAbort extends Error {
-  constructor(readonly reason: "cartChanged" | "storeClosed") {
+  constructor(readonly reason: AbortReason) {
     super(reason);
   }
 }
 
 /**
- * Creates a pickup order from the shopper's cart. Amounts come only from priceCart() (the
+ * Creates an order (pickup or home delivery) from the shopper's cart. Amounts come only from priceCart() (the
  * browser sends ids and quantities; `expectedSubtotalMinor` is just what the customer saw,
  * and any difference, a changed line or a missing stock answers `cartChanged` so the
  * customer reviews the new amounts before ordering). One transaction:
- *   1. lock the store row (serializes this store's checkouts) and honor the idempotency key
+ *   1. lock the store row (serializes this store's checkouts and its settings saves) and honor
+ *      the idempotency key; check the chosen fulfillment against the store's delivery
+ *      settings read now: pickup must be on; delivery must be on, the pin inside the service
+ *      area, the subtotal above the minimum, and the fee (computed here) the one the customer
+ *      saw, otherwise `deliveryChanged`
  *   2. take the next order number
  *   3. lock the variants and take their stock (only where stock is tracked)
  *   4. find the customer (the signed-in account's record, or by phone for a guest), insert
@@ -47,6 +74,7 @@ export async function placeOrder(input: {
   idempotencyKey: string;
   /** the customer account signed in on this store's host; null = guest checkout */
   accountUserId: string | null;
+  fulfillment: CheckoutFulfillment;
 }): Promise<PlaceOrderResult> {
   const { storeId, currencyCode, contact, idempotencyKey } = input;
 
@@ -79,6 +107,8 @@ export async function placeOrder(input: {
         .from(order)
         .where(and(eq(order.storeId, storeId), eq(order.idempotencyKey, idempotencyKey)));
       if (again) return again.id;
+
+      const shipping = await deliveryForOrder(tx, storeId, currencyCode, cart.subtotalMinor, input.fulfillment);
 
       const [counter] = await tx
         .update(store)
@@ -129,11 +159,11 @@ export async function placeOrder(input: {
           customerPhone: contact.phone,
           customerEmail: contact.email,
           customerNote: contact.note,
-          fulfillmentType: "pickup",
+          fulfillmentType: input.fulfillment.type,
           currencyCode,
           subtotalMinor: cart.subtotalMinor,
-          deliveryFeeMinor: 0,
-          totalMinor: cart.subtotalMinor,
+          deliveryFeeMinor: shipping?.feeMinor ?? 0,
+          totalMinor: cart.subtotalMinor + (shipping?.feeMinor ?? 0),
           idempotencyKey,
         })
         .returning({ id: order.id });
@@ -160,6 +190,10 @@ export async function placeOrder(input: {
         }),
       );
 
+      if (shipping) {
+        await tx.insert(orderDelivery).values({ orderId: created.id, tenantId, storeId, ...shipping.snapshot });
+      }
+
       await tx.insert(orderStatusHistory).values({
         tenantId,
         orderId: created.id,
@@ -178,6 +212,35 @@ export async function placeOrder(input: {
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Checks the chosen fulfillment against the store's delivery settings (read inside the
+ * order's transaction) and, for delivery, returns the fee and the snapshot to store.
+ */
+async function deliveryForOrder(tx: Tx, storeId: string, currencyCode: string, subtotalMinor: number, fulfillment: CheckoutFulfillment) {
+  const options = await getPublicDelivery(storeId, tx);
+  if (fulfillment.type === "pickup") {
+    if (!options.pickupEnabled) throw new CheckoutAbort("pickupUnavailable");
+    return null;
+  }
+  const delivery = options.delivery;
+  if (!delivery) throw new CheckoutAbort("deliveryUnavailable");
+  if (!insideArea(fulfillment.location, delivery.area)) throw new CheckoutAbort("outsideArea");
+  const distanceM = Math.round(distanceMeters(delivery.location, fulfillment.location));
+  const quote = deliveryFee(delivery, delivery.rates[currencyCode] ?? null, distanceM, subtotalMinor);
+  if (!quote.ok) throw new CheckoutAbort(quote.reason === "noRate" ? "deliveryUnavailable" : "belowMinimum");
+  if (quote.feeMinor !== fulfillment.expectedFeeMinor) throw new CheckoutAbort("deliveryChanged");
+  return {
+    feeMinor: quote.feeMinor,
+    snapshot: {
+      address: fulfillment.address,
+      locationLat: fulfillment.location.lat,
+      locationLng: fulfillment.location.lng,
+      distanceM,
+      feeMode: delivery.mode,
+    },
+  };
+}
 
 /**
  * Guest checkout: the customer is found again by phone. Nothing typed here overwrites the
@@ -286,5 +349,13 @@ export async function getPublicOrder(storeId: string, orderId: string) {
     .where(and(eq(orderItem.orderId, row.id), eq(orderItem.storeId, storeId)))
     .orderBy(asc(orderItem.position));
 
-  return { ...row, items };
+  const [delivery] =
+    row.fulfillmentType === "delivery"
+      ? await db
+          .select({ address: orderDelivery.address, distanceM: orderDelivery.distanceM })
+          .from(orderDelivery)
+          .where(and(eq(orderDelivery.orderId, row.id), eq(orderDelivery.storeId, storeId)))
+      : [];
+
+  return { ...row, items, delivery: delivery ?? null };
 }
