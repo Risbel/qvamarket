@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getOrder } from "@/server/orders";
 import { requireMerchantPermission } from "@/server/tenant";
+import { OrderLocationMap } from "./order-location-map";
 import { PaymentsSection } from "./payments-section";
 import { StatusActions } from "./status-actions";
 
@@ -27,6 +28,9 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   const status = (value: string) => t(`status.${value as OrderStatus}`);
   // wa.me wants the number with its country code and no "+"; only offered for a full number
   const whatsapp = placed.customerPhone.startsWith("+") ? `https://wa.me/${placed.customerPhone.slice(1)}` : null;
+  const delivery = placed.delivery;
+  // The pin as text for the courier's own map app (6 decimals = about 10 cm)
+  const coordinates = delivery ? `${delivery.lat.toFixed(6)},${delivery.lng.toFixed(6)}` : null;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-4">
@@ -96,10 +100,12 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
                 <TableCell colSpan={3}>{t("detail.subtotal")}</TableCell>
                 <TableCell className="text-right tabular-nums">{money(placed.subtotalMinor)}</TableCell>
               </TableRow>
-              {placed.deliveryFeeMinor > 0 && (
+              {(placed.fulfillmentType === "delivery" || placed.deliveryFeeMinor > 0) && (
                 <TableRow>
                   <TableCell colSpan={3}>{t("detail.deliveryFee")}</TableCell>
-                  <TableCell className="text-right tabular-nums">{money(placed.deliveryFeeMinor)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {placed.deliveryFeeMinor === 0 ? t("detail.delivery.free") : money(placed.deliveryFeeMinor)}
+                  </TableCell>
                 </TableRow>
               )}
               <TableRow className="font-semibold">
@@ -111,6 +117,54 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
         </section>
 
         <div className="flex flex-col gap-6">
+          {delivery && coordinates && (
+            <section className="flex flex-col gap-2 rounded-lg border p-4 text-sm" aria-labelledby="delivery-title">
+              <h2 id="delivery-title" className="font-semibold">
+                {t("detail.delivery.title")}
+              </h2>
+              <p className="whitespace-pre-line">{delivery.address}</p>
+              <p className="text-muted-foreground">
+                {t("detail.delivery.distance", { km: (delivery.distanceM / 1000).toFixed(1) })}
+              </p>
+              <p className="text-muted-foreground">
+                {t("detail.deliveryFee")}:{" "}
+                {placed.deliveryFeeMinor === 0 ? t("detail.delivery.free") : money(placed.deliveryFeeMinor)} ·{" "}
+                {t(`detail.delivery.mode.${delivery.feeMode as "free" | "flat" | "distance"}`)}
+              </p>
+              <OrderLocationMap
+                location={{ lat: delivery.lat, lng: delivery.lng }}
+                locale={locale}
+                labels={{
+                  map: t("detail.delivery.mapLabel"),
+                  error: t("detail.delivery.mapError"),
+                  unavailable: t("detail.delivery.tilesUnavailable"),
+                }}
+              />
+              <p className="flex flex-wrap gap-x-2">
+                <span className="text-muted-foreground">{t("detail.delivery.openIn")}</span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${coordinates}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-4 hover:underline"
+                >
+                  Google Maps
+                </a>
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${delivery.lat.toFixed(6)}&mlon=${delivery.lng.toFixed(6)}#map=18/${delivery.lat.toFixed(6)}/${delivery.lng.toFixed(6)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-4 hover:underline"
+                >
+                  OpenStreetMap
+                </a>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("detail.delivery.coordinates")} <span className="select-all tabular-nums">{coordinates}</span>
+              </p>
+            </section>
+          )}
+
           <section className="flex flex-col gap-1 rounded-lg border p-4 text-sm" aria-labelledby="customer-title">
             <h2 id="customer-title" className="mb-1 font-semibold">
               {t("detail.customer")}

@@ -956,6 +956,21 @@
         "customer": "Cliente",
         "merchant": "Tienda",
         "system": "Sistema"
+      },
+      "delivery": {
+        "title": "Entrega a domicilio",
+        "distance": "A {km} km de la tienda (en línea recta)",
+        "free": "Gratis",
+        "mode": {
+          "free": "envío gratis",
+          "flat": "tarifa fija",
+          "distance": "por distancia"
+        },
+        "mapLabel": "Mapa con el punto de entrega",
+        "mapError": "No se pudo mostrar el mapa en este navegador.",
+        "tilesUnavailable": "El mapa base no está disponible ahora mismo; el punto de entrega sí.",
+        "openIn": "Abrir en:",
+        "coordinates": "Coordenadas:"
       }
     },
     "actions": {

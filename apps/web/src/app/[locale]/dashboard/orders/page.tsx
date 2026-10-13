@@ -1,3 +1,4 @@
+import { Truck } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { parseDateRange } from "@/lib/date-range";
@@ -118,6 +119,12 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
                   <Link href={`/dashboard/orders/${o.id}`} className="underline-offset-4 hover:underline">
                     {orderReference(o.number)}
                   </Link>
+                  {o.fulfillmentType === "delivery" && (
+                    <span title={t("fulfillment.delivery")} className="ml-1.5 inline-flex align-text-bottom text-muted-foreground">
+                      <Truck className="size-4" aria-hidden />
+                      <span className="sr-only">{t("fulfillment.delivery")}</span>
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   <LocalDateTime iso={o.createdAt.toISOString()} locale={locale} />

@@ -8,6 +8,7 @@ import {
   inArray,
   or,
   order,
+  orderDelivery,
   orderItem,
   orderPayment,
   orderStatusHistory,
@@ -134,7 +135,7 @@ export async function getOrder(scope: Scope, id: string) {
   const [row] = await db.select().from(order).where(and(inScope(scope), eq(order.id, id))).limit(1);
   if (!row) return null;
 
-  const [items, history, payments] = await Promise.all([
+  const [items, history, payments, [delivery]] = await Promise.all([
     db
       .select({
         id: orderItem.id,
@@ -178,9 +179,22 @@ export async function getOrder(scope: Scope, id: string) {
       .leftJoin(user, eq(user.id, orderPayment.recordedByUserId))
       .where(and(eq(orderPayment.orderId, row.id), eq(orderPayment.tenantId, scope.tenantId)))
       .orderBy(asc(orderPayment.paidAt)),
+    // The delivery snapshot taken at checkout (delivery orders only)
+    row.fulfillmentType === "delivery"
+      ? db
+          .select({
+            address: orderDelivery.address,
+            lat: orderDelivery.locationLat,
+            lng: orderDelivery.locationLng,
+            distanceM: orderDelivery.distanceM,
+            feeMode: orderDelivery.feeMode,
+          })
+          .from(orderDelivery)
+          .where(and(eq(orderDelivery.orderId, row.id), eq(orderDelivery.tenantId, scope.tenantId)))
+      : Promise.resolve([]),
   ]);
 
-  return { ...row, items, history, payments };
+  return { ...row, items, history, payments, delivery: delivery ?? null };
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

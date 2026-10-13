@@ -956,6 +956,21 @@
         "customer": "Customer",
         "merchant": "Store",
         "system": "System"
+      },
+      "delivery": {
+        "title": "Home delivery",
+        "distance": "{km} km from the store (straight line)",
+        "free": "Free",
+        "mode": {
+          "free": "free delivery",
+          "flat": "flat fee",
+          "distance": "by distance"
+        },
+        "mapLabel": "Map with the delivery point",
+        "mapError": "The map could not be shown in this browser.",
+        "tilesUnavailable": "The base map is not available right now; the delivery point is.",
+        "openIn": "Open in:",
+        "coordinates": "Coordinates:"
       }
     },
     "actions": {
