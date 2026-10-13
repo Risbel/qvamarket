@@ -640,10 +640,22 @@
   "Banner": {
     "title": "Banner de portada",
     "description": "Imágenes que se alternan en la parte superior de tu tienda. Si no subes ninguna, la sección no se muestra.",
+    "devices": {
+      "desktop": {
+        "title": "Ordenador y tableta",
+        "shape": "panorámico",
+        "help": "Se muestran en pantallas de 768 px de ancho o más, en formato {shape} (recomendado {size} px). Las imágenes se recortan para llenar el espacio: créalas con esa forma. Se reducen automáticamente a menos de {limit}.",
+        "empty": "Sin imágenes: en ordenadores y tabletas la portada no aparece."
+      },
+      "mobile": {
+        "title": "Móvil",
+        "shape": "cuadrado",
+        "help": "Se muestran en teléfonos (pantallas de menos de 768 px), en formato {shape} (recomendado {size} px). Las imágenes se recortan para llenar el espacio: créalas con esa forma. Se reducen automáticamente a menos de {limit}.",
+        "empty": "Sin imágenes: en teléfonos la portada no aparece."
+      }
+    },
     "count": "{count}/{max}",
-    "help": "JPG, PNG o WebP. Se muestran en formato horizontal 2:1 (recomendado 2000 × 1000 px) y se recortan para llenar el espacio, así que deja el contenido importante en el centro. Se reducen automáticamente a menos de {limit}.",
-    "empty": "Aún no hay imágenes: la portada no aparece en tu tienda.",
-    "add": "Añadir imágenes",
+    "add": "Añadir imágenes ({device})",
     "position": "Imagen {position}",
     "moveUp": "Mover antes",
     "moveDown": "Mover después",
@@ -652,6 +664,7 @@
     "uploading": "Subiendo {name}...",
     "compressedInfo": "subida ({from} → {to})",
     "tooMany": "Solo puedes añadir {count} imagen(es) más.",
+    "shapeWarning": "Mide {width} × {height}: se recortará para llenar el formato {shape} y parte del texto podría no verse. Para que no se corte nada, súbela de {size} px.",
     "errors": {
       "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
       "originalTooLarge": "El archivo es demasiado grande (máximo {max}).",

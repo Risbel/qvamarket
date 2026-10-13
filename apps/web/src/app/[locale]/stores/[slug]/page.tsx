@@ -41,8 +41,9 @@ export default async function StoreCatalogPage({
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
-      {/* The hero only exists once the merchant has uploaded banner images */}
-      {banner.length > 0 && <HeroCarousel images={banner} storeName={store.name} />}
+      {/* One hero per screen size, each only where the merchant uploaded images for it */}
+      {banner.mobile.length > 0 && <HeroCarousel images={banner.mobile} device="mobile" storeName={store.name} />}
+      {banner.desktop.length > 0 && <HeroCarousel images={banner.desktop} device="desktop" storeName={store.name} />}
       {products.length === 0 ? (
         <>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>

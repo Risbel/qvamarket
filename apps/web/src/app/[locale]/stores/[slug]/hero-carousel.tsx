@@ -5,6 +5,7 @@ import Autoplay from "embla-carousel-autoplay";
 import Fade from "embla-carousel-fade";
 import { PauseIcon, PlayIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { BANNER_FORMATS, type BannerDevice } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import {
   Carousel,
@@ -19,6 +20,27 @@ export type HeroImage = { id: string; url: string };
 
 const AUTOPLAY_DELAY_MS = 5000;
 
+// Each device's banner is only displayed on its screen size (breakpoint `md`, 48rem), at the
+// shape its images were made for (BANNER_FORMATS), so a banner with text is never cropped to
+// fit the other shape. Literal class names: Tailwind only generates what it can read.
+// `otherScreens` is where the banner is hidden: there each image is swapped for an inline
+// 1x1 pixel through <picture>, because browsers download images inside display:none (even
+// lazy ones), and a phone must not pay for the desktop banner.
+const DEVICES: Record<BannerDevice, { root: string; image: string; otherScreens: string }> = {
+  desktop: { root: "hidden md:block", image: "aspect-[48/13]", otherScreens: "not all and (min-width: 48rem)" },
+  mobile: { root: "md:hidden", image: "aspect-square", otherScreens: "(min-width: 48rem)" },
+};
+const EMPTY_PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+
+/**
+ * The autoplay plugin, if running. An inactive carousel (one image: `active: false`) never
+ * initializes its plugins, and then Embla's plugins() returns undefined despite its types.
+ */
+function autoplayOf(api: CarouselApi) {
+  const plugins: ReturnType<NonNullable<CarouselApi>["plugins"]> | undefined = api?.plugins();
+  return plugins?.autoplay;
+}
+
 // Translucent round buttons on top of the image, readable on any photo in both themes
 const overlayButton =
   "border-0 bg-background/70 text-foreground shadow-sm backdrop-blur hover:bg-background/90 dark:bg-background/60 dark:hover:bg-background/80";
@@ -29,7 +51,15 @@ const overlayButton =
  * they swipe, and the pause/play button is always theirs to use (moving content needs a way
  * to stop it). Arrows and dots only restart the timer. One image = a static banner.
  */
-export function HeroCarousel({ images, storeName }: { images: HeroImage[]; storeName: string }) {
+export function HeroCarousel({
+  images,
+  device,
+  storeName,
+}: {
+  images: HeroImage[];
+  device: BannerDevice;
+  storeName: string;
+}) {
   const t = useTranslations("Store.hero");
   const multiple = images.length > 1;
   // Created once (lazy state); Embla re-initializes when the plugin list changes identity
@@ -66,20 +96,20 @@ export function HeroCarousel({ images, storeName }: { images: HeroImage[]; store
   const selected = useSyncExternalStore(subscribeSelect, () => api?.selectedScrollSnap() ?? 0, () => 0);
   const playing = useSyncExternalStore(
     subscribeAutoplay,
-    () => api?.plugins().autoplay?.isPlaying() ?? false,
+    () => autoplayOf(api)?.isPlaying() ?? false,
     () => false,
   );
 
   useEffect(() => {
-    const autoplay = api?.plugins().autoplay;
+    const autoplay = autoplayOf(api);
     if (autoplay && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) autoplay.play();
   }, [api]);
 
   // Clicking an arrow or a dot moves on by itself: give the new image a full delay
-  const restartTimer = () => api?.plugins().autoplay?.reset();
+  const restartTimer = () => autoplayOf(api)?.reset();
 
   function togglePlaying() {
-    const autoplay = api?.plugins().autoplay;
+    const autoplay = autoplayOf(api);
     if (!autoplay) return;
     if (autoplay.isPlaying()) autoplay.stop();
     else autoplay.play();
@@ -91,7 +121,7 @@ export function HeroCarousel({ images, storeName }: { images: HeroImage[]; store
       opts={{ loop: true, active: multiple }}
       plugins={plugins}
       aria-label={t("label")}
-      className="overflow-hidden rounded-lg border bg-muted"
+      className={cn("overflow-hidden rounded-lg border bg-muted", DEVICES[device].root)}
     >
       <CarouselContent className="ml-0">
         {images.map((image, index) => (
@@ -100,18 +130,20 @@ export function HeroCarousel({ images, storeName }: { images: HeroImage[]; store
             className="pl-0"
             aria-label={multiple ? t("slide", { index: index + 1, count: images.length }) : undefined}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed */}
-            <img
-              src={image.url}
-              alt={index === 0 ? storeName : ""}
-              width={2048}
-              height={1024}
-              // The first image is usually the page's largest paint
-              loading={index === 0 ? "eager" : "lazy"}
-              fetchPriority={index === 0 ? "high" : "auto"}
-              draggable={false}
-              className="aspect-[2/1] w-full object-cover"
-            />
+            <picture>
+              <source media={DEVICES[device].otherScreens} srcSet={EMPTY_PIXEL} />
+              <img
+                src={image.url}
+                alt={index === 0 ? storeName : ""}
+                width={BANNER_FORMATS[device].width}
+                height={BANNER_FORMATS[device].height}
+                // The first image is usually the page's largest paint
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "auto"}
+                draggable={false}
+                className={cn("w-full object-cover", DEVICES[device].image)}
+              />
+            </picture>
           </CarouselItem>
         ))}
       </CarouselContent>

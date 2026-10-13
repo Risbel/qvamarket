@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, db, eq, sql, store, storeBannerImage } from "@qvashop/db";
-import { checkImageBytes, extensionFor, MAX_BANNER_IMAGES, type ImageCheck } from "@/lib/images";
+import { checkImageBytes, extensionFor, MAX_BANNER_IMAGES, type BannerDevice, type ImageCheck } from "@/lib/images";
 import { deleteObject, putObject, tenantKey } from "./storage";
 
 // Hero banner images: rows in `store_banner_image` + files in object storage under
 // tenants/<tenantId>/stores/<storeId>/banner/. Every function takes the tenant and store
 // from getMerchantOrNull()/requireMerchant() and filters by both; image ids come from the
-// client but are only ever matched together with them.
+// client but are only ever matched together with them. Order and limit are per device
+// (desktop and mobile are two independent lists).
 
 type Scope = { tenantId: string; storeId: string };
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -16,17 +17,31 @@ export type BannerError = Extract<ImageCheck, { ok: false }>["error"] | "notFoun
 const inScope = ({ tenantId, storeId }: Scope) =>
   and(eq(storeBannerImage.tenantId, tenantId), eq(storeBannerImage.storeId, storeId));
 
-/** Banner images in display order. */
+const onDevice = (scope: Scope, device: BannerDevice) =>
+  and(inScope(scope), eq(storeBannerImage.device, device));
+
+/** Banner images of both devices, each list in display order. */
 export async function listBannerImages(scope: Scope) {
   return db
     .select({
       id: storeBannerImage.id,
+      device: storeBannerImage.device,
       storageKey: storeBannerImage.storageKey,
       sizeBytes: storeBannerImage.sizeBytes,
     })
     .from(storeBannerImage)
     .where(inScope(scope))
     .orderBy(asc(storeBannerImage.position), asc(storeBannerImage.createdAt));
+}
+
+/** The other images of the same device, in display order. */
+async function deviceIds(tx: Tx, scope: Scope, device: BannerDevice) {
+  const rows = await tx
+    .select({ id: storeBannerImage.id })
+    .from(storeBannerImage)
+    .where(onDevice(scope, device))
+    .orderBy(asc(storeBannerImage.position), asc(storeBannerImage.createdAt));
+  return rows.map((row) => row.id);
 }
 
 /** Rewrites positions as 0..n-1 following `orderedIds`. */
@@ -39,7 +54,7 @@ async function setPositions(tx: Tx, scope: Scope, orderedIds: string[]) {
   }
 }
 
-/** Locks the store row: serializes uploads (limit) and reorders of the same store. */
+/** Locks the store row: serializes uploads (limit), deletes and reorders of the same store. */
 async function lockStore(tx: Tx, { tenantId, storeId }: Scope) {
   const [row] = await tx
     .select({ id: store.id })
@@ -52,18 +67,19 @@ async function lockStore(tx: Tx, { tenantId, storeId }: Scope) {
 
 /**
  * Validates the bytes (size, real type), uploads the file and then records it as the last
- * banner image. The file goes first, so a row never points at a missing file; if recording
+ * banner image of that device. The file goes first, so a row never points at a missing file; if recording
  * fails or is refused the file is removed again.
  */
 export async function addBannerImage(
   scope: Scope,
+  device: BannerDevice,
   bytes: Uint8Array,
 ): Promise<{ ok: true; id: string } | { ok: false; error: BannerError }> {
   const check = checkImageBytes(bytes);
   if (!check.ok) return check;
 
   // Cheap early exit; the authoritative check runs again under the store lock below
-  const [existing] = await db.select({ total: count() }).from(storeBannerImage).where(inScope(scope));
+  const [existing] = await db.select({ total: count() }).from(storeBannerImage).where(onDevice(scope, device));
   if (existing.total >= MAX_BANNER_IMAGES) return { ok: false, error: "limit" };
 
   const key = tenantKey(
@@ -85,7 +101,7 @@ export async function addBannerImage(
           next: sql<number>`coalesce(max(${storeBannerImage.position}) + 1, 0)`,
         })
         .from(storeBannerImage)
-        .where(inScope(scope));
+        .where(onDevice(scope, device));
       if (stats.total >= MAX_BANNER_IMAGES) return { ok: false, error: "limit" } as const;
 
       const [row] = await tx
@@ -93,6 +109,7 @@ export async function addBannerImage(
         .values({
           tenantId: scope.tenantId,
           storeId: scope.storeId,
+          device,
           storageKey: key,
           contentType: check.type,
           sizeBytes: bytes.length,
@@ -110,7 +127,7 @@ export async function addBannerImage(
   }
 }
 
-/** Removes the row (the rest close the gap) and then the file. */
+/** Removes the row (the rest of its device close the gap) and then the file. */
 export async function deleteBannerImage(
   scope: Scope,
   imageId: string,
@@ -120,14 +137,9 @@ export async function deleteBannerImage(
     const [row] = await tx
       .delete(storeBannerImage)
       .where(and(inScope(scope), eq(storeBannerImage.id, imageId)))
-      .returning({ storageKey: storeBannerImage.storageKey });
+      .returning({ storageKey: storeBannerImage.storageKey, device: storeBannerImage.device });
     if (!row) return null;
-    const rest = await tx
-      .select({ id: storeBannerImage.id })
-      .from(storeBannerImage)
-      .where(inScope(scope))
-      .orderBy(asc(storeBannerImage.position), asc(storeBannerImage.createdAt));
-    await setPositions(tx, scope, rest.map((r) => r.id));
+    await setPositions(tx, scope, await deviceIds(tx, scope, row.device as BannerDevice));
     return row;
   });
   if (!removed) return { ok: false, error: "notFound" };
@@ -139,7 +151,7 @@ export async function deleteBannerImage(
   return { ok: true };
 }
 
-/** Swaps the image with its neighbour; positions are rewritten as 0..n-1. */
+/** Swaps the image with its neighbour on the same device; positions are rewritten as 0..n-1. */
 export async function moveBannerImage(
   scope: Scope,
   imageId: string,
@@ -147,16 +159,16 @@ export async function moveBannerImage(
 ): Promise<{ ok: true } | { ok: false; error: "notFound" }> {
   return db.transaction(async (tx) => {
     if (!(await lockStore(tx, scope))) return { ok: false, error: "notFound" } as const;
-    const all = await tx
-      .select({ id: storeBannerImage.id })
+    const [image] = await tx
+      .select({ device: storeBannerImage.device })
       .from(storeBannerImage)
-      .where(inScope(scope))
-      .orderBy(asc(storeBannerImage.position), asc(storeBannerImage.createdAt));
-    const index = all.findIndex((row) => row.id === imageId);
-    if (index < 0) return { ok: false, error: "notFound" } as const;
+      .where(and(inScope(scope), eq(storeBannerImage.id, imageId)))
+      .limit(1);
+    if (!image) return { ok: false, error: "notFound" } as const;
+    const ordered = await deviceIds(tx, scope, image.device as BannerDevice);
+    const index = ordered.indexOf(imageId);
     const target = direction === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= all.length) return { ok: true } as const;
-    const ordered = all.map((row) => row.id);
+    if (target < 0 || target >= ordered.length) return { ok: true } as const;
     [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
     await setPositions(tx, scope, ordered);
     return { ok: true } as const;

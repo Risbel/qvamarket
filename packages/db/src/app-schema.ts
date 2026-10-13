@@ -214,9 +214,13 @@ export const storeDelivery = pgTable(
   ],
 );
 
-// Images of the storefront's hero banner (a carousel at the top of the home page). The
-// section only exists when a store has at least one. Files live under
+// Images of the storefront's hero banner (a carousel at the top of the home page). Each image
+// belongs to one screen size: "desktop" images are only shown on wide screens and "mobile"
+// images only on phones (their shapes differ and banners carry text, so neither is cropped
+// to fit the other). A screen size without images shows no banner. Files live under
 // tenants/<tenantId>/stores/<storeId>/banner/.
+export const BANNER_DEVICES = ["desktop", "mobile"] as const;
+
 export const storeBannerImage = pgTable(
   "store_banner_image",
   {
@@ -228,7 +232,8 @@ export const storeBannerImage = pgTable(
     storageKey: text("storage_key").notNull().unique(),
     contentType: text("content_type").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
-    // 0 is shown first
+    device: text("device").default("desktop").notNull(),
+    // 0 is shown first; positions are counted per device
     position: integer("position").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -239,7 +244,8 @@ export const storeBannerImage = pgTable(
       foreignColumns: [store.id, store.tenantId],
     }).onDelete("cascade"),
     index("store_banner_image_tenantId_idx").on(table.tenantId),
-    index("store_banner_image_storeId_position_idx").on(table.storeId, table.position),
+    index("store_banner_image_storeId_device_position_idx").on(table.storeId, table.device, table.position),
+    check("store_banner_image_device", sql.raw(`device in (${BANNER_DEVICES.map((d) => `'${d}'`).join(", ")})`)),
     check("store_banner_image_size_positive", sql`${table.sizeBytes} > 0`),
     check("store_banner_image_position", sql`${table.position} >= 0`),
   ],

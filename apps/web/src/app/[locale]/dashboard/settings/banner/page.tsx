@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { BANNER_DEVICES } from "@/lib/images";
 import { listBannerImages } from "@/server/store-banner";
 import { publicUrl } from "@/server/storage";
 import { requireMerchantPermission } from "@/server/tenant";
@@ -18,13 +19,21 @@ export default async function BannerSettingsPage({
   return (
     <>
       <SectionHeader title={t("title")} description={t("description")} />
-      <BannerImages
-        images={images.map((image) => ({
-          id: image.id,
-          url: publicUrl(image.storageKey),
-          sizeBytes: image.sizeBytes,
-        }))}
-      />
+      <div className="flex flex-col gap-10">
+        {BANNER_DEVICES.map((device) => (
+          <BannerImages
+            key={device}
+            device={device}
+            images={images
+              .filter((image) => image.device === device)
+              .map((image) => ({
+                id: image.id,
+                url: publicUrl(image.storageKey),
+                sizeBytes: image.sizeBytes,
+              }))}
+          />
+        ))}
+      </div>
     </>
   );
 }

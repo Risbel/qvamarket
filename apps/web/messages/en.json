@@ -640,10 +640,22 @@
   "Banner": {
     "title": "Home banner",
     "description": "Images that rotate at the top of your store. If you upload none, the section is not shown.",
+    "devices": {
+      "desktop": {
+        "title": "Desktop and tablet",
+        "shape": "panoramic",
+        "help": "Shown on screens 768 px wide or more, in a {shape} format ({size} px recommended). Images are cropped to fill the space: make them in that shape. Automatically reduced to under {limit}.",
+        "empty": "No images: the banner does not appear on desktops and tablets."
+      },
+      "mobile": {
+        "title": "Mobile",
+        "shape": "square",
+        "help": "Shown on phones (screens under 768 px), in a {shape} format ({size} px recommended). Images are cropped to fill the space: make them in that shape. Automatically reduced to under {limit}.",
+        "empty": "No images: the banner does not appear on phones."
+      }
+    },
     "count": "{count}/{max}",
-    "help": "JPG, PNG or WebP. Shown landscape at 2:1 (2000 × 1000 px recommended) and cropped to fill, so keep the important part in the center. Automatically reduced to under {limit}.",
-    "empty": "No images yet: the banner does not appear in your store.",
-    "add": "Add images",
+    "add": "Add images ({device})",
     "position": "Image {position}",
     "moveUp": "Move earlier",
     "moveDown": "Move later",
@@ -652,6 +664,7 @@
     "uploading": "Uploading {name}...",
     "compressedInfo": "uploaded ({from} → {to})",
     "tooMany": "You can only add {count} more image(s).",
+    "shapeWarning": "It is {width} × {height}: it will be cropped to fill the {shape} format and part of the text may not show. To keep everything, upload it at {size} px.",
     "errors": {
       "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
       "originalTooLarge": "The file is too large (max {max}).",

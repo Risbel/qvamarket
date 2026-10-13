@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { MAX_IMAGE_BYTES } from "@/lib/images";
+import { BANNER_DEVICES, MAX_IMAGE_BYTES } from "@/lib/images";
 import { addBannerImage, deleteBannerImage, moveBannerImage, type BannerError } from "./store-banner";
 import { getMerchantOrNull } from "./tenant";
 
@@ -16,16 +16,20 @@ async function authorize() {
   return { tenantId: merchant.tenantId, storeId: merchant.store.id };
 }
 
+/** FormData: `device` (desktop | mobile) and `file`. */
 export async function uploadBannerImageAction(formData: FormData): Promise<BannerActionResult> {
   const scope = await authorize();
   if (!scope) return { ok: false, error: "forbidden" };
+
+  const device = z.enum(BANNER_DEVICES).safeParse(formData.get("device"));
+  if (!device.success) return { ok: false, error: "failed" };
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "empty" };
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "tooLarge" };
 
   try {
-    const result = await addBannerImage(scope, new Uint8Array(await file.arrayBuffer()));
+    const result = await addBannerImage(scope, device.data, new Uint8Array(await file.arrayBuffer()));
     return result.ok ? { ok: true } : result;
   } catch (error) {
     console.error("uploadBannerImageAction failed", error);

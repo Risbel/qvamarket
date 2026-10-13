@@ -1,3 +1,5 @@
+import type { BANNER_DEVICES as DB_BANNER_DEVICES } from "@qvashop/db/schema";
+
 // Image rules shared by the browser (compression target) and the server (hard checks).
 // The server never trusts the client: it re-checks size and the real file type.
 
@@ -10,10 +12,32 @@ export const MAX_IMAGE_DIMENSION = 1600;
 /** Largest original we accept to try compressing in the browser (phone photos are 3–12 MB). */
 export const MAX_ORIGINAL_BYTES = 20_000_000;
 export const MAX_IMAGES_PER_PRODUCT = 6;
-/** Hero banner of the storefront: images shown 2:1, cropped to fill. */
+/** Hero banner of the storefront: at most this many images per screen size. */
 export const MAX_BANNER_IMAGES = 5;
-/** Banner longest side: the storefront is 1024 css px wide, so this stays sharp on 2x screens. */
-export const BANNER_MAX_DIMENSION = 2048;
+
+/**
+ * Banner screen sizes: desktop images are only shown from the `md` breakpoint (768 px) up,
+ * mobile images only below it. Client-safe copy of the schema list.
+ */
+export const BANNER_DEVICES = ["desktop", "mobile"] as const satisfies typeof DB_BANNER_DEVICES;
+export type BannerDevice = (typeof BANNER_DEVICES)[number];
+
+/**
+ * Shape of each screen size's banner (the recommended upload size; images are shown at this
+ * ratio and cropped to fill) and the longest side after compression. Desktop: a wide
+ * panoramic strip (1920 x 520, about 3.7:1, a common web banner size); the storefront is
+ * 1024 css px wide, so 2048 stays sharp on 2x screens. Mobile: square, about 390 css px x 3.
+ */
+export const BANNER_FORMATS: Record<BannerDevice, { width: number; height: number; maxDimension: number }> = {
+  desktop: { width: 1920, height: 520, maxDimension: 2048 },
+  mobile: { width: 1080, height: 1080, maxDimension: 1200 },
+};
+
+/** True when an image's shape is within 3% of the banner's, so cropping is negligible. */
+export function fitsBannerFormat(device: BannerDevice, width: number, height: number) {
+  const format = BANNER_FORMATS[device];
+  return Math.abs(width / height / (format.width / format.height) - 1) <= 0.03;
+}
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type ImageType = (typeof IMAGE_TYPES)[number];

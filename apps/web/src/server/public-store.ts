@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { and, asc, db, eq, store, storeBannerImage } from "@qvashop/db";
+import type { BannerDevice } from "@/lib/images";
 import { getStoreCurrencies } from "./currencies";
 import { publicUrl } from "./storage";
 
@@ -43,14 +44,19 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
 });
 
 /**
- * Hero banner images of a store, in display order. Only call it with the id of a store
- * returned by getPublicStoreBySlug (so an active one). Returns public URLs only.
+ * Hero banner images of a store, one list per device, each in display order. Only call it
+ * with the id of a store returned by getPublicStoreBySlug (so an active one). Returns public
+ * URLs only.
  */
 export const listPublicBannerImages = cache(async (storeId: string) => {
   const rows = await db
-    .select({ id: storeBannerImage.id, storageKey: storeBannerImage.storageKey })
+    .select({ id: storeBannerImage.id, device: storeBannerImage.device, storageKey: storeBannerImage.storageKey })
     .from(storeBannerImage)
     .where(eq(storeBannerImage.storeId, storeId))
     .orderBy(asc(storeBannerImage.position), asc(storeBannerImage.createdAt));
-  return rows.map((row) => ({ id: row.id, url: publicUrl(row.storageKey) }));
+  const banner: Record<BannerDevice, { id: string; url: string }[]> = { desktop: [], mobile: [] };
+  for (const row of rows) {
+    banner[row.device as BannerDevice]?.push({ id: row.id, url: publicUrl(row.storageKey) });
+  }
+  return banner;
 });

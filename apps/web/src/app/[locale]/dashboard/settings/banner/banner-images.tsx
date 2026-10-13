@@ -6,14 +6,17 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { compressForUpload } from "@/lib/compress-image";
 import {
-  BANNER_MAX_DIMENSION,
+  BANNER_FORMATS,
+  fitsBannerFormat,
   formatBytes,
   IMAGE_TYPES,
   MAX_BANNER_IMAGES,
   MAX_IMAGE_BYTES,
   MAX_ORIGINAL_BYTES,
+  type BannerDevice,
 } from "@/lib/images";
 import { useHydrated } from "@/lib/use-hydrated";
+import { cn } from "@/lib/utils";
 import {
   deleteBannerImageAction,
   moveBannerImageAction,
@@ -25,10 +28,38 @@ import { Input } from "@/components/ui/input";
 
 export type BannerImage = { id: string; url: string; sizeBytes: number };
 
-type Line = { name: string; ok: boolean; text: string };
+type Line = { name: string; tone: "ok" | "warn" | "error"; text: string };
 
-/** Banner images in display order: upload (several at once), reorder, remove. */
-export function BannerImages({ images }: { images: BannerImage[] }) {
+const TONES: Record<Line["tone"], string> = {
+  ok: "text-muted-foreground",
+  warn: "text-amber-700 dark:text-amber-400",
+  error: "text-destructive",
+};
+
+// Same shapes as the storefront hero (literal class names for Tailwind)
+const PREVIEW_CLASSES: Record<BannerDevice, string> = {
+  desktop: "aspect-[48/13] sm:w-80",
+  mobile: "aspect-square sm:w-40",
+};
+
+/** Width and height of an image file, or null when the browser cannot tell. */
+async function imageSize(file: Blob) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The banner images of one device (desktop or mobile) in display order: upload (several at
+ * once), reorder, remove. Warns when an image's shape differs from the device's format, since
+ * it will be cropped to fill (and banners usually carry text).
+ */
+export function BannerImages({ device, images }: { device: BannerDevice; images: BannerImage[] }) {
   const t = useTranslations("Banner");
   const locale = useLocale();
   const router = useRouter();
@@ -38,6 +69,12 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
   const [status, setStatus] = useState<string | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
 
+  const format = BANNER_FORMATS[device];
+  const formatValues = {
+    shape: t(`devices.${device}.shape`),
+    size: `${format.width} × ${format.height}`,
+  };
+  const titleId = `banner-${device}-title`;
   const remaining = MAX_BANNER_IMAGES - images.length;
   const errorText = (error: Exclude<BannerActionResult, { ok: true }>["error"]) =>
     t(`errors.${error}`, { count: MAX_BANNER_IMAGES, limit: formatBytes(MAX_IMAGE_BYTES, locale) });
@@ -47,7 +84,7 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
     setLines([]);
     setBusy(true);
     if (files.length > remaining) {
-      setLines([{ name: "", ok: false, text: t("tooMany", { count: remaining }) }]);
+      setLines([{ name: "", tone: "error", text: t("tooMany", { count: remaining }) }]);
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
       return;
@@ -58,10 +95,10 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
       setStatus(t("compressing", { name: file.name }));
       let compressed: Awaited<ReturnType<typeof compressForUpload>>;
       try {
-        compressed = await compressForUpload(file, { maxDimension: BANNER_MAX_DIMENSION });
+        compressed = await compressForUpload(file, { maxDimension: format.maxDimension });
       } catch {
         // the browser could not decode the file (corrupt, or not really an image)
-        results.push({ name: file.name, ok: false, text: t("errors.unreadable") });
+        results.push({ name: file.name, tone: "error", text: t("errors.unreadable") });
         continue;
       }
 
@@ -69,7 +106,7 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
         if (!compressed.ok) {
           results.push({
             name: file.name,
-            ok: false,
+            tone: "error",
             text: t(`errors.${compressed.error}`, {
               max: formatBytes(MAX_ORIGINAL_BYTES, locale),
               limit: formatBytes(MAX_IMAGE_BYTES, locale),
@@ -80,23 +117,32 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
 
         setStatus(t("uploading", { name: file.name }));
         const body = new FormData();
+        body.append("device", device);
         body.append("file", compressed.file, compressed.file.type === "image/jpeg" ? "banner.jpg" : "banner.webp");
         const result = await uploadBannerImageAction(body);
+        if (!result.ok) {
+          results.push({ name: file.name, tone: "error", text: errorText(result.error) });
+          continue;
+        }
+
+        const uploaded = t("compressedInfo", {
+          from: formatBytes(compressed.originalBytes, locale),
+          to: formatBytes(compressed.file.size, locale),
+        });
+        // Uploaded either way (the merchant may accept the crop), but say what will happen
+        const size = await imageSize(compressed.file);
         results.push(
-          result.ok
+          size && !fitsBannerFormat(device, size.width, size.height)
             ? {
                 name: file.name,
-                ok: true,
-                text: t("compressedInfo", {
-                  from: formatBytes(compressed.originalBytes, locale),
-                  to: formatBytes(compressed.file.size, locale),
-                }),
+                tone: "warn",
+                text: `${uploaded}. ${t("shapeWarning", { width: size.width, height: size.height, ...formatValues })}`,
               }
-            : { name: file.name, ok: false, text: errorText(result.error) },
+            : { name: file.name, tone: "ok", text: uploaded },
         );
       } catch {
         // e.g. the request was rejected before reaching the action (body too large)
-        results.push({ name: file.name, ok: false, text: t("errors.failed") });
+        results.push({ name: file.name, tone: "error", text: t("errors.failed") });
       }
     }
 
@@ -113,27 +159,31 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
     try {
       const result = await action();
       if (!result.ok && result.error !== "notFound") {
-        setLines([{ name: "", ok: false, text: errorText(result.error) }]);
+        setLines([{ name: "", tone: "error", text: errorText(result.error) }]);
       }
     } catch {
-      setLines([{ name: "", ok: false, text: t("errors.failed") }]);
+      setLines([{ name: "", tone: "error", text: t("errors.failed") }]);
     }
     setBusy(false);
     router.refresh();
   }
 
   return (
-    // The page's section header already names it; this adds the rules and the count
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">
-        {t("help", { limit: formatBytes(MAX_IMAGE_BYTES, locale) })}{" "}
-        <span className="font-medium text-foreground">
-          {t("count", { count: images.length, max: MAX_BANNER_IMAGES })}
-        </span>
-      </p>
+    <section className="flex flex-col gap-4" aria-labelledby={titleId}>
+      <div>
+        <h2 id={titleId} className="text-lg font-semibold">
+          {t(`devices.${device}.title`)}{" "}
+          <span className="text-sm font-normal text-muted-foreground">
+            {t("count", { count: images.length, max: MAX_BANNER_IMAGES })}
+          </span>
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t(`devices.${device}.help`, { ...formatValues, limit: formatBytes(MAX_IMAGE_BYTES, locale) })}
+        </p>
+      </div>
 
       {images.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        <p className="text-sm text-muted-foreground">{t(`devices.${device}.empty`)}</p>
       ) : (
         <ol className="flex flex-col gap-3">
           {images.map((image, index) => (
@@ -142,10 +192,10 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
               <img
                 src={image.url}
                 alt={t("position", { position: index + 1 })}
-                width={320}
-                height={160}
+                width={format.width}
+                height={format.height}
                 loading="lazy"
-                className="aspect-[2/1] w-full rounded-md bg-muted object-cover sm:w-64"
+                className={cn("w-full rounded-md bg-muted object-cover", PREVIEW_CLASSES[device])}
               />
               <div className="flex flex-1 flex-col gap-2">
                 <div className="text-sm">
@@ -196,7 +246,7 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
             type="file"
             multiple
             accept={IMAGE_TYPES.join(",")}
-            aria-label={t("add")}
+            aria-label={t("add", { device: t(`devices.${device}.title`) })}
             disabled={!hydrated || busy}
             onChange={(event) => onFiles(Array.from(event.target.files ?? []))}
           />
@@ -211,13 +261,13 @@ export function BannerImages({ images }: { images: BannerImage[] }) {
       {lines.length > 0 && (
         <ul className="flex flex-col gap-1 text-sm" aria-live="polite">
           {lines.map((line, i) => (
-            <li key={i} className={line.ok ? "text-muted-foreground" : "text-destructive"}>
+            <li key={i} className={TONES[line.tone]}>
               {line.name && <span className="font-medium">{line.name}: </span>}
               {line.text}
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }
