@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Palette, Store, Truck } from "lucide-react";
+import { Coins, Palette, Store, Truck, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ const SECTIONS = [
   { key: "branding", href: "/dashboard/settings/branding", icon: Palette },
   { key: "currencies", href: "/dashboard/settings/currencies", icon: Coins },
   { key: "pickup", href: "/dashboard/settings/pickup", icon: Truck },
+  { key: "delivery", href: "/dashboard/settings/delivery", icon: MapPin },
 ] as const;
 
 /** Section menu: a horizontal scrolling row on phones, a vertical list from `md` up. */

@@ -230,7 +230,9 @@
     "amountInvalidWhole": "Enter an amount above zero, without decimals (e.g. 1500)",
     "paymentExceedsDue": "It cannot be more than what is due ({amount})",
     "refundExceedsPaid": "It cannot be more than what was collected ({amount})",
-    "dateInFuture": "The date cannot be in the future"
+    "dateInFuture": "The date cannot be in the future",
+    "areaTooFewPoints": "The area needs at least 3 points.",
+    "areaTooManyPoints": "The area can have at most {max} points."
   },
   "Admin": {
     "title": "Admin panel",
@@ -633,7 +635,8 @@
       "general": "General",
       "branding": "Branding",
       "currencies": "Currencies",
-      "pickup": "Pickup"
+      "pickup": "Pickup",
+      "delivery": "Home delivery"
     },
     "currencies": {
       "title": "Currencies",
@@ -688,6 +691,34 @@
         "forbidden": "You don't have permission to do this.",
         "failed": "Could not save. Please try again."
       }
+    },
+    "delivery": {
+      "title": "Home delivery",
+      "description": "Mark where your store is and draw the area you deliver to on the map. Fees are set up in the next step.",
+      "modeLabel": "What to do on the map",
+      "mode": {
+        "location": "Place the store",
+        "area": "Draw the area"
+      },
+      "modeHelp": {
+        "location": "Click on the map where your store is (or drag the marker). Orders leave from there and distance is measured from it.",
+        "area": "Click point by point around the area you deliver to. It closes itself by joining the last point to the first."
+      },
+      "mapLabel": "Delivery area map",
+      "mapError": "The map could not be loaded. Try another browser or reload the page.",
+      "undo": "Undo last point",
+      "clearArea": "Clear area",
+      "points": "{count, plural, =0 {No points} one {# point} other {# points}}",
+      "locationSet": "Store at {lat}, {lng}",
+      "noLocation": "You have not marked where your store is yet.",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Delivery area saved.",
+      "errors": {
+        "forbidden": "You are not allowed to change the settings.",
+        "failed": "Could not save. Try again."
+      },
+      "tilesUnavailable": "The base map is not available right now. You can still place the store and draw the area."
     }
   },
   "Promotions": {

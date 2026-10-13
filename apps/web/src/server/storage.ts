@@ -1,6 +1,7 @@
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   PutObjectCommand,
   S3Client,
@@ -83,6 +84,18 @@ export async function deleteObject(key: string): Promise<void> {
   await getClient().send(
     new DeleteObjectCommand({ Bucket: env("S3_BUCKET"), Key: key }),
   );
+}
+
+/**
+ * Reads `length` bytes of an object from `offset` (an HTTP range request), e.g. one tile of
+ * the map archive. Returns the bytes and the object's ETag (changes when it is replaced).
+ */
+export async function getObjectRange(key: string, offset: number, length: number) {
+  const response = await getClient().send(
+    new GetObjectCommand({ Bucket: env("S3_BUCKET"), Key: key, Range: `bytes=${offset}-${offset + length - 1}` }),
+  );
+  const data = await response.Body!.transformToByteArray();
+  return { data, etag: response.ETag };
 }
 
 /** Public URL of an object (the bucket allows anonymous reads). */

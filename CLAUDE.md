@@ -25,6 +25,7 @@ QvaShop is a **B2B2C multi-tenant SaaS** for creating online stores.
 | UI | Tailwind CSS + shadcn/ui |
 | i18n | next-intl — locales `es` (default) and `en` |
 | Forms / validation | react-hook-form + zod, connected with `@hookform/resolvers` (`zodResolver`) |
+| Maps | **MapLibre GL** + **Protomaps** vector tiles of Cuba (one PMTiles archive in our own bucket, served by our tile route). No map API, no key, no third-party server (see Maps) |
 | Image compression | `browser-image-compression` in the browser: every product image is shrunk to a WebP **under 1 MB** (max 1600 px) before upload |
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | Better Auth (email + password, organizations, admin/impersonation plugins) |
@@ -163,8 +164,25 @@ Orders are created at storefront checkout (guest checkout, no customer account).
 - **Money:** integer minor units (e.g. cents) + currency code, `bigint` columns (currencies like CUP reach large amounts). Never floats.
 - Order totals are computed server-side at checkout; the client never sends prices.
 
-### Home delivery (to be designed in Phase 5)
-Merchant configures per store: delivery on/off, pickup on/off, delivery zones, fee per zone, minimum order, optional schedule/slots. Checkout reads this config and fills `order_delivery`. Open decision at that point: zones by neighborhood/municipality list vs. radius, flat vs. variable fees.
+### Home delivery (Phase 5, decided 2026-10)
+- **Where:** the merchant places the store on a map (orders leave from there) and **draws the service area as a polygon** (click corner by corner; undo last point, clear). Not a list of neighborhoods, not a radius. At checkout the customer drops a pin; the order is accepted only inside the polygon (point-in-polygon, checked on the server).
+- **Distance = straight line** (haversine) between the store pin and the customer pin, computed on our server; no routing engine.
+- **Fees (step 2, not built yet):** a delivery on/off toggle and a shipping mode (free / flat / distance-based), modelled on the merchant's reference screen: base price, base distance (km covered by the base price), per-km charge beyond it, free delivery above an order amount (0 = never), minimum order value (blocks checkout below it). Amounts per store currency (no conversion). Pickup on/off too. Time slots come later; until then the customer can write a preferred time in the note.
+- **Built (step 1):** table `store_delivery` (1:1 with store, migration `0015`: `location_lat`/`location_lng` double precision, `service_area` jsonb of `[lng, lat]` corners, GeoJSON order, not closed, 3 to 200 corners by DB check; composite FK to the store). Settings > **Delivery** (`/dashboard/settings/delivery`, `store:update`): `delivery-area-form.tsx` (map modes "place the store" / "draw the area", draggable store marker) -> `saveDeliveryAreaAction` (`catalog-actions.ts`) -> `saveDeliveryArea` (`src/server/delivery-settings.ts`), schema `createDeliveryAreaSchema` (`lib/validation/delivery.ts`).
+- Checkout reads this config and fills `order_delivery` (step 3).
+
+### Maps (decided 2026-10)
+- **Base map = one PMTiles archive** (Protomaps vector tiles cut from the OpenStreetMap-based daily build, bbox of Cuba `-85.1,19.7,-74.0,23.4`, `MAP_BOUNDS` in `src/lib/map.ts`) stored in our bucket at `platform/maps/cuba.pmtiles` (`MAP_ARCHIVE_KEY`). The browser asks **`/api/map/tiles/{z}/{x}/{y}`** (same origin on every host, store subdomains included); the route reads that tile from the archive with an S3 range request (`src/server/map-tiles.ts`, `pmtiles` library, header/directories cached per process; a failed read drops that cache so the next request retries) and returns it **uncompressed** (pmtiles already decompresses tiles, and Next undoes a gzip set by a route handler), cached a day; compression is the edge's job (pre-launch checklist). 204 = no tile there (outside the archive), 503 = archive unreadable (`<BaseMap>` then shows one notice instead of an error per tile). Why: CARTO basemaps need a paid license for commercial use and the public OSM tile servers may block commercial apps at any time; this way there is no key, no per-view fee and no third party.
+- **Style:** `@protomaps/basemaps` `layers("protomaps", namedFlavor("light"), { lang })`. Fonts (Noto Sans Regular/Medium/Italic, Latin ranges 0-255, 256-511, 8192-8447) and the "light" sprites are static files in `public/map/`, copied from `protomaps/basemaps-assets` (commit `028c18f`; Noto fonts are OFL). Attribution "© OpenStreetMap" must stay visible.
+- **MapLibre's worker:** v6 loads its Web Worker by URL next to its own file, which does not exist once bundled, so `scripts/copy-map-worker.mjs` copies `maplibre-gl-worker.mjs` + `maplibre-gl-shared.mjs` to `public/map/vendor/<version>/` before `dev` and `build` (package.json scripts; the folder is gitignored) and `<BaseMap>` calls `setWorkerUrl`. `<BaseMap>` (`src/components/map/base-map.tsx`) is the only place that creates a map; maplibre is imported dynamically, so only map pages load it.
+- **The map cannot be edited in the app.** Missing streets, buildings or house numbers are fixed in OpenStreetMap itself (openstreetmap.org editor) and show up after the next refresh of the archive. Store-specific points drawn on top would be a separate feature (Parking Lot). Checkout must never depend on the map being complete: the customer's pin plus a typed address/reference is enough.
+- **Refreshing the archive** (e.g. every few months), from the repo root:
+  1. Pick a build from `https://build-metadata.protomaps.dev/builds.json` (key `YYYYMMDD.pmtiles`).
+  2. `docker run --rm -v "<dir>:/data" protomaps/go-pmtiles:v1.31.2 extract https://build.protomaps.com/YYYYMMDD.pmtiles /data/cuba.pmtiles --bbox=-85.1,19.7,-74.0,23.4`
+     - On a machine whose antivirus inspects HTTPS (Avast here) the container rejects the certificate: mount a CA bundle that includes the antivirus root, `-v "<bundle>:/etc/ssl/certs/ca-certificates.crt:ro"` (export the root from the Windows certificate store). Never disable TLS verification.
+     - On a slow or unstable connection add `--overfetch=0 --download-threads=8` (many small requests instead of a few large ones; long downloads were cut with "unexpected EOF"). `--dry-run` shows the size first: all of Cuba is about 136 MB.
+  3. `cd apps/web && node --env-file=../../.env scripts/upload-map.mjs <dir>/cuba.pmtiles` (the tile route picks it up on the next failed or fresh read; restart the app to be sure).
+- **Local development uses a Havana-only archive** (bbox `-82.55,22.95,-82.1,23.2`, about 12 MB) uploaded under the same key: the full Cuba download was too slow here. Outside Havana the dev map shows only the background. Build the full archive on the VPS (fast connection).
 
 ### File storage
 - `docker-compose.yml` runs SeaweedFS (`chrislusf/seaweedfs:4.48`, S3 API on port 8333). One bucket (`S3_BUCKET`, created on first use) with **public read** (anonymous identity) and write/delete only with the access key. Env: `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_PUBLIC_URL` (see `.env.example`). Use a strong secret outside local dev.
@@ -220,6 +238,7 @@ Merchant configures per store: delivery on/off, pickup on/off, delivery zones, f
 - **Strong secrets**: `BETTER_AUTH_SECRET`, `S3_SECRET_KEY`, database password (the local defaults are for development only).
 - **Deleting a company must delete its `tenants/<id>/` files** in storage (there is no delete-company feature yet).
 - Add `ROOT_DOMAIN`, `S3_*` and `SIGNUP_*` to the production environment; run the `migrator` before each deploy.
+- **Map:** build the full Cuba archive on the VPS and upload it (see Maps; the local one only covers Havana), and turn on compression for `/api/map/tiles/*` at the edge (Cloudflare or a Traefik compress middleware; tiles leave the app uncompressed and shrink a lot).
 
 ### Deployment image
 - `Dockerfile` (repo root context) builds `apps/web` with Next `output: "standalone"`; runs `node apps/web/server.js` as non-root on port 3000.
@@ -295,7 +314,9 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 ✅ Done when: a merchant processes an order from `pending` to `completed`.
 
 ### Phase 5 — Home delivery
-- [ ] Delivery configuration flow per store (zones, fees, minimum, slots, pickup toggle)
+- [x] Delivery configuration, step 1: base map (self-hosted Protomaps tiles), store location + service area polygon in Settings > Delivery
+- [ ] Delivery configuration, step 2: delivery on/off, pickup on/off, shipping mode (free / flat / distance), fees per currency, free above, minimum order
+- [ ] Time slots (later)
 - [ ] Checkout supports delivery (address, zone fee, slot)
 - [ ] Delivery info in the merchant order view
 
@@ -318,6 +339,7 @@ Rule: **don't start a phase until the previous one is done.** New ideas go to th
 - Custom domains for stores
 - Order tracking page for customers
 - QR code generator for the store link in the merchant panel (the store URL already works as a QR target)
+- Store-specific map annotations (points/labels drawn on top of the base map)
 - Calendar view of orders (month/week grid in the merchant panel): reuse `DateRange` + `inDateRange` (one query for the visible days, grouped by the local date in the viewer's zone)
 - Companies defining their own roles (Better Auth dynamic access control) and a team management UI
 - Email verification and self-service password recovery (needs an email provider)

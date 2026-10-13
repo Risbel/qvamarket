@@ -10,6 +10,7 @@ import {
   createPickupSchema,
   createStoreProfileSchema,
 } from "@/lib/validation/catalog-settings";
+import { createDeliveryAreaSchema } from "@/lib/validation/delivery";
 import {
   createCategory,
   deleteCategory,
@@ -18,6 +19,7 @@ import {
   setCategoryVisibility,
 } from "./categories";
 import { setStoreCurrencies } from "./currencies";
+import { saveDeliveryArea } from "./delivery-settings";
 import { updatePickupSettings, updateStoreProfile } from "./store-settings";
 import { getMerchantOrNull } from "./tenant";
 import type { PermissionRequest } from "@/lib/permissions";
@@ -117,6 +119,14 @@ export async function updatePickupSettingsAction(values: unknown, locale: string
   const parsed = createPickupSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(async () => ((await updatePickupSettings(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
+}
+
+export async function saveDeliveryAreaAction(values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf({ store: ["update"] });
+  if (!scope) return { ok: false, error: "forbidden" };
+  const parsed = createDeliveryAreaSchema(await translator(locale)).safeParse(values);
+  if (!parsed.success) return invalid(parsed.error);
+  return guard(async () => ((await saveDeliveryArea(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
 export async function setStoreCurrenciesAction(values: unknown, locale: string): Promise<CatalogActionResult> {

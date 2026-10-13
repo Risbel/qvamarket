@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  doublePrecision,
   foreignKey,
   index,
   integer,
@@ -151,6 +152,48 @@ export const storeCurrency = pgTable(
     uniqueIndex("store_currency_one_default_idx")
       .on(table.storeId)
       .where(sql`${table.isDefault}`),
+  ],
+);
+
+/** Max corners of a delivery area (keeps the polygon light to store and to test against). */
+export const MAX_SERVICE_AREA_POINTS = 200;
+
+/**
+ * Home delivery settings of a store (1:1, created on first save). The store's location is
+ * where orders leave from (distance-based fees are measured from it, in a straight line); the
+ * service area is a polygon drawn by the merchant on the map: [lng, lat] corners (GeoJSON
+ * order), not closed (the first corner is not repeated). Coordinates are WGS84 degrees.
+ */
+export const storeDelivery = pgTable(
+  "store_delivery",
+  {
+    storeId: uuid("store_id").primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    locationLat: doublePrecision("location_lat"),
+    locationLng: doublePrecision("location_lng"),
+    serviceArea: jsonb("service_area").$type<[number, number][]>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "store_delivery_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    check(
+      "store_delivery_location",
+      sql`(${table.locationLat} is null and ${table.locationLng} is null) or (${table.locationLat} between -90 and 90 and ${table.locationLng} between -180 and 180)`,
+    ),
+    check(
+      "store_delivery_service_area",
+      sql.raw(
+        `service_area is null or (jsonb_typeof(service_area) = 'array' and jsonb_array_length(service_area) between 3 and ${MAX_SERVICE_AREA_POINTS})`,
+      ),
+    ),
   ],
 );
 

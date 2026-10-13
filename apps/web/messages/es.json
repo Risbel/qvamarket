@@ -230,7 +230,9 @@
     "amountInvalidWhole": "Introduce un importe mayor que cero, sin decimales (ej. 1500)",
     "paymentExceedsDue": "No puede superar lo pendiente ({amount})",
     "refundExceedsPaid": "No puede superar lo cobrado ({amount})",
-    "dateInFuture": "La fecha no puede ser futura"
+    "dateInFuture": "La fecha no puede ser futura",
+    "areaTooFewPoints": "La zona necesita al menos 3 puntos.",
+    "areaTooManyPoints": "La zona puede tener como máximo {max} puntos."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -633,7 +635,8 @@
       "general": "General",
       "branding": "Marca",
       "currencies": "Monedas",
-      "pickup": "Recogida"
+      "pickup": "Recogida",
+      "delivery": "Entrega a domicilio"
     },
     "currencies": {
       "title": "Monedas",
@@ -688,6 +691,34 @@
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo guardar. Inténtalo de nuevo."
       }
+    },
+    "delivery": {
+      "title": "Entrega a domicilio",
+      "description": "Marca dónde está tu tienda y dibuja en el mapa la zona a la que entregas. Las tarifas se configuran en el siguiente paso.",
+      "modeLabel": "Qué quieres hacer en el mapa",
+      "mode": {
+        "location": "Ubicar la tienda",
+        "area": "Dibujar la zona"
+      },
+      "modeHelp": {
+        "location": "Haz clic en el mapa donde está tu tienda (o arrastra el marcador). Desde ahí salen los pedidos y se mide la distancia.",
+        "area": "Haz clic punto a punto alrededor de la zona a la que entregas. Se cierra sola uniendo el último punto con el primero."
+      },
+      "mapLabel": "Mapa de la zona de entrega",
+      "mapError": "No se pudo cargar el mapa. Prueba con otro navegador o actualiza la página.",
+      "undo": "Deshacer último punto",
+      "clearArea": "Borrar zona",
+      "points": "{count, plural, =0 {Sin puntos} one {# punto} other {# puntos}}",
+      "locationSet": "Tienda en {lat}, {lng}",
+      "noLocation": "Aún no has marcado dónde está tu tienda.",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "saved": "Zona de entrega guardada.",
+      "errors": {
+        "forbidden": "No tienes permiso para cambiar los ajustes.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      },
+      "tilesUnavailable": "El mapa base no está disponible en este momento. Puedes seguir marcando la tienda y la zona."
     }
   },
   "Promotions": {

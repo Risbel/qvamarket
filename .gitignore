@@ -7,3 +7,6 @@ dist
 !.env.example
 *.log
 .DS_Store
+
+# Copied from node_modules by apps/web/scripts/copy-map-worker.mjs
+apps/web/public/map/vendor/
