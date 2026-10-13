@@ -28,14 +28,30 @@ export type BannerDevice = (typeof BANNER_DEVICES)[number];
  * panoramic strip (1920 x 520, about 3.7:1, a common web banner size); the storefront is
  * 1024 css px wide, so 2048 stays sharp on 2x screens. Mobile: square, about 390 css px x 3.
  */
-export const BANNER_FORMATS: Record<BannerDevice, { width: number; height: number; maxDimension: number }> = {
+export type ImageFormat = { width: number; height: number; maxDimension: number };
+
+export const BANNER_FORMATS: Record<BannerDevice, ImageFormat> = {
   desktop: { width: 1920, height: 520, maxDimension: 2048 },
   mobile: { width: 1080, height: 1080, maxDimension: 1200 },
 };
 
-/** True when an image's shape is within 3% of the banner's, so cropping is negligible. */
-export function fitsBannerFormat(device: BannerDevice, width: number, height: number) {
-  const format = BANNER_FORMATS[device];
+/** Secondary banner (pairs of tiles under the hero): at most this many pairs per screen size. */
+export const MAX_SECONDARY_BANNER_PAIRS = 5;
+export const SECONDARY_BANNER_SIDES = ["left", "right"] as const;
+export type SecondaryBannerSide = (typeof SECONDARY_BANNER_SIDES)[number];
+
+/**
+ * Shape of ONE tile of the secondary banner (two tiles side by side). Desktop: the hero's
+ * panoramic shape at half width (about 500 x 135 css px). Mobile: square, since a tile is only
+ * about 170 css px wide on a phone and a flat one would make its text unreadable.
+ */
+export const SECONDARY_BANNER_FORMATS: Record<BannerDevice, ImageFormat> = {
+  desktop: { width: 960, height: 260, maxDimension: 1200 },
+  mobile: { width: 600, height: 600, maxDimension: 720 },
+};
+
+/** True when an image's shape is within 3% of the format's, so cropping is negligible. */
+export function fitsFormat(format: ImageFormat, width: number, height: number) {
   return Math.abs(width / height / (format.width / format.height) - 1) <= 0.03;
 }
 

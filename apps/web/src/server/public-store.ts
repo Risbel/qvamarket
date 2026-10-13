@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, asc, db, eq, store, storeBannerImage } from "@qvashop/db";
+import { and, asc, db, eq, isNotNull, store, storeBannerImage, storeSecondaryBannerPair } from "@qvashop/db";
 import type { BannerDevice } from "@/lib/images";
 import { getStoreCurrencies } from "./currencies";
 import { publicUrl } from "./storage";
@@ -32,6 +32,7 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
       logoKey: store.logoKey,
       primaryColor: store.primaryColor,
       accentColor: store.accentColor,
+      secondaryBannerVisible: store.secondaryBannerVisible,
     })
     .from(store)
     .where(and(eq(store.slug, slug), eq(store.status, "active")))
@@ -57,6 +58,36 @@ export const listPublicBannerImages = cache(async (storeId: string) => {
   const banner: Record<BannerDevice, { id: string; url: string }[]> = { desktop: [], mobile: [] };
   for (const row of rows) {
     banner[row.device as BannerDevice]?.push({ id: row.id, url: publicUrl(row.storageKey) });
+  }
+  return banner;
+});
+
+/**
+ * Secondary banner of a store (pairs of tiles under the hero), one list per device, each in
+ * display order, with COMPLETE pairs only (a pair missing a side is never shown). Same rules
+ * as listPublicBannerImages; the caller also checks store.secondaryBannerVisible and that the
+ * hero has images for that device.
+ */
+export const listPublicSecondaryBanner = cache(async (storeId: string) => {
+  const pair = storeSecondaryBannerPair;
+  const rows = await db
+    .select({ id: pair.id, device: pair.device, left: pair.leftStorageKey, right: pair.rightStorageKey })
+    .from(pair)
+    .where(and(eq(pair.storeId, storeId), isNotNull(pair.leftStorageKey), isNotNull(pair.rightStorageKey)))
+    .orderBy(asc(pair.position), asc(pair.createdAt));
+  const banner: Record<BannerDevice, { id: string; images: { id: string; url: string }[] }[]> = {
+    desktop: [],
+    mobile: [],
+  };
+  for (const row of rows) {
+    if (!row.left || !row.right) continue;
+    banner[row.device as BannerDevice]?.push({
+      id: row.id,
+      images: [
+        { id: `${row.id}-left`, url: publicUrl(row.left) },
+        { id: `${row.id}-right`, url: publicUrl(row.right) },
+      ],
+    });
   }
   return banner;
 });

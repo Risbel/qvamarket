@@ -48,7 +48,8 @@
       "next": "Imagen siguiente",
       "slide": "Imagen {index} de {count}",
       "pause": "Pausar",
-      "play": "Reproducir"
+      "play": "Reproducir",
+      "secondaryLabel": "Promociones"
     },
     "product": {
       "back": "Volver a la tienda",
@@ -639,7 +640,14 @@
   },
   "Banner": {
     "title": "Banner de portada",
-    "description": "Imágenes que se alternan en la parte superior de tu tienda. Si no subes ninguna, la sección no se muestra.",
+    "description": "Imágenes en la parte superior de tu tienda: el banner principal y, debajo, un banner secundario opcional.",
+    "mainIntro": "Imágenes que se alternan en la parte superior de tu tienda. Si no subes ninguna, la sección no se muestra.",
+    "tabs": {
+      "label": "Tipo de banner",
+      "main": "Banner principal",
+      "secondary": "Banner secundario",
+      "locked": "El banner secundario se activa cuando el banner principal tenga imágenes."
+    },
     "devices": {
       "desktop": {
         "title": "Ordenador y tableta",
@@ -676,6 +684,44 @@
       "forbidden": "No tienes permiso para hacer esto.",
       "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
       "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
+    },
+    "secondary": {
+      "description": "Una fila de dos imágenes debajo del banner principal, ideal para promociones. Cada diapositiva es una pareja de imágenes que cambian a la vez; con una sola pareja se queda fija. Sube unas parejas para ordenador y otras para móvil: cada pantalla muestra solo las suyas.",
+      "visible": "Mostrar el banner secundario",
+      "visibleHelp": "Apágalo para ocultarlo en tu tienda sin borrar las imágenes (por ejemplo, cuando termine una promoción).",
+      "count": "{count}/{max} parejas",
+      "pair": "Pareja {position}",
+      "left": "Izquierda",
+      "right": "Derecha",
+      "sideLabel": "{side}, pareja {position}",
+      "incomplete": "Incompleta: no se muestra",
+      "addPair": "Añadir pareja",
+      "upload": "Subir imagen ({label})",
+      "replace": "Cambiar imagen ({label})",
+      "deletePair": "Eliminar pareja",
+      "moveUp": "Mover antes",
+      "moveDown": "Mover después",
+      "devices": {
+        "desktop": {
+          "title": "Ordenador y tableta",
+          "shape": "panorámico",
+          "help": "Cada imagen ocupa media fila, en formato {shape} (recomendado {size} px). Se recortan para llenar el espacio: créalas con esa forma. Se reducen automáticamente a menos de {limit}.",
+          "empty": "Sin parejas: en ordenadores y tabletas no se muestra.",
+          "heroMissing": "No se muestra en ordenadores y tabletas: el banner principal no tiene imágenes para esas pantallas."
+        },
+        "mobile": {
+          "title": "Móvil",
+          "shape": "cuadrado",
+          "help": "Cada imagen ocupa media pantalla del teléfono, en formato {shape} (recomendado {size} px): usa textos grandes. Se recortan para llenar el espacio. Se reducen automáticamente a menos de {limit}.",
+          "empty": "Sin parejas: en teléfonos no se muestra.",
+          "heroMissing": "No se muestra en teléfonos: el banner principal no tiene imágenes para móvil."
+        }
+      },
+      "errors": {
+        "limit": "Ya tienes el máximo de {count} parejas.",
+        "needsHero": "Añade primero imágenes al banner principal.",
+        "failed": "No se pudo completar la operación. Inténtalo de nuevo."
+      }
     }
   },
   "Signup": {

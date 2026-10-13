@@ -79,6 +79,8 @@ export const store = pgTable(
     logoKey: text("logo_key"),
     primaryColor: text("primary_color"),
     accentColor: text("accent_color"),
+    // Secondary banner (pairs of tiles under the hero) on/off: hides it without deleting images
+    secondaryBannerVisible: boolean("secondary_banner_visible").default(true).notNull(),
     // Public profile: shown on the storefront and the order confirmation (pickup)
     description: text("description"),
     phone: text("phone"),
@@ -248,6 +250,55 @@ export const storeBannerImage = pgTable(
     check("store_banner_image_device", sql.raw(`device in (${BANNER_DEVICES.map((d) => `'${d}'`).join(", ")})`)),
     check("store_banner_image_size_positive", sql`${table.sizeBytes} > 0`),
     check("store_banner_image_position", sql`${table.position} >= 0`),
+  ],
+);
+
+// Secondary banner: a carousel under the hero whose slides are PAIRS of tiles shown side by
+// side (both change together). One row = one slide; each side is filled separately, and a
+// pair missing a side is not shown. Same desktop/mobile split as the hero. Only shown where
+// the hero has images, and only while store.secondary_banner_visible. Files live under
+// tenants/<tenantId>/stores/<storeId>/banner/secondary/.
+export const storeSecondaryBannerPair = pgTable(
+  "store_secondary_banner_pair",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    device: text("device").notNull(),
+    // 0 is shown first; positions are counted per device
+    position: integer("position").default(0).notNull(),
+    leftStorageKey: text("left_storage_key").unique(),
+    leftContentType: text("left_content_type"),
+    leftSizeBytes: integer("left_size_bytes"),
+    rightStorageKey: text("right_storage_key").unique(),
+    rightContentType: text("right_content_type"),
+    rightSizeBytes: integer("right_size_bytes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "store_secondary_banner_pair_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    index("store_secondary_banner_pair_tenantId_idx").on(table.tenantId),
+    index("store_secondary_banner_pair_storeId_device_position_idx").on(table.storeId, table.device, table.position),
+    check(
+      "store_secondary_banner_pair_device",
+      sql.raw(`device in (${BANNER_DEVICES.map((d) => `'${d}'`).join(", ")})`),
+    ),
+    check("store_secondary_banner_pair_position", sql`${table.position} >= 0`),
+    // each side is all set (key, type, positive size) or all empty
+    check(
+      "store_secondary_banner_pair_left",
+      sql`(${table.leftStorageKey} is null and ${table.leftContentType} is null and ${table.leftSizeBytes} is null) or (${table.leftStorageKey} is not null and ${table.leftContentType} is not null and ${table.leftSizeBytes} > 0)`,
+    ),
+    check(
+      "store_secondary_banner_pair_right",
+      sql`(${table.rightStorageKey} is null and ${table.rightContentType} is null and ${table.rightSizeBytes} is null) or (${table.rightStorageKey} is not null and ${table.rightContentType} is not null and ${table.rightSizeBytes} > 0)`,
+    ),
   ],
 );
 

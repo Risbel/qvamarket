@@ -4,15 +4,12 @@ import { useRef, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { compressForUpload } from "@/lib/compress-image";
 import {
   BANNER_FORMATS,
-  fitsBannerFormat,
   formatBytes,
   IMAGE_TYPES,
   MAX_BANNER_IMAGES,
   MAX_IMAGE_BYTES,
-  MAX_ORIGINAL_BYTES,
   type BannerDevice,
 } from "@/lib/images";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -25,34 +22,15 @@ import {
 } from "@/server/banner-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LINE_TONES, uploadBannerFile, type UploadLine } from "./upload-banner-file";
 
 export type BannerImage = { id: string; url: string; sizeBytes: number };
-
-type Line = { name: string; tone: "ok" | "warn" | "error"; text: string };
-
-const TONES: Record<Line["tone"], string> = {
-  ok: "text-muted-foreground",
-  warn: "text-amber-700 dark:text-amber-400",
-  error: "text-destructive",
-};
 
 // Same shapes as the storefront hero (literal class names for Tailwind)
 const PREVIEW_CLASSES: Record<BannerDevice, string> = {
   desktop: "aspect-[48/13] sm:w-80",
   mobile: "aspect-square sm:w-40",
 };
-
-/** Width and height of an image file, or null when the browser cannot tell. */
-async function imageSize(file: Blob) {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const size = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return size;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * The banner images of one device (desktop or mobile) in display order: upload (several at
@@ -67,13 +45,10 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<UploadLine[]>([]);
 
   const format = BANNER_FORMATS[device];
-  const formatValues = {
-    shape: t(`devices.${device}.shape`),
-    size: `${format.width} × ${format.height}`,
-  };
+  const shape = t(`devices.${device}.shape`);
   const titleId = `banner-${device}-title`;
   const remaining = MAX_BANNER_IMAGES - images.length;
   const errorText = (error: Exclude<BannerActionResult, { ok: true }>["error"]) =>
@@ -90,60 +65,23 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
       return;
     }
 
-    const results: Line[] = [];
+    const results: UploadLine[] = [];
     for (const file of files) {
-      setStatus(t("compressing", { name: file.name }));
-      let compressed: Awaited<ReturnType<typeof compressForUpload>>;
-      try {
-        compressed = await compressForUpload(file, { maxDimension: format.maxDimension });
-      } catch {
-        // the browser could not decode the file (corrupt, or not really an image)
-        results.push({ name: file.name, tone: "error", text: t("errors.unreadable") });
-        continue;
-      }
-
-      try {
-        if (!compressed.ok) {
-          results.push({
-            name: file.name,
-            tone: "error",
-            text: t(`errors.${compressed.error}`, {
-              max: formatBytes(MAX_ORIGINAL_BYTES, locale),
-              limit: formatBytes(MAX_IMAGE_BYTES, locale),
-            }),
-          });
-          continue;
-        }
-
-        setStatus(t("uploading", { name: file.name }));
-        const body = new FormData();
-        body.append("device", device);
-        body.append("file", compressed.file, compressed.file.type === "image/jpeg" ? "banner.jpg" : "banner.webp");
-        const result = await uploadBannerImageAction(body);
-        if (!result.ok) {
-          results.push({ name: file.name, tone: "error", text: errorText(result.error) });
-          continue;
-        }
-
-        const uploaded = t("compressedInfo", {
-          from: formatBytes(compressed.originalBytes, locale),
-          to: formatBytes(compressed.file.size, locale),
-        });
-        // Uploaded either way (the merchant may accept the crop), but say what will happen
-        const size = await imageSize(compressed.file);
-        results.push(
-          size && !fitsBannerFormat(device, size.width, size.height)
-            ? {
-                name: file.name,
-                tone: "warn",
-                text: `${uploaded}. ${t("shapeWarning", { width: size.width, height: size.height, ...formatValues })}`,
-              }
-            : { name: file.name, tone: "ok", text: uploaded },
-        );
-      } catch {
-        // e.g. the request was rejected before reaching the action (body too large)
-        results.push({ name: file.name, tone: "error", text: t("errors.failed") });
-      }
+      results.push(
+        await uploadBannerFile({
+          file,
+          format,
+          shape,
+          upload: (body) => {
+            body.append("device", device);
+            return uploadBannerImageAction(body);
+          },
+          errorText: (error) => errorText(error as Exclude<BannerActionResult, { ok: true }>["error"]),
+          t,
+          locale,
+          onStatus: setStatus,
+        }),
+      );
     }
 
     setStatus(null);
@@ -178,7 +116,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
           </span>
         </h2>
         <p className="text-sm text-muted-foreground">
-          {t(`devices.${device}.help`, { ...formatValues, limit: formatBytes(MAX_IMAGE_BYTES, locale) })}
+          {t(`devices.${device}.help`, { shape, size: `${format.width} × ${format.height}`, limit: formatBytes(MAX_IMAGE_BYTES, locale) })}
         </p>
       </div>
 
@@ -261,7 +199,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
       {lines.length > 0 && (
         <ul className="flex flex-col gap-1 text-sm" aria-live="polite">
           {lines.map((line, i) => (
-            <li key={i} className={TONES[line.tone]}>
+            <li key={i} className={LINE_TONES[line.tone]}>
               {line.name && <span className="font-medium">{line.name}: </span>}
               {line.text}
             </li>

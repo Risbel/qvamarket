@@ -48,7 +48,8 @@
       "next": "Next image",
       "slide": "Image {index} of {count}",
       "pause": "Pause",
-      "play": "Play"
+      "play": "Play",
+      "secondaryLabel": "Promotions"
     },
     "product": {
       "back": "Back to the store",
@@ -639,7 +640,14 @@
   },
   "Banner": {
     "title": "Home banner",
-    "description": "Images that rotate at the top of your store. If you upload none, the section is not shown.",
+    "description": "Images at the top of your store: the main banner and, below it, an optional secondary banner.",
+    "mainIntro": "Images that rotate at the top of your store. If you upload none, the section is not shown.",
+    "tabs": {
+      "label": "Banner type",
+      "main": "Main banner",
+      "secondary": "Secondary banner",
+      "locked": "The secondary banner becomes available once the main banner has images."
+    },
     "devices": {
       "desktop": {
         "title": "Desktop and tablet",
@@ -676,6 +684,44 @@
       "forbidden": "You do not have permission to do this.",
       "failed": "The operation could not be completed. Please try again.",
       "unreadable": "Could not read the image. Is it damaged or not an image?"
+    },
+    "secondary": {
+      "description": "A row of two images under the main banner, ideal for promotions. Each slide is a pair of images that change together; with a single pair it stays still. Upload some pairs for desktop and others for mobile: each screen shows only its own.",
+      "visible": "Show the secondary banner",
+      "visibleHelp": "Turn it off to hide it in your store without deleting the images (for example, when a promotion ends).",
+      "count": "{count}/{max} pairs",
+      "pair": "Pair {position}",
+      "left": "Left",
+      "right": "Right",
+      "sideLabel": "{side}, pair {position}",
+      "incomplete": "Incomplete: not shown",
+      "addPair": "Add pair",
+      "upload": "Upload image ({label})",
+      "replace": "Replace image ({label})",
+      "deletePair": "Delete pair",
+      "moveUp": "Move earlier",
+      "moveDown": "Move later",
+      "devices": {
+        "desktop": {
+          "title": "Desktop and tablet",
+          "shape": "panoramic",
+          "help": "Each image takes half the row, in a {shape} format ({size} px recommended). They are cropped to fill the space: make them in that shape. Automatically reduced to under {limit}.",
+          "empty": "No pairs: nothing is shown on desktops and tablets.",
+          "heroMissing": "Not shown on desktops and tablets: the main banner has no images for those screens."
+        },
+        "mobile": {
+          "title": "Mobile",
+          "shape": "square",
+          "help": "Each image takes half of a phone screen, in a {shape} format ({size} px recommended): use large text. They are cropped to fill the space. Automatically reduced to under {limit}.",
+          "empty": "No pairs: nothing is shown on phones.",
+          "heroMissing": "Not shown on phones: the main banner has no images for mobile."
+        }
+      },
+      "errors": {
+        "limit": "You already have the maximum of {count} pairs.",
+        "needsHero": "Add images to the main banner first.",
+        "failed": "The operation could not be completed. Please try again."
+      }
     }
   },
   "Signup": {

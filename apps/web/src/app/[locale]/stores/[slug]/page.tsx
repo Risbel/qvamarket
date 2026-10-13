@@ -3,10 +3,11 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PriceTag } from "@/components/price-tag";
 import { listPublicCatalog, type PublicListItem } from "@/server/public-catalog";
-import { getPublicStoreBySlug, listPublicBannerImages } from "@/server/public-store";
+import { BANNER_DEVICES } from "@/lib/images";
+import { getPublicStoreBySlug, listPublicBannerImages, listPublicSecondaryBanner } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
-import { HeroCarousel } from "./hero-carousel";
+import { BannerCarousel } from "./banner-carousel";
 
 export default async function StoreCatalogPage({
   params,
@@ -18,9 +19,10 @@ export default async function StoreCatalogPage({
   if (!store) notFound();
   const currency = await selectedCurrency(store.currencies);
   const t = await getTranslations("Store.catalog");
-  const [{ categories, products }, banner] = await Promise.all([
+  const [{ categories, products }, hero, secondary] = await Promise.all([
     listPublicCatalog(store.id, currency.code),
     listPublicBannerImages(store.id),
+    listPublicSecondaryBanner(store.id),
   ]);
 
   // One section per visible category (in the merchant's order), then everything else
@@ -42,8 +44,34 @@ export default async function StoreCatalogPage({
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
       {/* One hero per screen size, each only where the merchant uploaded images for it */}
-      {banner.mobile.length > 0 && <HeroCarousel images={banner.mobile} device="mobile" storeName={store.name} />}
-      {banner.desktop.length > 0 && <HeroCarousel images={banner.desktop} device="desktop" storeName={store.name} />}
+      {BANNER_DEVICES.map(
+        (device) =>
+          hero[device].length > 0 && (
+            <BannerCarousel
+              key={device}
+              kind="hero"
+              device={device}
+              slides={hero[device].map((image) => ({ id: image.id, images: [image] }))}
+              storeName={store.name}
+            />
+          ),
+      )}
+      {/* The secondary banner (pairs of tiles) only sits under a hero on the same screen size,
+          and only while the merchant has it switched on */}
+      {store.secondaryBannerVisible &&
+        BANNER_DEVICES.map(
+          (device) =>
+            hero[device].length > 0 &&
+            secondary[device].length > 0 && (
+              <BannerCarousel
+                key={device}
+                kind="secondary"
+                device={device}
+                slides={secondary[device]}
+                storeName={store.name}
+              />
+            ),
+        )}
       {products.length === 0 ? (
         <>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
