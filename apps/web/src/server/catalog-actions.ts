@@ -12,7 +12,7 @@ import {
 } from "@/lib/validation/catalog-settings";
 import { createDeliveryAreaSchema } from "@/lib/validation/delivery";
 import { createDeliveryChargesSchema, toDeliveryChargesInput } from "@/lib/validation/delivery-charges";
-import { createFooterLinksSchema, createFooterTextSchema } from "@/lib/validation/footer";
+import { createFooterLinksSchema, createFooterSocialSchema, createFooterTextSchema } from "@/lib/validation/footer";
 import {
   createCategory,
   deleteCategory,
@@ -22,7 +22,13 @@ import {
 } from "./categories";
 import { setStoreCurrencies } from "./currencies";
 import { saveDeliveryArea, saveDeliveryCharges } from "./delivery-settings";
-import { updateFooterLinks, updateFooterText, updatePickupSettings, updateStoreProfile } from "./store-settings";
+import {
+  updateFooterLinks,
+  updateFooterSocial,
+  updateFooterText,
+  updatePickupSettings,
+  updateStoreProfile,
+} from "./store-settings";
 import { getMerchantOrNull } from "./tenant";
 import type { PermissionRequest } from "@/lib/permissions";
 
@@ -50,6 +56,13 @@ async function translator(locale: string) {
 
 function invalid(error: z.ZodError): CatalogActionResult {
   return { ok: false, error: "invalid", fieldErrors: z.flattenError(error).fieldErrors as Record<string, string[]> };
+}
+
+/** Nested fields: keyed by their full path ("groups.0.links.2.url") so the form marks the right one. */
+function invalidByPath(error: z.ZodError): CatalogActionResult {
+  const fieldErrors: Record<string, string[]> = {};
+  for (const issue of error.issues) (fieldErrors[issue.path.join(".")] ??= []).push(issue.message);
+  return { ok: false, error: "invalid", fieldErrors };
 }
 
 async function guard<T>(fn: () => Promise<T>): Promise<T | CatalogActionResult> {
@@ -135,13 +148,16 @@ export async function updateFooterLinksAction(values: unknown, locale: string): 
   const scope = await scopeIf({ store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createFooterLinksSchema(await translator(locale)).safeParse(values);
-  if (!parsed.success) {
-    // Nested fields: keyed by their full path ("groups.0.links.2.url") so the form marks the right one
-    const fieldErrors: Record<string, string[]> = {};
-    for (const issue of parsed.error.issues) (fieldErrors[issue.path.join(".")] ??= []).push(issue.message);
-    return { ok: false, error: "invalid", fieldErrors };
-  }
+  if (!parsed.success) return invalidByPath(parsed.error);
   return guard(async () => ((await updateFooterLinks(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
+}
+
+export async function updateFooterSocialAction(values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf({ store: ["update"] });
+  if (!scope) return { ok: false, error: "forbidden" };
+  const parsed = createFooterSocialSchema(await translator(locale)).safeParse(values);
+  if (!parsed.success) return invalidByPath(parsed.error);
+  return guard(async () => ((await updateFooterSocial(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
 export async function saveDeliveryAreaAction(values: unknown, locale: string): Promise<CatalogActionResult> {

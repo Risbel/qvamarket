@@ -7,11 +7,20 @@ import { FOOTER_TABS, type FooterTab } from "./tabs";
 
 /**
  * Tabs of the footer settings (shadcn Tabs): about (short text under the logo + name) | links |
- * social media. Social media is not built yet, so its tab is shown disabled; when it is, give
- * it a panel, add it to FOOTER_TABS and enable the trigger. The open tab is kept in the URL
- * (`?tab=links`) with replaceState, like the banner tabs; the first tab has no parameter.
+ * social media. The open tab is kept in the URL (`?tab=links`) with replaceState, like the
+ * banner tabs; the first tab has no parameter.
  */
-export function FooterTabs({ defaultTab, about, links }: { defaultTab: FooterTab; about: ReactNode; links: ReactNode }) {
+export function FooterTabs({
+  defaultTab,
+  about,
+  links,
+  social,
+}: {
+  defaultTab: FooterTab;
+  about: ReactNode;
+  links: ReactNode;
+  social: ReactNode;
+}) {
   const t = useTranslations("Settings.footer.tabs");
   const [tab, setTab] = useState<FooterTab>(defaultTab);
 
@@ -28,22 +37,16 @@ export function FooterTabs({ defaultTab, about, links }: { defaultTab: FooterTab
     <Tabs value={tab} onValueChange={onValueChange} className="gap-6">
       <div className="border-b">
         <TabsList variant="line" aria-label={t("label")} className="justify-start">
-          <TabsTrigger value="about" className="flex-none px-3">
-            {t("about")}
-          </TabsTrigger>
-          <TabsTrigger value="links" className="flex-none px-3">
-            {t("links")}
-          </TabsTrigger>
-          <TabsTrigger value="social" disabled className="flex-none px-3">
-            {t("social")}
-            <span className="rounded-full bg-muted px-1.5 text-[0.65rem] font-normal text-muted-foreground">
-              {t("soon")}
-            </span>
-          </TabsTrigger>
+          {FOOTER_TABS.map((value) => (
+            <TabsTrigger key={value} value={value} className="flex-none px-3">
+              {t(value)}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </div>
       <TabsContent value="about">{about}</TabsContent>
       <TabsContent value="links">{links}</TabsContent>
+      <TabsContent value="social">{social}</TabsContent>
     </Tabs>
   );
 }

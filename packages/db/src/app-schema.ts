@@ -104,6 +104,10 @@ export const store = pgTable(
     footerLinks: jsonb("footer_links"),
     // Short text under the logo + name in the storefront footer (plain text). null = none.
     footerText: text("footer_text"),
+    // Social media icons in the storefront footer, in display order, one per network, e.g.
+    // [{ "network": "instagram", "url": "https://instagram.com/tienda" }]. Validated in the app
+    // (src/lib/social.ts) on write AND on read. null = none.
+    footerSocial: jsonb("footer_social"),
     metaTitle: text("meta_title"),
     metaDescription: text("meta_description"),
     // Counter behind order.number: checkout increments it with UPDATE ... RETURNING inside the
@@ -137,6 +141,10 @@ export const store = pgTable(
     check(
       "store_footer_links_array",
       sql`${table.footerLinks} is null or jsonb_typeof(${table.footerLinks}) = 'array'`,
+    ),
+    check(
+      "store_footer_social_array",
+      sql`${table.footerSocial} is null or jsonb_typeof(${table.footerSocial}) = 'array'`,
     ),
   ],
 );

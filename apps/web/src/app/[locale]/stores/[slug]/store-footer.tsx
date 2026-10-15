@@ -1,12 +1,15 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { FooterLinkGroup } from "@/lib/footer";
+import { socialNetwork, type SocialLink } from "@/lib/social";
+import { SocialIcon } from "@/components/social-icon";
 
 /**
  * Storefront footer (Settings > Footer). Always shows the store's brand column: the logotype
- * alone when there is one (same rule as the header), otherwise logo + name, and the merchant's
- * short text below (plain text, line breaks kept). Then the link groups, in their order. Their
- * URLs were checked by parseFooterLinks (http(s), mailto:, tel: or a path on this store). Plain
+ * alone when there is one (same rule as the header), otherwise logo + name, the merchant's
+ * short text below (plain text, line breaks kept) and the social media icons (always a new tab;
+ * URLs checked against each network's domains by parseFooterSocial). Then the link groups, in
+ * their order. Their URLs were checked by parseFooterLinks (http(s), mailto:, tel: or a path on this store). Plain
  * <a> on purpose: a store path typed by the merchant ("/products/x") gets its locale from the proxy.
  */
 export async function StoreFooter({
@@ -15,12 +18,14 @@ export async function StoreFooter({
   logotypeUrl,
   text,
   groups,
+  social,
 }: {
   name: string;
   logoUrl: string | null;
   logotypeUrl: string | null;
   text: string | null;
   groups: FooterLinkGroup[];
+  social: SocialLink[];
 }) {
   const t = await getTranslations("Store.footer");
 
@@ -43,6 +48,23 @@ export async function StoreFooter({
             )}
           </Link>
           {text && <p className="text-sm whitespace-pre-line text-muted-foreground">{text}</p>}
+          {social.length > 0 && (
+            <ul aria-label={t("socialLabel")} className="-ml-2 flex flex-wrap gap-1">
+              {social.map((link) => (
+                <li key={link.network}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("social", { name: socialNetwork(link.network).name })}
+                    className="flex size-9 items-center justify-center rounded-full text-muted-foreground outline-offset-2 hover:bg-muted hover:text-foreground focus-visible:outline-2"
+                  >
+                    <SocialIcon network={link.network} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {groups.length > 0 && (

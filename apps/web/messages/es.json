@@ -237,7 +237,9 @@
     },
     "footer": {
       "label": "Enlaces de la tienda",
-      "newTab": "(se abre en una pestaña nueva)"
+      "newTab": "(se abre en una pestaña nueva)",
+      "socialLabel": "Redes sociales",
+      "social": "{name} (se abre en una pestaña nueva)"
     }
   },
   "Validation": {
@@ -294,7 +296,9 @@
     "linkUrlInvalid": "Usa una dirección que empiece por https://, / , mailto: o tel:",
     "footerLinksRequired": "Añade al menos un enlace o quita el grupo.",
     "footerTooManyLinks": "Máximo {max} enlaces por grupo.",
-    "footerTooManyGroups": "Máximo {max} grupos."
+    "footerTooManyGroups": "Máximo {max} grupos.",
+    "socialUrlInvalid": "Usa un enlace de {name} que empiece por https://{domain}",
+    "socialDuplicate": "Esta red social ya está en la lista."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -946,8 +950,7 @@
         "label": "Secciones del pie de página",
         "about": "Sobre la tienda",
         "links": "Enlaces",
-        "social": "Redes sociales",
-        "soon": "Pronto"
+        "social": "Redes sociales"
       },
       "empty": "Aún no hay grupos de enlaces. Añade uno, por ejemplo «Accesos» con «Preguntas frecuentes» y «Contacto».",
       "group": "Grupo {number}",
@@ -983,6 +986,24 @@
         "saving": "Guardando...",
         "saved": "Texto guardado.",
         "errors": {
+          "forbidden": "No tienes permiso para hacer esto.",
+          "failed": "No se pudo guardar. Inténtalo de nuevo."
+        }
+      },
+      "social": {
+        "network": "Red social",
+        "url": "Enlace",
+        "add": "Añadir red social",
+        "moveUp": "Subir {name}",
+        "moveDown": "Bajar {name}",
+        "remove": "Quitar {name}",
+        "empty": "Todavía no has añadido redes sociales.",
+        "help": "Cada red aparece como un icono al pie de tu tienda, debajo del texto. Al pulsarlo se abre en una pestaña nueva.",
+        "save": "Guardar",
+        "saving": "Guardando...",
+        "saved": "Redes sociales guardadas.",
+        "errors": {
+          "invalid": "Revisa los campos marcados.",
           "forbidden": "No tienes permiso para hacer esto.",
           "failed": "No se pudo guardar. Inténtalo de nuevo."
         }

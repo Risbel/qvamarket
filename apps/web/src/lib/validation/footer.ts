@@ -8,6 +8,7 @@ import {
   MAX_FOOTER_GROUPS,
   MAX_FOOTER_LINKS,
 } from "@/lib/footer";
+import { isSocialUrl, SOCIAL_NETWORK_KEYS, SOCIAL_NETWORKS, socialNetwork } from "@/lib/social";
 import type { Translator } from "./types";
 
 /** Footer links (Settings > Footer > Links). Array order = display order. */
@@ -42,3 +43,37 @@ export function createFooterTextSchema(t: Translator) {
   });
 }
 export type FooterTextValues = z.infer<ReturnType<typeof createFooterTextSchema>>;
+
+/** Social media icons (Settings > Footer > Social media): one per network, array order = display order. */
+export function createFooterSocialSchema(t: Translator) {
+  const link = z
+    .object({
+      network: z.enum(SOCIAL_NETWORK_KEYS),
+      url: z.string().trim().min(1, t("required")).max(FOOTER_URL_MAX, t("tooLong", { max: FOOTER_URL_MAX })),
+    })
+    .superRefine((value, ctx) => {
+      if (value.url !== "" && !isSocialUrl(value.network, value.url)) {
+        const network = socialNetwork(value.network);
+        ctx.addIssue({
+          code: "custom",
+          path: ["url"],
+          message: t("socialUrlInvalid", { name: network.name, domain: network.hosts[0] }),
+        });
+      }
+    });
+  return z.object({
+    links: z
+      .array(link)
+      .max(SOCIAL_NETWORKS.length)
+      .superRefine((links, ctx) => {
+        const seen = new Set<string>();
+        links.forEach((item, index) => {
+          if (seen.has(item.network)) {
+            ctx.addIssue({ code: "custom", path: [index, "network"], message: t("socialDuplicate") });
+          }
+          seen.add(item.network);
+        });
+      }),
+  });
+}
+export type FooterSocialValues = z.infer<ReturnType<typeof createFooterSocialSchema>>;

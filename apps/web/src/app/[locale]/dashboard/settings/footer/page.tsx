@@ -3,6 +3,7 @@ import { getFooterSettings } from "@/server/store-settings";
 import { requireMerchantPermission } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { FooterLinksForm } from "./footer-links-form";
+import { FooterSocialForm } from "./footer-social-form";
 import { FooterTabs } from "./footer-tabs";
 import { FooterTextForm } from "./footer-text-form";
 import { FOOTER_TABS } from "./tabs";
@@ -28,6 +29,7 @@ export default async function FooterSettingsPage({
         defaultTab={FOOTER_TABS.find((value) => value === tab) ?? "about"}
         about={<FooterTextForm initialValues={{ footerText: footer.text }} />}
         links={<FooterLinksForm initialValues={{ groups: footer.groups }} />}
+        social={<FooterSocialForm initialValues={{ links: footer.social }} />}
       />
     </>
   );

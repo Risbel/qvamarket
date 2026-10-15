@@ -114,6 +114,7 @@ export default async function StoreLayout({
           logotypeUrl={store.logotypeKey ? publicUrl(store.logotypeKey) : null}
           text={store.footerText}
           groups={store.footerLinks}
+          social={store.footerSocial}
         />
       </div>
     </CartProvider>

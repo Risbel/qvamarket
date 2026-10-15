@@ -1,7 +1,8 @@
 import { and, db, eq, store } from "@qvashop/db";
 import { parseFooterLinks, type FooterLinkGroup } from "@/lib/footer";
+import { parseFooterSocial, type SocialLink } from "@/lib/social";
 import type { PickupValues, StoreProfileValues } from "@/lib/validation/catalog-settings";
-import type { FooterLinksValues, FooterTextValues } from "@/lib/validation/footer";
+import type { FooterLinksValues, FooterSocialValues, FooterTextValues } from "@/lib/validation/footer";
 
 type Scope = { tenantId: string; storeId: string };
 const owns = ({ tenantId, storeId }: Scope) => and(eq(store.id, storeId), eq(store.tenantId, tenantId));
@@ -46,14 +47,34 @@ export async function updateStoreProfile(scope: Scope, values: StoreProfileValue
   return rows.length === 1;
 }
 
-/** Footer settings: the short text and the link groups in display order (unsafe or malformed links are dropped). */
-export async function getFooterSettings(scope: Scope): Promise<{ text: string; groups: FooterLinkGroup[] }> {
+/**
+ * Footer settings: the short text, the link groups and the social media links, in display order
+ * (unsafe or malformed links are dropped).
+ */
+export async function getFooterSettings(
+  scope: Scope,
+): Promise<{ text: string; groups: FooterLinkGroup[]; social: SocialLink[] }> {
   const [row] = await db
-    .select({ footerText: store.footerText, footerLinks: store.footerLinks })
+    .select({ footerText: store.footerText, footerLinks: store.footerLinks, footerSocial: store.footerSocial })
     .from(store)
     .where(owns(scope))
     .limit(1);
-  return { text: row?.footerText ?? "", groups: parseFooterLinks(row?.footerLinks) };
+  return {
+    text: row?.footerText ?? "",
+    groups: parseFooterLinks(row?.footerLinks),
+    social: parseFooterSocial(row?.footerSocial),
+  };
+}
+
+/** Replaces the footer's social media links (validated values; array order = display order). None = NULL. */
+export async function updateFooterSocial(scope: Scope, values: FooterSocialValues) {
+  const links: SocialLink[] = values.links.map(({ network, url }) => ({ network, url }));
+  const rows = await db
+    .update(store)
+    .set({ footerSocial: links.length > 0 ? links : null })
+    .where(owns(scope))
+    .returning({ id: store.id });
+  return rows.length === 1;
 }
 
 /** Saves the footer's short text; empty = NULL. */

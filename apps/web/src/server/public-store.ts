@@ -2,6 +2,7 @@ import { cache } from "react";
 import { and, asc, db, eq, isNotNull, store, storeBannerImage, storeSecondaryBannerPair } from "@qvashop/db";
 import { parseFooterLinks } from "@/lib/footer";
 import type { BannerDevice } from "@/lib/images";
+import { parseFooterSocial } from "@/lib/social";
 import { getStoreCurrencies } from "./currencies";
 import { publicUrl } from "./storage";
 
@@ -37,6 +38,7 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
       secondaryBannerVisible: store.secondaryBannerVisible,
       footerLinks: store.footerLinks,
       footerText: store.footerText,
+      footerSocial: store.footerSocial,
     })
     .from(store)
     .where(and(eq(store.slug, slug), eq(store.status, "active")))
@@ -46,7 +48,13 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
   const defaultCurrency = currencies.find((c) => c.isDefault) ?? currencies[0];
   if (!defaultCurrency) return null; // a store without currencies cannot sell anything
   // Re-checked on read too: only safe URLs reach an href
-  return { ...row, footerLinks: parseFooterLinks(row.footerLinks), currencies, defaultCurrency };
+  return {
+    ...row,
+    footerLinks: parseFooterLinks(row.footerLinks),
+    footerSocial: parseFooterSocial(row.footerSocial),
+    currencies,
+    defaultCurrency,
+  };
 });
 
 /**

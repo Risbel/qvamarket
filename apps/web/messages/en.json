@@ -237,7 +237,9 @@
     },
     "footer": {
       "label": "Store links",
-      "newTab": "(opens in a new tab)"
+      "newTab": "(opens in a new tab)",
+      "socialLabel": "Social media",
+      "social": "{name} (opens in a new tab)"
     }
   },
   "Validation": {
@@ -294,7 +296,9 @@
     "linkUrlInvalid": "Use an address starting with https://, / , mailto: or tel:",
     "footerLinksRequired": "Add at least one link or remove the group.",
     "footerTooManyLinks": "At most {max} links per group.",
-    "footerTooManyGroups": "At most {max} groups."
+    "footerTooManyGroups": "At most {max} groups.",
+    "socialUrlInvalid": "Use a {name} link starting with https://{domain}",
+    "socialDuplicate": "This social network is already in the list."
   },
   "Admin": {
     "title": "Admin panel",
@@ -946,8 +950,7 @@
         "label": "Footer sections",
         "about": "About the store",
         "links": "Links",
-        "social": "Social media",
-        "soon": "Soon"
+        "social": "Social media"
       },
       "empty": "No link groups yet. Add one, for example “Quick links” with “FAQ” and “Contact”.",
       "group": "Group {number}",
@@ -983,6 +986,24 @@
         "saving": "Saving...",
         "saved": "Text saved.",
         "errors": {
+          "forbidden": "You don't have permission to do this.",
+          "failed": "Could not save. Please try again."
+        }
+      },
+      "social": {
+        "network": "Social network",
+        "url": "Link",
+        "add": "Add social network",
+        "moveUp": "Move {name} up",
+        "moveDown": "Move {name} down",
+        "remove": "Remove {name}",
+        "empty": "You haven't added any social networks yet.",
+        "help": "Each network shows as an icon at the bottom of your store, under the text. It opens in a new tab.",
+        "save": "Save",
+        "saving": "Saving...",
+        "saved": "Social networks saved.",
+        "errors": {
+          "invalid": "Check the highlighted fields.",
           "forbidden": "You don't have permission to do this.",
           "failed": "Could not save. Please try again."
         }
