@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { compressForUpload } from "@/lib/compress-image";
 import {
@@ -64,22 +65,22 @@ export function BrandImageUploader({
       const body = new FormData();
       body.append("file", compressed.file, compressed.file.type === "image/png" ? `${kind}.png` : `${kind}.webp`);
       const result = await uploadBrandImageAction(kind, body);
-      setMessage(
-        result.ok
-          ? {
-              ok: true,
-              text: t(`${kind}.uploaded`, {
-                from: formatBytes(compressed.originalBytes, locale),
-                to: formatBytes(compressed.file.size, locale),
-              }),
-            }
-          : {
-              ok: false,
-              text: t(`upload.errors.${result.error === "invalid" ? "failed" : result.error}`, {
-                limit: formatBytes(MAX_IMAGE_BYTES, locale),
-              }),
-            },
-      );
+      if (result.ok) {
+        setMessage(null);
+        toast.success(
+          t(`${kind}.uploaded`, {
+            from: formatBytes(compressed.originalBytes, locale),
+            to: formatBytes(compressed.file.size, locale),
+          }),
+        );
+      } else {
+        setMessage({
+          ok: false,
+          text: t(`upload.errors.${result.error === "invalid" ? "failed" : result.error}`, {
+            limit: formatBytes(MAX_IMAGE_BYTES, locale),
+          }),
+        });
+      }
       router.refresh();
     } catch {
       setMessage({ ok: false, text: t("upload.errors.failed") });
@@ -93,7 +94,8 @@ export function BrandImageUploader({
     setBusy(true);
     setMessage(null);
     const result = await removeBrandImageAction(kind);
-    setMessage(result.ok ? { ok: true, text: t(`${kind}.removed`) } : { ok: false, text: t("upload.errors.failed") });
+    if (result.ok) toast.success(t(`${kind}.removed`));
+    else setMessage({ ok: false, text: t("upload.errors.failed") });
     setBusy(false);
     router.refresh();
   }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { isoToLocalInput, localInputToIso } from "@/components/local-date-time";
 import { formatMoney, minorToInput, parsePriceToMinor } from "@/lib/money";
@@ -146,6 +147,7 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
       ? await updatePromotionAction(promotionId, payload, locale)
       : await createPromotionAction(payload, locale);
     if (result.ok) {
+      toast.success(t(promotionId ? "toasts.saved" : "toasts.created", { name: values.name.trim() }));
       router.push("/dashboard/promotions");
       router.refresh();
       return;

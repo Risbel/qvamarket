@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { setSecondaryBannerVisibleAction } from "@/server/secondary-banner-actions";
@@ -24,6 +25,7 @@ export function SecondaryBannerSwitch({ visible }: { visible: boolean }) {
     try {
       const result = await setSecondaryBannerVisibleAction(next);
       if (!result.ok) throw new Error(result.error);
+      toast.success(t(next ? "toasts.shown" : "toasts.hidden"));
     } catch {
       setChecked(!next);
       setFailed(true);

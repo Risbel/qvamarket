@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { toast } from "sonner";
+import { Link, useRouter } from "@/i18n/navigation";
 import { MAX_LINE_QUANTITY } from "@/lib/cart";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useCart } from "../../cart-provider";
@@ -10,10 +11,10 @@ import { useCart } from "../../cart-provider";
 /** Quantity picker + "add to cart". `stock` null = not tracked. */
 export function AddToCart({ variantId, stock }: { variantId: string; stock: number | null }) {
   const t = useTranslations("Store.cart");
+  const router = useRouter();
   const hydrated = useHydrated();
   const { items, add } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState(false);
 
   const max = stock === null ? MAX_LINE_QUANTITY : Math.min(stock, MAX_LINE_QUANTITY);
   const inCart = items.find((item) => item.variantId === variantId)?.quantity ?? 0;
@@ -63,8 +64,8 @@ export function AddToCart({ variantId, stock }: { variantId: string; stock: numb
           disabled={!hydrated}
           onClick={() => {
             add(variantId, chosen, max);
-            setAdded(true);
             setQuantity(1);
+            toast.success(t("added"), { action: { label: t("view"), onClick: () => router.push("/cart") } });
           }}
           className="h-9 rounded-md px-5 text-sm font-medium disabled:opacity-50"
           style={{ backgroundColor: "var(--brand)", color: "var(--brand-foreground)" }}
@@ -72,15 +73,6 @@ export function AddToCart({ variantId, stock }: { variantId: string; stock: numb
           {t("add")}
         </button>
       </div>
-
-      {added && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {t("added")}{" "}
-          <Link href="/cart" className="font-medium text-foreground underline underline-offset-4">
-            {t("view")}
-          </Link>
-        </p>
-      )}
     </div>
   );
 }

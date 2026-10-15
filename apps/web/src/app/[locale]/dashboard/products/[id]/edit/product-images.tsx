@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { compressForUpload } from "@/lib/compress-image";
 import {
@@ -106,15 +107,18 @@ export function ProductImages({
     setStatus(null);
     setBusy(false);
     setLines(results);
+    const uploaded = results.filter((line) => line.ok).length;
+    if (uploaded > 0) toast.success(t("toasts.uploaded", { count: uploaded }));
     if (inputRef.current) inputRef.current.value = "";
     router.refresh();
   }
 
-  async function run(id: string, action: (id: string) => ReturnType<typeof deleteProductImageAction>) {
+  async function run(id: string, action: (id: string) => ReturnType<typeof deleteProductImageAction>, success: string) {
     setBusy(true);
     setLines([]);
     const result = await action(id);
-    if (!result.ok && result.error !== "notFound") {
+    if (result.ok) toast.success(success);
+    else if (result.error !== "notFound") {
       setLines([{ name: "", ok: false, text: t(`errors.${result.error}`, { count: MAX_IMAGES_PER_PRODUCT }) }]);
     }
     setBusy(false);
@@ -165,7 +169,7 @@ export function ProductImages({
                     size="sm"
                     variant="outline"
                     disabled={!hydrated || busy}
-                    onClick={() => run(image.id, setMainProductImageAction)}
+                    onClick={() => run(image.id, setMainProductImageAction, t("toasts.mainChanged"))}
                   >
                     {t("makeMain")}
                   </Button>
@@ -175,7 +179,7 @@ export function ProductImages({
                   size="sm"
                   variant="outline"
                   disabled={!hydrated || busy}
-                  onClick={() => run(image.id, deleteProductImageAction)}
+                  onClick={() => run(image.id, deleteProductImageAction, t("toasts.removed"))}
                 >
                   {t("remove")}
                 </Button>

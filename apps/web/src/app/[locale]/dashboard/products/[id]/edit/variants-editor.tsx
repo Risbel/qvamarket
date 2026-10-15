@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createVariantsSchema, type FormCurrency, type VariantsFormValues } from "@/lib/validation/product";
@@ -46,7 +47,7 @@ export function VariantsEditor({
   const router = useRouter();
   const hydrated = useHydrated();
   const [open, setOpen] = useState<Set<number>>(new Set());
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createVariantsSchema(tv, currencies), [tv, currencies]);
   const form = useForm<VariantsFormValues>({ resolver: zodResolver(schema), defaultValues: toValues(variants, currencies) });
 
@@ -72,14 +73,14 @@ export function VariantsEditor({
   function openErrors(errors: FieldErrors<VariantsFormValues>) {
     const withErrors = (errors.variants ?? []) as unknown[];
     setOpen((current) => new Set([...current, ...withErrors.flatMap((error, i) => (error ? [i] : []))]));
-    setStatus({ ok: false, text: t("fixErrors") });
+    setFormError(t("fixErrors"));
   }
 
   async function onSubmit(values: VariantsFormValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await saveVariantsAction(productId, values, locale);
     if (result.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       router.refresh();
       return;
     }
@@ -89,7 +90,7 @@ export function VariantsEditor({
     }
     if (result.error === "stale") router.refresh();
     const key = ["forbidden", "stale", "notFound", "skuTaken"].includes(result.error) ? result.error : "failed";
-    setStatus({ ok: false, text: t(`errors.${key as "forbidden" | "stale" | "notFound" | "skuTaken" | "failed"}`) });
+    setFormError(t(`errors.${key as "forbidden" | "stale" | "notFound" | "skuTaken" | "failed"}`));
   }
 
   return (
@@ -152,9 +153,9 @@ export function VariantsEditor({
           })}
         </ul>
 
-        {status && (
-          <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-            {status.text}
+        {formError && (
+          <p role="alert" className="text-sm text-destructive">
+            {formError}
           </p>
         )}
         <div>

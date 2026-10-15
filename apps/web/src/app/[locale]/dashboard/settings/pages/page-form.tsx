@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { PageContent } from "@/components/page-content";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export function PageForm({ pageId, initialValues }: { pageId?: string; initialVa
     setFormError(null);
     const result = pageId ? await updateStorePageAction(pageId, values, locale) : await createStorePageAction(values, locale);
     if (result.ok) {
+      toast.success(t(pageId ? "toasts.saved" : "toasts.created", { title: values.title.trim() }));
       router.push("/dashboard/settings/pages");
       router.refresh();
       return;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { deleteProductAction } from "@/server/product-actions";
@@ -29,6 +30,7 @@ export function DeleteProductButton({ id, name }: { id: string; name: string }) 
     const result = await deleteProductAction(id);
     // "notFound" = already gone: same outcome for the user
     if (result.ok || result.error === "notFound") {
+      toast.success(t("toasts.deleted", { name }));
       setOpen(false);
       router.refresh();
       return;

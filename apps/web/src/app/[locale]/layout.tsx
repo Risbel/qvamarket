@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -47,6 +48,7 @@ export default async function LocaleLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <Toaster richColors />
         </ThemeProvider>
       </body>
     </html>

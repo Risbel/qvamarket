@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { DELIVERY_FEE_MODES, type DeliveryFeeMode } from "@/lib/delivery";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -37,7 +38,7 @@ export function DeliveryChargesForm({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const schema = useMemo(() => createDeliveryChargesSchema(tv, currencies), [tv, currencies]);
   const form = useForm<DeliveryChargesValues>({ resolver: zodResolver(schema), defaultValues: initialValues });
@@ -45,20 +46,20 @@ export function DeliveryChargesForm({
   const deliveryEnabled = useWatch({ control: form.control, name: "deliveryEnabled" });
 
   async function onSubmit(values: DeliveryChargesValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await saveDeliveryChargesAction(values, locale).catch(() => null);
     if (result?.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       form.reset(values);
       router.refresh();
     } else if (result?.error === "invalid") {
       for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
         form.setError(field as keyof DeliveryChargesValues, { message: messages[0] });
       }
-      setStatus({ ok: false, text: t("errors.invalid") });
+      setFormError(t("errors.invalid"));
     } else {
       const key = result?.error === "forbidden" || result?.error === "deliveryNeedsArea" ? result.error : "failed";
-      setStatus({ ok: false, text: t(`errors.${key}`) });
+      setFormError(t(`errors.${key}`));
     }
   }
 
@@ -145,9 +146,9 @@ export function DeliveryChargesForm({
         </fieldset>
       ))}
 
-      {status && (
-        <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-          {status.text}
+      {formError && (
+        <p role="alert" className="text-sm text-destructive">
+          {formError}
         </p>
       )}
       <div>

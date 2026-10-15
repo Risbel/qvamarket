@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2Icon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { currencyDigits, formatMoney, minorToInput } from "@/lib/money";
 import { PAYMENT_METHODS, paymentTotals, type PaymentKind, type PaymentMethod } from "@/lib/orders";
@@ -77,7 +78,8 @@ export function PaymentsSection({
     const result = await deletePaymentAction(orderId, payment.id).catch(() => null);
     setBusy(false);
     setRemoving(null);
-    if (!result?.ok) setError(result && result.error !== "invalid" ? result.error : "failed");
+    if (result?.ok) toast.success(t(payment.kind === "refund" ? "toasts.refundRemoved" : "toasts.paymentRemoved"));
+    else setError(result && result.error !== "invalid" ? result.error : "failed");
     router.refresh();
   }
 
@@ -236,7 +238,10 @@ function PaymentForm({
       { ...values, paidAt: localInputToIso(values.paidAt) },
       locale,
     ).catch(() => null);
-    if (result?.ok) return onDone();
+    if (result?.ok) {
+      toast.success(t(values.kind === "refund" ? "toasts.refundRecorded" : "toasts.paymentRecorded"));
+      return onDone();
+    }
     if (result?.error === "invalid" && result.fieldErrors) {
       for (const [field, messages] of Object.entries(result.fieldErrors)) {
         form.setError(field as keyof PaymentFormValues, { message: messages[0] });

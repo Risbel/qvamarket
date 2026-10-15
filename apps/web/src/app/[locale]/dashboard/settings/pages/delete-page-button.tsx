@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { deleteStorePageAction } from "@/server/store-page-actions";
@@ -33,6 +34,7 @@ export function DeletePageButton({ id, title }: { id: string; title: string }) {
       setError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
       return;
     }
+    toast.success(t("toasts.deleted", { title }));
     setConfirming(false);
     router.refresh();
   }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm, useFormState, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
@@ -34,7 +35,7 @@ export function OptionsEditor({ productId, options }: { productId: string; optio
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createOptionsSchema(tv), [tv]);
   const form = useForm<OptionsFormValues>({ resolver: zodResolver(schema), defaultValues: toValues(options) });
   const fields = useFieldArray({ control: form.control, name: "options" });
@@ -50,18 +51,15 @@ export function OptionsEditor({ productId, options }: { productId: string; optio
   const rootError = form.formState.errors.options?.root?.message ?? form.formState.errors.options?.message;
 
   async function onSubmit(values: OptionsFormValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await setProductOptionsAction(productId, values, locale);
     if (result.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       router.refresh();
       return;
     }
     if (result.error === "stale") router.refresh();
-    setStatus({
-      ok: false,
-      text: t(`errors.${result.error === "forbidden" || result.error === "stale" || result.error === "notFound" ? result.error : "failed"}`),
-    });
+    setFormError(t(`errors.${result.error === "forbidden" || result.error === "stale" || result.error === "notFound" ? result.error : "failed"}`));
   }
 
   return (
@@ -103,9 +101,9 @@ export function OptionsEditor({ productId, options }: { productId: string; optio
           <p className="rounded-md bg-muted p-3 text-sm">{t("backToSimple")}</p>
         )}
         {rootError && <FieldError>{rootError}</FieldError>}
-        {status && (
-          <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-            {status.text}
+        {formError && (
+          <p role="alert" className="text-sm text-destructive">
+            {formError}
           </p>
         )}
         <div>

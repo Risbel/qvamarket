@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import {
   BANNER_FORMATS,
@@ -87,16 +88,21 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
     setStatus(null);
     setBusy(false);
     setLines(results);
+    const uploaded = results.filter((line) => line.tone !== "error").length;
+    if (uploaded > 0) toast.success(t("toasts.uploaded", { count: uploaded }));
     if (inputRef.current) inputRef.current.value = "";
     router.refresh();
   }
 
-  async function run(action: () => Promise<BannerActionResult>) {
+  /** `success`: the toast shown when it worked (none for reordering, which shows itself) */
+  async function run(action: () => Promise<BannerActionResult>, success?: string) {
     setBusy(true);
     setLines([]);
     try {
       const result = await action();
-      if (!result.ok && result.error !== "notFound") {
+      if (result.ok) {
+        if (success) toast.success(success);
+      } else if (result.error !== "notFound") {
         setLines([{ name: "", tone: "error", text: errorText(result.error) }]);
       }
     } catch {
@@ -166,7 +172,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
                     size="sm"
                     variant="outline"
                     disabled={!hydrated || busy}
-                    onClick={() => run(() => deleteBannerImageAction(image.id))}
+                    onClick={() => run(() => deleteBannerImageAction(image.id), t("toasts.removed"))}
                   >
                     {t("remove")}
                   </Button>

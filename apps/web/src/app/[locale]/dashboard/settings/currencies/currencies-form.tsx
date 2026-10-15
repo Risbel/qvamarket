@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { setStoreCurrenciesAction } from "@/server/catalog-actions";
@@ -34,24 +35,24 @@ export function CurrenciesForm({
   const [current, setCurrent] = useState(defaultCode);
   const [adding, setAdding] = useState("");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const labelOf = new Map(available.map((c) => [c.code, c.label]));
   const dirty = codes.join() !== enabled.join() || current !== defaultCode;
 
   async function save() {
     setBusy(true);
-    setMessage(null);
+    setFormError(null);
     const result = await setStoreCurrenciesAction({ codes, defaultCode: current }, locale);
     setBusy(false);
     if (result.ok) {
-      setMessage({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       router.refresh();
     } else if (result.error === "inUse") {
-      setMessage({ ok: false, text: t("inUse", { codes: (result.codes ?? []).join(", ") }) });
+      setFormError(t("inUse", { codes: (result.codes ?? []).join(", ") }));
       setCodes(enabled);
       setCurrent(defaultCode);
     } else {
-      setMessage({ ok: false, text: t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`) });
+      setFormError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
     }
   }
 
@@ -112,9 +113,9 @@ export function CurrenciesForm({
       </div>
 
       <p className="text-sm text-muted-foreground">{t("help")}</p>
-      {message && (
-        <p role="status" className={message.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-          {message.text}
+      {formError && (
+        <p role="alert" className="text-sm text-destructive">
+          {formError}
         </p>
       )}
       <div>

@@ -27,6 +27,7 @@ QvaShop is a **B2B2C multi-tenant SaaS** for creating online stores.
 | Forms / validation | react-hook-form + zod, connected with `@hookform/resolvers` (`zodResolver`) |
 | Maps | **MapLibre GL** + **Protomaps** vector tiles of Cuba (one PMTiles archive in our own bucket, served by our tile route). No map API, no key, no third-party server (see Maps) |
 | Image compression | `browser-image-compression` in the browser: every product image is shrunk to a WebP **under 1 MB** (max 1600 px) before upload |
+| Toasts | **Sonner** via the shadcn `sonner` component (shadcn's Toast is deprecated) |
 | Carousel | **Embla 8.6.0** (stable; pinned, not the 9.x RC): `embla-carousel-react` via the shadcn `carousel` component + `embla-carousel-fade` and `embla-carousel-autoplay` |
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | Better Auth (email + password, organizations, admin/impersonation plugins) |
@@ -288,6 +289,7 @@ Orders are created at storefront checkout (guest checkout, no customer account).
 - Every form must use `method="post"` and keep its submit button disabled until hydrated (`useHydrated()` from `@/lib/use-hydrated`). Otherwise a submit before hydration is a native GET that puts the fields (including passwords) in the URL.
 - Existing forms written with plain state (e.g. login) should be migrated when they are next touched.
 - **Every text input and textarea has a placeholder** with a realistic example (`<field>Placeholder` message key, `"Ej.: ..."` / `"E.g. ..."`; a URL slug shows the slug itself, e.g. `sobre-nosotros`). The placeholder is an example, never the label or an instruction (those go in the label / description).
+- **Success feedback = a toast** (decided 2026-10): `toast.success(t(...))` from `sonner` (shadcn `sonner` component, one `<Toaster />` in the root layout, so a toast survives `router.push`). Errors stay **inline** (field errors under the field, others in a `role="alert"` paragraph by the form). Messages in the component's namespace under `toasts.*` (older forms reuse their `saved` key). No toast when the change is obvious on screen (reordering, adding an empty banner pair). A Server Action that calls `redirect()` cannot toast (the client code after `await` never runs): return a result and navigate from the client.
 
 ### Light / dark theme (decided 2026-10)
 - `next-themes` (as in the shadcn docs): `<ThemeProvider attribute="class" defaultTheme="system">` in the root layout toggles the `dark` class on `<html>` (`suppressHydrationWarning` there is required); the choice is kept in `localStorage` per host. `<ModeToggle>` (`src/components/mode-toggle.tsx`: Light / Dark / System) sits in the panel header; on the storefront the same choice is a radio group inside the account menu (`THEMES` is shared).

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { setStoreStatusAction } from "@/server/merchant-actions";
@@ -43,6 +44,8 @@ export function StoreStatusControls({
     const result = await setStoreStatusAction(storeId, next);
     setPending(false);
     if (result.ok) {
+      const done = next === "suspended" ? "suspended" : status === "pending" ? "approved" : "reactivated";
+      toast.success(t(`toasts.${done}`, { name: storeName }));
       setConfirming(false);
       router.refresh();
       return;

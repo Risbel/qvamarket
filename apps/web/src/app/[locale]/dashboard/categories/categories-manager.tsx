@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { categorySlug } from "@/lib/slug";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -53,12 +54,15 @@ export function CategoriesManager({
   const [deleting, setDeleting] = useState<Category | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(action: () => Promise<CatalogActionResult>) {
+  /** `success`: the toast shown when it worked (none for reordering, which shows itself) */
+  async function run(action: () => Promise<CatalogActionResult>, success?: string) {
     setBusy(true);
     setError(null);
     const result = await action();
     setBusy(false);
-    if (!result.ok) setError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
+    if (result.ok) {
+      if (success) toast.success(success);
+    } else setError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
     router.refresh();
     return result;
   }
@@ -130,7 +134,12 @@ export function CategoriesManager({
                       size="sm"
                       variant="outline"
                       disabled={!hydrated || busy}
-                      onClick={() => run(() => setCategoryVisibilityAction(category.id, !category.isVisible))}
+                      onClick={() =>
+                        run(
+                          () => setCategoryVisibilityAction(category.id, !category.isVisible),
+                          t(category.isVisible ? "toasts.hidden" : "toasts.shown", { name: category.name }),
+                        )
+                      }
                     >
                       {category.isVisible ? t("hide") : t("show")}
                     </Button>
@@ -167,7 +176,7 @@ export function CategoriesManager({
               disabled={busy}
               onClick={async () => {
                 if (!deleting) return;
-                await run(() => deleteCategoryAction(deleting.id));
+                await run(() => deleteCategoryAction(deleting.id), t("toasts.deleted", { name: deleting.name }));
                 setDeleting(null);
               }}
             >
@@ -216,6 +225,7 @@ function CategoryForm({
         ? await createCategoryAction(values, locale)
         : await updateCategoryAction(category!.id, values, locale);
     if (result.ok) {
+      toast.success(t(mode === "create" ? "toasts.created" : "toasts.saved", { name: values.name.trim() }));
       if (mode === "create") form.reset({ name: "" });
       onDone();
       return;

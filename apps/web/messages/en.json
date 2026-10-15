@@ -233,6 +233,9 @@
         "number": "Order {number}",
         "limited": "Showing your latest {count} orders.",
         "signedInOnly": "Orders placed while signed in appear here. Orders placed without an account are not added, even with the same phone."
+      },
+      "toasts": {
+        "signedOut": "You have signed out."
       }
     },
     "footer": {
@@ -390,6 +393,11 @@
         "forbidden": "You are not allowed to do this.",
         "notFound": "Store not found.",
         "failed": "The status could not be changed. Please try again."
+      },
+      "toasts": {
+        "approved": "Store \"{name}\" approved: it is now public.",
+        "suspended": "Store \"{name}\" suspended.",
+        "reactivated": "Store \"{name}\" reactivated: it is public again."
       }
     }
   },
@@ -406,6 +414,9 @@
       "invalidCurrent": "The current password is incorrect",
       "unauthenticated": "Your session has expired. Please sign in again.",
       "failed": "The password could not be changed. Please try again."
+    },
+    "toasts": {
+      "changed": "Password changed."
     }
   },
   "Impersonation": {
@@ -445,6 +456,9 @@
       "menu": "My account",
       "changePassword": "Change password",
       "signOut": "Sign out"
+    },
+    "toasts": {
+      "signedOut": "You have signed out."
     }
   },
   "Products": {
@@ -523,7 +537,10 @@
       "metaTitleHelp": "{count}/70. If empty, the name is used.",
       "metaDescription": "Search engine description",
       "metaDescriptionHelp": "{count}/160. If empty, the description is used.",
-      "pricesInVariants": "This product has options: price, SKU and stock are edited per variant, below."
+      "pricesInVariants": "This product has options: price, SKU and stock are edited per variant, below.",
+      "toasts": {
+        "saved": "Product \"{name}\" saved."
+      }
     },
     "delete": {
       "button": "Delete",
@@ -535,6 +552,9 @@
       "errors": {
         "forbidden": "You are not allowed to delete products.",
         "failed": "The product could not be deleted. Please try again."
+      },
+      "toasts": {
+        "deleted": "Product \"{name}\" deleted."
       }
     },
     "createdNotice": "Product created. Now you can add images and, if it comes in several sizes or colors, its options.",
@@ -562,6 +582,11 @@
         "forbidden": "You are not allowed to do this.",
         "failed": "The operation could not be completed. Please try again.",
         "unreadable": "The image could not be read. Is it damaged or not an image?"
+      },
+      "toasts": {
+        "uploaded": "{count, plural, one {Image uploaded.} other {# images uploaded.}}",
+        "removed": "Image deleted.",
+        "mainChanged": "Main image changed."
       }
     },
     "fromPrefix": "from",
@@ -752,7 +777,16 @@
         "limit": "You already have the maximum of {count} pairs.",
         "needsHero": "Add images to the main banner first.",
         "failed": "The operation could not be completed. Please try again."
+      },
+      "toasts": {
+        "pairDeleted": "Pair deleted.",
+        "shown": "The secondary banner is now shown in your store.",
+        "hidden": "Secondary banner hidden. Its images are kept."
       }
+    },
+    "toasts": {
+      "uploaded": "{count, plural, one {Image uploaded.} other {# images uploaded.}}",
+      "removed": "Image deleted."
     }
   },
   "Signup": {
@@ -800,7 +834,14 @@
       "forbidden": "You don't have permission to do this.",
       "failed": "The operation could not be completed. Please try again."
     },
-    "anchorPreview": "Link to its section in the store: {anchor}"
+    "anchorPreview": "Link to its section in the store: {anchor}",
+    "toasts": {
+      "created": "Category \"{name}\" created.",
+      "saved": "Category \"{name}\" saved.",
+      "hidden": "\"{name}\" is no longer shown in your store.",
+      "shown": "\"{name}\" is now shown in your store.",
+      "deleted": "Category \"{name}\" deleted."
+    }
   },
   "Settings": {
     "nav": {
@@ -1074,7 +1115,12 @@
       },
       "slugPlaceholder": "about-us",
       "metaTitlePlaceholder": "E.g. Our story | My store",
-      "metaDescriptionPlaceholder": "E.g. We are a family shop in Havana selling handmade clothes since 2015."
+      "metaDescriptionPlaceholder": "E.g. We are a family shop in Havana selling handmade clothes since 2015.",
+      "toasts": {
+        "created": "Page \"{title}\" created.",
+        "saved": "Page \"{title}\" saved.",
+        "deleted": "Page \"{title}\" deleted."
+      }
     }
   },
   "Promotions": {
@@ -1144,7 +1190,16 @@
         "notFound": "Promotion not found.",
         "stale": "A product changed while you were editing (price or variants). We reloaded the data: check and save again.",
         "failed": "The promotion could not be saved. Please try again."
+      },
+      "toasts": {
+        "created": "Promotion \"{name}\" created.",
+        "saved": "Promotion \"{name}\" saved."
       }
+    },
+    "toasts": {
+      "activated": "Promotion \"{name}\" activated.",
+      "paused": "Promotion \"{name}\" paused.",
+      "deleted": "Promotion \"{name}\" deleted."
     }
   },
   "Sidebar": {
@@ -1262,6 +1317,9 @@
         "stale": "The order changed while you were looking at it. Check its current status.",
         "forbidden": "You are not allowed to change orders.",
         "failed": "The status could not be changed. Try again."
+      },
+      "toasts": {
+        "changed": "Order {reference} marked as {status}."
       }
     },
     "payments": {
@@ -1303,6 +1361,12 @@
         "cancelled": "The order is cancelled: it only takes refunds.",
         "unbalanced": "It cannot be removed: the amount collected would go below zero or above the total. Remove the refund or payment that offsets it first.",
         "failed": "It could not be saved. Try again."
+      },
+      "toasts": {
+        "paymentRecorded": "Payment recorded.",
+        "refundRecorded": "Refund recorded.",
+        "paymentRemoved": "Payment removed.",
+        "refundRemoved": "Refund removed."
       }
     },
     "dates": {

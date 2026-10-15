@@ -15,6 +15,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/initials";
@@ -111,6 +112,7 @@ export function PanelSidebar({ groups, brand, user, storeUrl, impersonating }: P
 
   async function signOut() {
     await authClient.signOut();
+    toast.success(t("toasts.signedOut"));
     router.push("/login");
     router.refresh();
   }

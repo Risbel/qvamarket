@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, ImageIcon, PlusIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import {
   formatBytes,
@@ -67,12 +68,15 @@ export function SecondaryBannerPairs({
       ? t(`errors.${error}`, { count: MAX_SECONDARY_BANNER_PAIRS })
       : tb(`errors.${error}`, { limit: formatBytes(MAX_IMAGE_BYTES, locale) });
 
-  async function run(action: () => Promise<SecondaryBannerActionResult>) {
+  /** `success`: the toast shown when it worked (none for adding or reordering, which show themselves) */
+  async function run(action: () => Promise<SecondaryBannerActionResult>, success?: string) {
     setBusy(true);
     setLines([]);
     try {
       const result = await action();
-      if (!result.ok && result.error !== "notFound") {
+      if (result.ok) {
+        if (success) toast.success(success);
+      } else if (result.error !== "notFound") {
         setLines([{ name: "", tone: "error", text: errorText(result.error) }]);
       }
     } catch {
@@ -104,6 +108,7 @@ export function SecondaryBannerPairs({
     setStatus(null);
     setBusy(false);
     setLines([line]);
+    if (line.tone !== "error") toast.success(tb("toasts.uploaded", { count: 1 }));
     input.value = "";
     router.refresh();
   }
@@ -211,7 +216,7 @@ export function SecondaryBannerPairs({
                     size="sm"
                     variant="outline"
                     disabled={disabled}
-                    onClick={() => run(() => deleteSecondaryPairAction(pair.id))}
+                    onClick={() => run(() => deleteSecondaryPairAction(pair.id), t("toasts.pairDeleted"))}
                   >
                     {t("deletePair")}
                   </Button>

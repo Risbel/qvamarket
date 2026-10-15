@@ -233,6 +233,9 @@
         "number": "Pedido {number}",
         "limited": "Se muestran tus últimos {count} pedidos.",
         "signedInOnly": "Aquí aparecen los pedidos hechos con la sesión iniciada. Los pedidos hechos sin cuenta no se añaden, aunque uses el mismo teléfono."
+      },
+      "toasts": {
+        "signedOut": "Sesión cerrada."
       }
     },
     "footer": {
@@ -390,6 +393,11 @@
         "forbidden": "No tienes permiso para hacer esto.",
         "notFound": "No se encontró la tienda.",
         "failed": "No se pudo cambiar el estado. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "approved": "Tienda \"{name}\" aprobada: ya es pública.",
+        "suspended": "Tienda \"{name}\" suspendida.",
+        "reactivated": "Tienda \"{name}\" reactivada: vuelve a ser pública."
       }
     }
   },
@@ -406,6 +414,9 @@
       "invalidCurrent": "La contraseña actual no es correcta",
       "unauthenticated": "Tu sesión ha expirado. Inicia sesión de nuevo.",
       "failed": "No se pudo cambiar la contraseña. Inténtalo de nuevo."
+    },
+    "toasts": {
+      "changed": "Contraseña cambiada."
     }
   },
   "Impersonation": {
@@ -445,6 +456,9 @@
       "menu": "Mi cuenta",
       "changePassword": "Cambiar contraseña",
       "signOut": "Cerrar sesión"
+    },
+    "toasts": {
+      "signedOut": "Sesión cerrada."
     }
   },
   "Products": {
@@ -523,7 +537,10 @@
       "metaTitleHelp": "{count}/70. Si lo dejas vacío se usa el nombre.",
       "metaDescription": "Descripción para buscadores",
       "metaDescriptionHelp": "{count}/160. Si la dejas vacía se usa la descripción.",
-      "pricesInVariants": "Este producto tiene opciones: el precio, el SKU y el stock se editan en cada variante, más abajo."
+      "pricesInVariants": "Este producto tiene opciones: el precio, el SKU y el stock se editan en cada variante, más abajo.",
+      "toasts": {
+        "saved": "Producto \"{name}\" guardado."
+      }
     },
     "delete": {
       "button": "Eliminar",
@@ -535,6 +552,9 @@
       "errors": {
         "forbidden": "No tienes permiso para eliminar productos.",
         "failed": "No se pudo eliminar el producto. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "deleted": "Producto \"{name}\" eliminado."
       }
     },
     "createdNotice": "Producto creado. Ahora puedes añadir imágenes y, si viene en varias tallas o colores, sus opciones.",
@@ -562,6 +582,11 @@
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
         "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
+      },
+      "toasts": {
+        "uploaded": "{count, plural, one {Imagen subida.} other {# imágenes subidas.}}",
+        "removed": "Imagen eliminada.",
+        "mainChanged": "Imagen principal cambiada."
       }
     },
     "fromPrefix": "desde",
@@ -752,7 +777,16 @@
         "limit": "Ya tienes el máximo de {count} parejas.",
         "needsHero": "Añade primero imágenes al banner principal.",
         "failed": "No se pudo completar la operación. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "pairDeleted": "Pareja eliminada.",
+        "shown": "El banner secundario se muestra en tu tienda.",
+        "hidden": "Banner secundario oculto. Sus imágenes se conservan."
       }
+    },
+    "toasts": {
+      "uploaded": "{count, plural, one {Imagen subida.} other {# imágenes subidas.}}",
+      "removed": "Imagen eliminada."
     }
   },
   "Signup": {
@@ -800,7 +834,14 @@
       "forbidden": "No tienes permiso para hacer esto.",
       "failed": "No se pudo completar la operación. Inténtalo de nuevo."
     },
-    "anchorPreview": "Enlace a su sección en la tienda: {anchor}"
+    "anchorPreview": "Enlace a su sección en la tienda: {anchor}",
+    "toasts": {
+      "created": "Categoría \"{name}\" creada.",
+      "saved": "Categoría \"{name}\" guardada.",
+      "hidden": "\"{name}\" ya no se muestra en tu tienda.",
+      "shown": "\"{name}\" se muestra en tu tienda.",
+      "deleted": "Categoría \"{name}\" eliminada."
+    }
   },
   "Settings": {
     "nav": {
@@ -1074,7 +1115,12 @@
       },
       "slugPlaceholder": "sobre-nosotros",
       "metaTitlePlaceholder": "Ej.: Conoce nuestra historia | Mi tienda",
-      "metaDescriptionPlaceholder": "Ej.: Somos una tienda familiar de La Habana que vende ropa hecha a mano desde 2015."
+      "metaDescriptionPlaceholder": "Ej.: Somos una tienda familiar de La Habana que vende ropa hecha a mano desde 2015.",
+      "toasts": {
+        "created": "Página «{title}» creada.",
+        "saved": "Página «{title}» guardada.",
+        "deleted": "Página «{title}» borrada."
+      }
     }
   },
   "Promotions": {
@@ -1144,7 +1190,16 @@
         "notFound": "No se encontró la promoción.",
         "stale": "Algún producto cambió mientras editabas (precio o variantes). Hemos recargado los datos: revisa y vuelve a guardar.",
         "failed": "No se pudo guardar la promoción. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "created": "Promoción \"{name}\" creada.",
+        "saved": "Promoción \"{name}\" guardada."
       }
+    },
+    "toasts": {
+      "activated": "Promoción \"{name}\" activada.",
+      "paused": "Promoción \"{name}\" pausada.",
+      "deleted": "Promoción \"{name}\" eliminada."
     }
   },
   "Sidebar": {
@@ -1262,6 +1317,9 @@
         "stale": "El pedido cambió mientras lo veías. Revisa su estado actual.",
         "forbidden": "No tienes permiso para cambiar pedidos.",
         "failed": "No se pudo cambiar el estado. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "changed": "Pedido {reference} marcado como {status}."
       }
     },
     "payments": {
@@ -1303,6 +1361,12 @@
         "cancelled": "El pedido está cancelado: solo admite reembolsos.",
         "unbalanced": "No se puede quitar: lo cobrado quedaría por debajo de cero o por encima del total. Quita antes el reembolso o el pago que lo compensa.",
         "failed": "No se pudo guardar. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "paymentRecorded": "Pago registrado.",
+        "refundRecorded": "Reembolso registrado.",
+        "paymentRemoved": "Pago quitado.",
+        "refundRemoved": "Reembolso quitado."
       }
     },
     "dates": {

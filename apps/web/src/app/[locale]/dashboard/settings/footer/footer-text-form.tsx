@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { FOOTER_TEXT_MAX } from "@/lib/footer";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -20,23 +21,23 @@ export function FooterTextForm({ initialValues }: { initialValues: FooterTextVal
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createFooterTextSchema(tv), [tv]);
   const form = useForm<FooterTextValues>({ resolver: zodResolver(schema), defaultValues: initialValues });
   const length = useWatch({ control: form.control, name: "footerText" }).length;
 
   async function onSubmit(values: FooterTextValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await updateFooterTextAction(values, locale);
     if (result.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       router.refresh();
     } else if (result.error === "invalid") {
       for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
         form.setError(field as keyof FooterTextValues, { message: messages[0] });
       }
     } else {
-      setStatus({ ok: false, text: t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`) });
+      setFormError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
     }
   }
 
@@ -70,9 +71,9 @@ export function FooterTextForm({ initialValues }: { initialValues: FooterTextVal
             </Field>
           )}
         />
-        {status && (
-          <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-            {status.text}
+        {formError && (
+          <p role="alert" className="text-sm text-destructive">
+            {formError}
           </p>
         )}
         <div>

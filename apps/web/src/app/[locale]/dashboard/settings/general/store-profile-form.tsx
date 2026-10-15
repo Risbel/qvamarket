@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createStoreProfileSchema, type StoreProfileValues } from "@/lib/validation/catalog-settings";
@@ -26,22 +27,22 @@ export function StoreProfileForm({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createStoreProfileSchema(tv), [tv]);
   const form = useForm<StoreProfileValues>({ resolver: zodResolver(schema), defaultValues: initialValues });
 
   async function onSubmit(values: StoreProfileValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await updateStoreProfileAction(values, locale);
     if (result.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       router.refresh();
     } else if (result.error === "invalid") {
       for (const [field, messages] of Object.entries(result.fieldErrors ?? {})) {
         form.setError(field as keyof StoreProfileValues, { message: messages[0] });
       }
     } else {
-      setStatus({ ok: false, text: t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`) });
+      setFormError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
     }
   }
 
@@ -77,9 +78,9 @@ export function StoreProfileForm({
         <Area control={form.control} name="address" label={t("address")} rows={2} />
         <Text control={form.control} name="metaTitle" label={t("metaTitle")} help={t("metaHelp")} />
         <Area control={form.control} name="metaDescription" label={t("metaDescription")} rows={2} />
-        {status && (
-          <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-            {status.text}
+        {formError && (
+          <p role="alert" className="text-sm text-destructive">
+            {formError}
           </p>
         )}
         <div>

@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { DEFAULT_MAP_CENTER, MAX_SERVICE_AREA_POINTS, type LatLng, type LngLat } from "@/lib/map";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -57,7 +58,7 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
   const router = useRouter();
   const hydrated = useHydrated();
   const [mode, setMode] = useState<Mode>(initialValues.location ? "area" : "location");
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [map, setMap] = useState<{ map: MapLibreMap; maplibre: typeof import("maplibre-gl") } | null>(null);
   const marker = useRef<Marker | null>(null);
 
@@ -133,18 +134,18 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
   }
 
   async function onSubmit(values: DeliveryAreaValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await saveDeliveryAreaAction(values, locale).catch(() => null);
     if (result?.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       form.reset(values);
       router.refresh();
     } else if (result?.error === "invalid") {
       const messages = Object.values(result.fieldErrors ?? {}).flat();
-      setStatus({ ok: false, text: messages[0] ?? t("errors.failed") });
+      setFormError(messages[0] ?? t("errors.failed"));
     } else {
       const key = result?.error === "forbidden" || result?.error === "deliveryNeedsArea" ? result.error : "failed";
-      setStatus({ ok: false, text: t(`errors.${key}`) });
+      setFormError(t(`errors.${key}`));
     }
   }
 
@@ -200,9 +201,9 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
         {location ? t("locationSet", { lat: location.lat.toFixed(5), lng: location.lng.toFixed(5) }) : t("noLocation")}
       </p>
       {areaError && <FieldError>{areaError.message ?? areaError.root?.message}</FieldError>}
-      {status && (
-        <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-          {status.text}
+      {formError && (
+        <p role="alert" className="text-sm text-destructive">
+          {formError}
         </p>
       )}
       <div>

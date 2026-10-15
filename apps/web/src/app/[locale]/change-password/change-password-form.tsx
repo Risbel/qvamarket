@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
@@ -34,6 +35,7 @@ export function ChangePasswordForm() {
     const result = await changePasswordAction(values, locale);
 
     if (result.ok) {
+      toast.success(t("toasts.changed"));
       router.push("/dashboard");
       router.refresh();
       return;

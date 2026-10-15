@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { HEX_COLOR } from "@/lib/color";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -36,7 +37,7 @@ export function BrandingForm({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [status, setStatus] = useState<"saved" | string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const schema = useMemo(() => createBrandingSchema(tv), [tv]);
   const form = useForm<BrandingValues>({
@@ -50,10 +51,10 @@ export function BrandingForm({
   const validAccent = HEX_COLOR.test(accent.toLowerCase()) ? accent.toLowerCase() : initialValues.accentColor;
 
   async function onSubmit(values: BrandingValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await updateBrandingAction(values, locale);
     if (result.ok) {
-      setStatus("saved");
+      toast.success(t("saved"));
       router.refresh();
       return;
     }
@@ -63,7 +64,7 @@ export function BrandingForm({
       }
       return;
     }
-    setStatus(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
+    setFormError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
   }
 
   return (
@@ -97,12 +98,9 @@ export function BrandingForm({
           />
         </div>
 
-        {status && (
-          <p
-            role="status"
-            className={status === "saved" ? "text-sm text-muted-foreground" : "text-sm text-destructive"}
-          >
-            {status === "saved" ? t("saved") : status}
+        {formError && (
+          <p role="alert" className="text-sm text-destructive">
+            {formError}
           </p>
         )}
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { slugify } from "@/lib/slug";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -74,7 +75,9 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
       : await createProductAction(values, locale);
 
     if (result.ok) {
-      // A new product continues on its edit page, where images can be added
+      // A new product continues on its edit page, where images can be added (and a notice
+      // there says it was created); an edited one goes back to the list
+      if (productId) toast.success(t("toasts.saved", { name: values.name.trim() }));
       router.push(productId ? "/dashboard/products" : `/dashboard/products/${result.id}/edit?created=1`);
       router.refresh();
       return;

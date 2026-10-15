@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { customerSignOutAction } from "@/server/customer-account-actions";
@@ -21,6 +22,7 @@ export function SignOutButton() {
       onClick={async () => {
         setBusy(true);
         await customerSignOutAction().catch(() => null);
+        toast.success(t("toasts.signedOut"));
         router.replace("/");
         router.refresh();
       }}

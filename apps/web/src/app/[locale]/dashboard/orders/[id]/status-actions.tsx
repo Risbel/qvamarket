@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDownIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { isFinalStatus, nextStatuses, type OrderStatus } from "@/lib/orders";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -22,8 +23,6 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
-
-type Message = { kind: "error" | "notice"; text: string };
 
 /**
  * Status buttons of an order: the next step in one click, later steps (skipping) in a menu,
@@ -49,7 +48,7 @@ export function StatusActions({
   const hydrated = useHydrated();
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState<OrderStatus | null>(null);
-  const [message, setMessage] = useState<Message | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const options = nextStatuses(status, fulfillmentType);
   const [next] = options;
@@ -57,18 +56,20 @@ export function StatusActions({
 
   async function change(values: OrderStatusValues): Promise<OrderStatusActionResult | null> {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     const result = await changeOrderStatusAction(orderId, values, locale).catch(() => null);
     setBusy(false);
     if (result?.ok) {
       setConfirming(null);
-      if (result.restockedUnits > 0) setMessage({ kind: "notice", text: t("restocked", { count: result.restockedUnits }) });
+      toast.success(t("toasts.changed", { reference, status: tStatus(values.to) }), {
+        description: result.restockedUnits > 0 ? t("restocked", { count: result.restockedUnits }) : undefined,
+      });
     } else if (result?.error === "invalid" && result.fieldErrors) {
       return result; // shown on the dialog's fields
     } else {
-      const error = result?.error === "stale" || result?.error === "notAllowed" ? "stale" : result?.error === "forbidden" ? "forbidden" : "failed";
+      const key = result?.error === "stale" || result?.error === "notAllowed" ? "stale" : result?.error === "forbidden" ? "forbidden" : "failed";
       setConfirming(null);
-      setMessage({ kind: "error", text: t(`errors.${error}`) });
+      setError(t(`errors.${key}`));
     }
     router.refresh();
     return result;
@@ -110,9 +111,9 @@ export function StatusActions({
           {t("to.cancelled")}
         </Button>
       </div>
-      {message && (
-        <p role={message.kind === "error" ? "alert" : "status"} className={message.kind === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
-          {message.text}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
         </p>
       )}
 

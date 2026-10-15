@@ -3,6 +3,7 @@
 import { LogInIcon, LogOutIcon, PackageIcon, UserIcon, UserPlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { initials } from "@/lib/initials";
 import { customerSignOutAction } from "@/server/customer-account-actions";
@@ -35,6 +36,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
 
   async function signOut() {
     await customerSignOutAction().catch(() => null);
+    toast.success(t("toasts.signedOut"));
     router.replace("/");
     router.refresh();
   }

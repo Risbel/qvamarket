@@ -5,6 +5,7 @@ import { Controller, useFieldArray, useForm, useWatch, type FieldPath } from "re
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ArrowUp, PlusIcon, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { normalizeLinkUrl } from "@/lib/footer";
 import { isSocialNetwork, SOCIAL_NETWORKS, socialNetwork } from "@/lib/social";
@@ -27,7 +28,7 @@ export function FooterSocialForm({ initialValues }: { initialValues: FooterSocia
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createFooterSocialSchema(tv), [tv]);
   const form = useForm<FooterSocialValues>({ resolver: zodResolver(schema), defaultValues: initialValues });
   const links = useFieldArray({ control: form.control, name: "links" });
@@ -36,18 +37,18 @@ export function FooterSocialForm({ initialValues }: { initialValues: FooterSocia
   const nextFree = SOCIAL_NETWORKS.find((network) => !used.has(network.key));
 
   async function onSubmit(values: FooterSocialValues) {
-    setStatus(null);
+    setFormError(null);
     const result = await updateFooterSocialAction(values, locale);
     if (result.ok) {
-      setStatus({ ok: true, text: t("saved") });
+      toast.success(t("saved"));
       router.refresh();
     } else if (result.error === "invalid") {
       for (const [path, messages] of Object.entries(result.fieldErrors ?? {})) {
         form.setError(path as FieldPath<FooterSocialValues>, { message: messages[0] });
       }
-      setStatus({ ok: false, text: t("errors.invalid") });
+      setFormError(t("errors.invalid"));
     } else {
-      setStatus({ ok: false, text: t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`) });
+      setFormError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));
     }
   }
 
@@ -176,9 +177,9 @@ export function FooterSocialForm({ initialValues }: { initialValues: FooterSocia
         <FieldDescription>{t("help")}</FieldDescription>
       </div>
 
-      {status && (
-        <p role="status" className={status.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
-          {status.text}
+      {formError && (
+        <p role="alert" className="text-sm text-destructive">
+          {formError}
         </p>
       )}
       <div>
