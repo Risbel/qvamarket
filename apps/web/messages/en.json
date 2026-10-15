@@ -42,6 +42,21 @@
       "sale": "Sale",
       "was": "Was"
     },
+    "search": {
+      "label": "Search products",
+      "placeholder": "Search {store}",
+      "title": "Search",
+      "titleFor": "Results for “{q}”",
+      "count": "{count, plural, one {# product} other {# products}}",
+      "hint": "Type the name of a product in the search box.",
+      "noResults": "We found no products for that search. Try another word or check the spelling.",
+      "seeAll": "See all products",
+      "submit": "Search",
+      "loading": "Searching…",
+      "noSuggestions": "No matches for “{q}”",
+      "seeAllFor": "See all results for “{q}”",
+      "suggestionsLabel": "Suggestions"
+    },
     "hero": {
       "label": "Highlights",
       "previous": "Previous image",

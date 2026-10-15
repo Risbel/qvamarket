@@ -42,6 +42,21 @@
       "sale": "Oferta",
       "was": "Antes"
     },
+    "search": {
+      "label": "Buscar productos",
+      "placeholder": "Buscar en {store}",
+      "title": "Buscar",
+      "titleFor": "Resultados para “{q}”",
+      "count": "{count, plural, one {# producto} other {# productos}}",
+      "hint": "Escribe el nombre de un producto en el buscador.",
+      "noResults": "No encontramos productos con esa búsqueda. Prueba con otra palabra o revisa cómo está escrita.",
+      "seeAll": "Ver todos los productos",
+      "submit": "Buscar",
+      "loading": "Buscando…",
+      "noSuggestions": "Sin coincidencias para “{q}”",
+      "seeAllFor": "Ver todos los resultados para “{q}”",
+      "suggestionsLabel": "Sugerencias"
+    },
     "hero": {
       "label": "Destacados",
       "previous": "Imagen anterior",

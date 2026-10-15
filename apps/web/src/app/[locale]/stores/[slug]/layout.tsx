@@ -18,6 +18,7 @@ import { CartLink } from "./cart-link";
 import { CartProvider } from "./cart-provider";
 import { CurrencySwitcher } from "./currency-switcher";
 import { StoreFooter } from "./store-footer";
+import { HeaderSearch, MobileSearchRow } from "./store-search";
 
 export async function generateMetadata({
   params,
@@ -58,8 +59,14 @@ export default async function StoreLayout({
 
   return (
     <CartProvider storeId={store.id} storeSlug={store.slug} currency={currency.code}>
-      {/* --store-header: the header's height, for whatever sticks or scrolls below it */}
-      <div className="flex flex-1 flex-col [--store-header:3.5rem]" style={brand}>
+      {/* --store-header: the main bar's height; --store-search: the phone search row's;
+          --store-sticky: what is pinned at the top right now, for whatever sticks below it
+          (the main bar alone from md up, where the search sits inside it, or while the
+          phone row is scrolled away) */}
+      <div
+        className="flex flex-1 flex-col [--store-header:3.5rem] [--store-search:3rem] [--store-sticky:calc(var(--store-header)+var(--store-search))] has-[[data-search-hidden]]:[--store-sticky:var(--store-header)] md:[--store-sticky:var(--store-header)]"
+        style={brand}
+      >
         <header
           // The brand color, slightly see-through, blurring what scrolls under it
           className="sticky top-0 z-40 bg-(--brand)/80 backdrop-blur-md backdrop-saturate-150"
@@ -92,6 +99,7 @@ export default async function StoreLayout({
                 </>
               )}
             </Link>
+            <HeaderSearch storeName={store.name} />
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
               {store.currencies.length > 1 && (
                 <CurrencySwitcher codes={store.currencies.map((c) => c.code)} current={currency.code} />
@@ -107,6 +115,7 @@ export default async function StoreLayout({
             </div>
           </div>
         </header>
+        <MobileSearchRow storeName={store.name} />
         {children}
         <StoreFooter
           name={store.name}

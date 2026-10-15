@@ -17,6 +17,7 @@ import {
   variantOptionValue,
 } from "@qvashop/db";
 import { resolvePrice, volumeTiers, type ResolvedPrice, type VolumeTier } from "@/lib/pricing";
+import { searchScore, searchTerms } from "@/lib/search";
 import { loadPriceRows } from "./pricing";
 
 // Public catalog: what an anonymous visitor may see of a store's products.
@@ -78,24 +79,10 @@ export type PublicListItem = {
 
 export type PublicCategory = { id: string; name: string; slug: string };
 
-/** Catalog of a store in a currency: products and the visible categories that have any. */
-export async function listPublicCatalog(
-  storeId: string,
-  currencyCode: string,
-): Promise<{ categories: PublicCategory[]; products: PublicListItem[] }> {
-  const rows = await db
-    .select({
-      id: product.id,
-      slug: product.slug,
-      name: product.name,
-      categoryId: product.categoryId,
-      imageKey: mainImage,
-    })
-    .from(product)
-    .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
-    .where(publicProducts(storeId))
-    .orderBy(desc(product.createdAt));
+type ListRow = { id: string; slug: string; name: string; categoryId: string | null; imageKey: string | null };
 
+/** Prices the rows in a currency (cheapest variant, 1 unit); rows not sold in it are dropped. */
+async function toListItems(storeId: string, currencyCode: string, rows: ListRow[]): Promise<PublicListItem[]> {
   const variants = await variantsOf(rows.map((r) => r.id));
   const prices = await loadPriceRows(storeId, [...variants.values()].flat().map((v) => v.id), currencyCode);
 
@@ -113,6 +100,27 @@ export async function listPublicCatalog(
       soldOut: sellable.every((x) => x.v.stock === 0),
     });
   }
+  return products;
+}
+
+/** Catalog of a store in a currency: products and the visible categories that have any. */
+export async function listPublicCatalog(
+  storeId: string,
+  currencyCode: string,
+): Promise<{ categories: PublicCategory[]; products: PublicListItem[] }> {
+  const rows = await db
+    .select({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      categoryId: product.categoryId,
+      imageKey: mainImage,
+    })
+    .from(product)
+    .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
+    .where(publicProducts(storeId))
+    .orderBy(desc(product.createdAt));
+  const products = await toListItems(storeId, currencyCode, rows);
 
   const used = new Set(products.map((p) => p.categoryId).filter(Boolean));
   const categories = (
@@ -124,6 +132,48 @@ export async function listPublicCatalog(
   ).filter((c) => used.has(c.id));
 
   return { categories, products };
+}
+
+export const SEARCH_RESULTS_MAX = 60;
+
+/**
+ * Products of the store matching a query (name, tags, visible category, description;
+ * accents and case ignored, see searchScore), best matches first, at most `limit`.
+ */
+export async function searchPublicCatalog(
+  storeId: string,
+  currencyCode: string,
+  query: string,
+  limit = SEARCH_RESULTS_MAX,
+): Promise<PublicListItem[]> {
+  const terms = searchTerms(query);
+  if (terms.length === 0) return [];
+  const rows = await db
+    .select({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      categoryId: product.categoryId,
+      imageKey: mainImage,
+      tags: product.tags,
+      description: product.description,
+      // A hidden category does not exist for the public, so its name finds nothing
+      categoryName: sql<string | null>`case when ${category.isVisible} then ${category.name} end`,
+    })
+    .from(product)
+    .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
+    .leftJoin(category, and(eq(category.id, product.categoryId), eq(category.tenantId, product.tenantId)))
+    .where(publicProducts(storeId))
+    .orderBy(desc(product.createdAt));
+
+  const matches = rows
+    .map((row) => ({ row, score: searchScore(terms, row) }))
+    .filter((x): x is { row: (typeof rows)[number]; score: number } => x.score !== null)
+    .sort((a, b) => b.score - a.score) // stable: equal scores stay newest first
+    // Only the best ones get priced; some extra, since products not sold in this currency drop out
+    .slice(0, limit * 2)
+    .map(({ row: { id, slug, name, categoryId, imageKey } }) => ({ id, slug, name, categoryId, imageKey }));
+  return (await toListItems(storeId, currencyCode, matches)).slice(0, limit);
 }
 
 export type PublicVariant = {

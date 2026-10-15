@@ -1,13 +1,11 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import { PriceTag } from "@/components/price-tag";
-import { listPublicCatalog, type PublicListItem } from "@/server/public-catalog";
+import { listPublicCatalog } from "@/server/public-catalog";
 import { BANNER_DEVICES } from "@/lib/images";
 import { getPublicStoreBySlug, listPublicBannerImages, listPublicSecondaryBanner } from "@/server/public-store";
-import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
 import { BannerCarousel } from "./banner-carousel";
+import { ProductCard } from "./product-card";
 
 export default async function StoreCatalogPage({
   params,
@@ -84,7 +82,7 @@ export default async function StoreCatalogPage({
             // Index of the categories: jumps to each section of the page
             <nav
               aria-label={t("categoriesLabel")}
-              className="sticky top-(--store-header) z-10 -mx-4 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur"
+              className="sticky top-(--store-sticky) z-10 transition-[top] duration-200 -mx-4 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur"
             >
               {sections.map((section) => (
                 <a
@@ -99,7 +97,7 @@ export default async function StoreCatalogPage({
           )}
 
           {sections.map((section) => (
-            <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`} className="flex scroll-mt-[calc(var(--store-header)+5rem)] flex-col gap-4">
+            <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`} className="flex scroll-mt-[calc(var(--store-sticky)+5rem)] flex-col gap-4">
               <h2 id={`${section.id}-title`} className="text-xl font-semibold">
                 {section.title}
               </h2>
@@ -120,64 +118,5 @@ export default async function StoreCatalogPage({
         </>
       )}
     </main>
-  );
-}
-
-function ProductCard({
-  product,
-  currency,
-  locale,
-  eager,
-  labels,
-}: {
-  product: PublicListItem;
-  currency: string;
-  locale: string;
-  eager: boolean;
-  labels: { soldOut: string; noImage: string; from: string; sale: string; was: string };
-}) {
-  const badge = product.soldOut ? labels.soldOut : product.price.promotion || product.price.compareAtMinor ? labels.sale : null;
-  return (
-    <li>
-      <Link
-        href={`/products/${product.slug}`}
-        className="group flex flex-col gap-2 rounded-lg outline-offset-4 focus-visible:outline-2"
-      >
-        <div className="relative aspect-square overflow-hidden rounded-lg border bg-muted">
-          {product.imageKey ? (
-            // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
-            <img
-              src={publicUrl(product.imageKey)}
-              alt={product.name}
-              width={400}
-              height={400}
-              loading={eager ? "eager" : "lazy"}
-              className={`size-full object-cover transition-transform group-hover:scale-105 ${product.soldOut ? "opacity-60" : ""}`}
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center text-xs text-muted-foreground">{labels.noImage}</div>
-          )}
-          {badge && (
-            <span
-              className="absolute left-2 top-2 rounded-full px-2.5 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: "var(--brand-accent)", color: "var(--brand-accent-foreground)" }}
-            >
-              {badge}
-            </span>
-          )}
-        </div>
-        <div className="flex flex-col">
-          <span className="font-medium leading-snug">{product.name}</span>
-          <PriceTag
-            unitMinor={product.price.unitMinor}
-            compareAtMinor={product.price.compareAtMinor}
-            currency={currency}
-            locale={locale}
-            prefix={product.priceVaries ? labels.from : undefined}
-            wasLabel={labels.was}
-          />
-        </div>
-      </Link>
-    </li>
   );
 }
