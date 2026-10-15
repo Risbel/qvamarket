@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, GalleryHorizontal, MapPin, PanelBottom, Palette, Store, Truck } from "lucide-react";
+import { Coins, FileText, GalleryHorizontal, MapPin, PanelBottom, Palette, Store, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -14,9 +14,13 @@ const SECTIONS = [
   { key: "pickup", href: "/dashboard/settings/pickup", icon: Truck },
   { key: "delivery", href: "/dashboard/settings/delivery", icon: MapPin },
   { key: "footer", href: "/dashboard/settings/footer", icon: PanelBottom },
+  { key: "pages", href: "/dashboard/settings/pages", icon: FileText },
 ] as const;
 
-/** Section menu: a horizontal scrolling row on phones, a vertical list from `md` up. */
+/**
+ * Section menu: a horizontal scrolling row on phones, a vertical list from `md` up that stays
+ * in view while the section scrolls (sticky under the panel header: h-14 + 1rem gap).
+ */
 export function SettingsNav() {
   const t = useTranslations("Settings.nav");
   const pathname = usePathname();
@@ -24,7 +28,7 @@ export function SettingsNav() {
   return (
     <nav
       aria-label={t("label")}
-      className="-mx-4 flex gap-1 overflow-x-auto border-b px-4 pb-2 md:mx-0 md:flex-col md:overflow-visible md:border-b-0 md:px-0 md:pb-0"
+      className="-mx-4 flex gap-1 overflow-x-auto border-b px-4 pb-2 md:sticky md:top-18 md:mx-0 md:flex-col md:overflow-visible md:border-b-0 md:px-0 md:pb-0"
     >
       {SECTIONS.map(({ key, href, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);

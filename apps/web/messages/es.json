@@ -298,7 +298,9 @@
     "footerTooManyLinks": "Máximo {max} enlaces por grupo.",
     "footerTooManyGroups": "Máximo {max} grupos.",
     "socialUrlInvalid": "Usa un enlace de {name} que empiece por https://{domain}",
-    "socialDuplicate": "Esta red social ya está en la lista."
+    "socialDuplicate": "Esta red social ya está en la lista.",
+    "pageSlugReserved": "Esta dirección la usa la tienda; elige otra",
+    "pageSlugTaken": "Ya hay una página con esta dirección"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -809,7 +811,8 @@
       "currencies": "Monedas",
       "pickup": "Recogida",
       "delivery": "Entrega a domicilio",
-      "footer": "Pie de página"
+      "footer": "Pie de página",
+      "pages": "Páginas"
     },
     "currencies": {
       "title": "Monedas",
@@ -1008,6 +1011,70 @@
           "failed": "No se pudo guardar. Inténtalo de nuevo."
         }
       }
+    },
+    "pages": {
+      "title": "Páginas",
+      "description": "Páginas propias de tu tienda, como «Sobre nosotros», «Envíos» o «Preguntas frecuentes».",
+      "count": "{count} de {max} páginas",
+      "new": "Nueva página",
+      "editTitle": "Editar página",
+      "formDescription": "Escribe el texto de la página. Mientras no la publiques, solo la ve tu equipo aquí.",
+      "limitReached": "Has llegado al máximo de páginas. Borra alguna para crear otra.",
+      "back": "Volver a las páginas",
+      "empty": "Aún no tienes páginas.",
+      "statuses": {
+        "draft": "Borrador",
+        "published": "Publicada"
+      },
+      "opensInNewTab": "(se abre en una pestaña nueva)",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "deleteTitle": "¿Borrar la página?",
+      "deleteConfirm": "Se borrará «{title}». Los enlaces que apunten a ella dejarán de funcionar.",
+      "cancel": "Cancelar",
+      "footerHint": "Para que tus clientes encuentren una página, añádela como enlace en el <link>pie de página</link> (por ejemplo, /sobre-nosotros).",
+      "pageTitle": "Título",
+      "pageTitlePlaceholder": "Ej.: Sobre nosotros",
+      "slug": "Dirección",
+      "slugHelp": "Aparece en el enlace: {path}. Si la cambias, los enlaces antiguos dejarán de funcionar.",
+      "content": "Contenido",
+      "contentTabs": "Escribir o ver el contenido",
+      "write": "Escribir",
+      "preview": "Vista previa",
+      "contentPlaceholder": "# Quiénes somos\n\nSomos una tienda familiar de La Habana...",
+      "contentCount": "{count}/{max} caracteres",
+      "previewEmpty": "Escribe algo para ver cómo quedará.",
+      "published": "Publicada",
+      "publishedHelp": "Visible para todos en tu tienda. Apágalo para guardarla como borrador.",
+      "seoTitle": "Buscadores (SEO)",
+      "seoHelp": "Ayuda a que encuentren esta página en Google y al compartir el enlace.",
+      "metaTitle": "Título para buscadores",
+      "metaTitleHelp": "{count}/70. Si lo dejas vacío se usa el título.",
+      "metaDescription": "Descripción para buscadores",
+      "metaDescriptionHelp": "{count}/160. Si la dejas vacía se usa el principio del contenido.",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "Esta página ya no existe.",
+        "limit": "Has llegado al máximo de páginas. Borra alguna para crear otra.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      },
+      "format": {
+        "title": "Cómo dar formato al texto",
+        "heading": "Título de sección (al principio de la línea)",
+        "subheading": "Subtítulo (al principio de la línea)",
+        "minorHeading": "Título más pequeño (al principio de la línea)",
+        "divider": "Línea separadora (sola en su línea)",
+        "bullet": "Elemento de una lista",
+        "numbered": "Elemento de una lista numerada",
+        "bold": "Texto en negrita: **así**",
+        "link": "Enlace: [Ver productos](/products/camiseta) o [Instagram](https://instagram.com/...). Una dirección https://... escrita sola también se convierte en enlace.",
+        "paragraphs": "Deja una línea en blanco para empezar otro párrafo."
+      },
+      "slugPlaceholder": "sobre-nosotros",
+      "metaTitlePlaceholder": "Ej.: Conoce nuestra historia | Mi tienda",
+      "metaDescriptionPlaceholder": "Ej.: Somos una tienda familiar de La Habana que vende ropa hecha a mano desde 2015."
     }
   },
   "Promotions": {

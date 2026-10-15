@@ -298,7 +298,9 @@
     "footerTooManyLinks": "At most {max} links per group.",
     "footerTooManyGroups": "At most {max} groups.",
     "socialUrlInvalid": "Use a {name} link starting with https://{domain}",
-    "socialDuplicate": "This social network is already in the list."
+    "socialDuplicate": "This social network is already in the list.",
+    "pageSlugReserved": "The store uses this address; choose another",
+    "pageSlugTaken": "There is already a page with this address"
   },
   "Admin": {
     "title": "Admin panel",
@@ -809,7 +811,8 @@
       "currencies": "Currencies",
       "pickup": "Pickup",
       "delivery": "Home delivery",
-      "footer": "Footer"
+      "footer": "Footer",
+      "pages": "Pages"
     },
     "currencies": {
       "title": "Currencies",
@@ -1008,6 +1011,70 @@
           "failed": "Could not save. Please try again."
         }
       }
+    },
+    "pages": {
+      "title": "Pages",
+      "description": "Your store's own pages, such as \"About us\", \"Shipping\" or \"FAQ\".",
+      "count": "{count} of {max} pages",
+      "new": "New page",
+      "editTitle": "Edit page",
+      "formDescription": "Write the page's text. Until you publish it, only your team sees it here.",
+      "limitReached": "You have reached the maximum number of pages. Delete one to create another.",
+      "back": "Back to pages",
+      "empty": "You have no pages yet.",
+      "statuses": {
+        "draft": "Draft",
+        "published": "Published"
+      },
+      "opensInNewTab": "(opens in a new tab)",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteTitle": "Delete the page?",
+      "deleteConfirm": "\"{title}\" will be deleted. Links pointing to it will stop working.",
+      "cancel": "Cancel",
+      "footerHint": "So your customers can find a page, add it as a link in the <link>footer</link> (for example, /about-us).",
+      "pageTitle": "Title",
+      "pageTitlePlaceholder": "E.g. About us",
+      "slug": "Address",
+      "slugHelp": "Shown in the link: {path}. If you change it, old links will stop working.",
+      "content": "Content",
+      "contentTabs": "Write or preview the content",
+      "write": "Write",
+      "preview": "Preview",
+      "contentPlaceholder": "# Who we are\n\nWe are a family shop in Havana...",
+      "contentCount": "{count}/{max} characters",
+      "previewEmpty": "Write something to see how it will look.",
+      "published": "Published",
+      "publishedHelp": "Visible to everyone on your store. Turn it off to keep it as a draft.",
+      "seoTitle": "Search engines (SEO)",
+      "seoHelp": "Helps people find this page on Google and when the link is shared.",
+      "metaTitle": "Title for search engines",
+      "metaTitleHelp": "{count}/70. If empty, the title is used.",
+      "metaDescription": "Description for search engines",
+      "metaDescriptionHelp": "{count}/160. If empty, the start of the content is used.",
+      "save": "Save",
+      "saving": "Saving...",
+      "errors": {
+        "forbidden": "You do not have permission to do this.",
+        "notFound": "This page no longer exists.",
+        "limit": "You have reached the maximum number of pages. Delete one to create another.",
+        "failed": "Could not save. Please try again."
+      },
+      "format": {
+        "title": "How to format the text",
+        "heading": "Section heading (at the start of the line)",
+        "subheading": "Subheading (at the start of the line)",
+        "minorHeading": "Smaller heading (at the start of the line)",
+        "divider": "Divider line (on a line of its own)",
+        "bullet": "List item",
+        "numbered": "Numbered list item",
+        "bold": "Bold text: **like this**",
+        "link": "Link: [See products](/products/t-shirt) or [Instagram](https://instagram.com/...). An https://... address typed on its own also becomes a link.",
+        "paragraphs": "Leave a blank line to start a new paragraph."
+      },
+      "slugPlaceholder": "about-us",
+      "metaTitlePlaceholder": "E.g. Our story | My store",
+      "metaDescriptionPlaceholder": "E.g. We are a family shop in Havana selling handmade clothes since 2015."
     }
   },
   "Promotions": {

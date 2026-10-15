@@ -149,6 +149,50 @@ export const store = pgTable(
   ],
 );
 
+export const STORE_PAGE_STATUSES = ["draft", "published"] as const;
+
+/**
+ * Custom pages of a store ("Sobre nosotros", "Envíos"...), served at <store>/<locale>/<slug>.
+ * `content` is plain text with a few simple marks (headings, lists, bold, links) that the app
+ * turns into React elements (src/lib/store-pages.ts); it is never rendered as HTML. Slugs that
+ * collide with storefront routes are refused in the app. Max pages per store: app limit.
+ */
+export const storePage = pgTable(
+  "store_page",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    title: text("title").notNull(),
+    // URL: <store>/<locale>/<slug>. Unique per store.
+    slug: text("slug").notNull(),
+    content: text("content").default("").notNull(),
+    // draft: only the team sees it (in the panel), published: public
+    status: text("status").default("draft").notNull(),
+    metaTitle: text("meta_title"),
+    metaDescription: text("meta_description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "store_page_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    unique("store_page_store_slug_unique").on(table.storeId, table.slug),
+    index("store_page_tenantId_idx").on(table.tenantId),
+    check("store_page_title_not_empty", sql`length(trim(${table.title})) > 0`),
+    check("store_page_slug_format", sql.raw(`slug ~ ${SLUG_CHECK}`)),
+    check("store_page_status", sql`${table.status} in ('draft', 'published')`),
+  ],
+);
+
 /**
  * Currencies a store sells in, chosen by its owner/manager. Exactly one is the default (the
  * storefront's starting currency). A variant is sold in a currency only if it has a price in

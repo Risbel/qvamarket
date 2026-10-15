@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, asc, db, eq, isNotNull, store, storeBannerImage, storeSecondaryBannerPair } from "@qvashop/db";
+import { and, asc, db, eq, isNotNull, store, storeBannerImage, storePage, storeSecondaryBannerPair } from "@qvashop/db";
 import { parseFooterLinks } from "@/lib/footer";
 import type { BannerDevice } from "@/lib/images";
 import { parseFooterSocial } from "@/lib/social";
@@ -103,4 +103,23 @@ export const listPublicSecondaryBanner = cache(async (storeId: string) => {
     });
   }
   return banner;
+});
+
+/**
+ * A PUBLISHED custom page of a store, by its slug (drafts do not exist for the public). Same
+ * rules as the banners: only call it with the id of a store returned by getPublicStoreBySlug.
+ */
+export const getPublicStorePage = cache(async (storeId: string, slug: string) => {
+  const [row] = await db
+    .select({
+      title: storePage.title,
+      slug: storePage.slug,
+      content: storePage.content,
+      metaTitle: storePage.metaTitle,
+      metaDescription: storePage.metaDescription,
+    })
+    .from(storePage)
+    .where(and(eq(storePage.storeId, storeId), eq(storePage.slug, slug), eq(storePage.status, "published")))
+    .limit(1);
+  return row ?? null;
 });
