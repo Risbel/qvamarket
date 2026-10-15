@@ -76,6 +76,7 @@ export function BrandingForm({
           label={t("colors.primary")}
           pickerLabel={t("colors.picker", { label: t("colors.primary") })}
           help={t("colors.primaryHelp")}
+          placeholder={t("colors.placeholder")}
         />
         <ColorField
           control={form.control}
@@ -83,6 +84,7 @@ export function BrandingForm({
           label={t("colors.accent")}
           pickerLabel={t("colors.picker", { label: t("colors.accent") })}
           help={t("colors.accentHelp")}
+          placeholder={t("colors.placeholder")}
         />
 
         <div className="flex flex-col gap-2">
@@ -120,6 +122,7 @@ function ColorField({
   label,
   pickerLabel,
   help,
+  placeholder,
 }: {
   control: Control<BrandingValues>;
   name: keyof BrandingValues;
@@ -127,6 +130,7 @@ function ColorField({
   /** Distinct accessible name for the native color picker (the hex field already has `label`) */
   pickerLabel: string;
   help: string;
+  placeholder: string;
 }) {
   return (
     <Controller
@@ -148,6 +152,7 @@ function ColorField({
               id={name}
               autoComplete="off"
               spellCheck={false}
+              placeholder={placeholder}
               aria-invalid={fieldState.invalid}
               className="max-w-40 font-mono"
             />

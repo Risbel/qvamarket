@@ -532,7 +532,7 @@
       "slug": "Product address",
       "slugHelp": "Shown in the link: {path}",
       "tags": "Tags",
-      "tagsHelp": "Words separated by commas (e.g. cotton, summer).",
+      "tagsHelp": "Words separated by commas.",
       "metaTitle": "Search engine title",
       "metaTitleHelp": "{count}/70. If empty, the name is used.",
       "metaDescription": "Search engine description",
@@ -540,7 +540,17 @@
       "pricesInVariants": "This product has options: price, SKU and stock are edited per variant, below.",
       "toasts": {
         "saved": "Product \"{name}\" saved."
-      }
+      },
+      "namePlaceholder": "E.g. Cotton T-shirt",
+      "descriptionPlaceholder": "E.g. 100% cotton T-shirt, classic fit. Machine wash cold.",
+      "amountPlaceholder": "E.g. {example}",
+      "tierFromPlaceholder": "E.g. 10",
+      "skuPlaceholder": "E.g. TSH-COT-001",
+      "stockPlaceholder": "E.g. 25",
+      "slugPlaceholder": "cotton-t-shirt",
+      "tagsPlaceholder": "E.g. cotton, summer",
+      "metaTitlePlaceholder": "E.g. Men's cotton T-shirt | My store",
+      "metaDescriptionPlaceholder": "E.g. 100% cotton T-shirt, cool and durable. Pick it up at the store or get it delivered."
     },
     "delete": {
       "button": "Delete",
@@ -679,7 +689,8 @@
       "primaryHelp": "Your store's header and buttons.",
       "accent": "Accent color",
       "accentHelp": "Badges and highlights.",
-      "picker": "{label} (color picker)"
+      "picker": "{label} (color picker)",
+      "placeholder": "#1d4ed8"
     },
     "preview": {
       "title": "Preview",
@@ -841,7 +852,8 @@
       "hidden": "\"{name}\" is no longer shown in your store.",
       "shown": "\"{name}\" is now shown in your store.",
       "deleted": "Category \"{name}\" deleted."
-    }
+    },
+    "namePlaceholder": "E.g. T-shirts"
   },
   "Settings": {
     "nav": {
@@ -894,20 +906,28 @@
       },
       "phoneCountry": "Country for phone numbers",
       "phoneCountryNone": "None (only numbers with +)",
-      "phoneCountryHelp": "Preselected at checkout: when a customer types their number without +, this country's code is added (e.g. 5 435 3930 → +53 5435 3930)."
+      "phoneCountryHelp": "Preselected at checkout: when a customer types their number without +, this country's code is added (e.g. 5 435 3930 → +53 5435 3930).",
+      "descriptionPlaceholder": "E.g. Handmade clothing from Havana since 2015. Sizes S to XXL.",
+      "phonePlaceholder": "E.g. 7 832 1234",
+      "whatsappPlaceholder": "E.g. 5 435 3930",
+      "contactEmailPlaceholder": "E.g. sales@mystore.com",
+      "addressPlaceholder": "E.g. 456 23rd St, between L and M, Vedado, Havana",
+      "metaTitlePlaceholder": "E.g. My store | Handmade clothing in Havana",
+      "metaDescriptionPlaceholder": "E.g. Handmade clothing from Havana. Pick it up at the store or get it delivered."
     },
     "pickup": {
       "title": "In-store pickup",
       "description": "How your customers pick up their orders.",
       "instructions": "Pickup instructions",
-      "instructionsHelp": "Where and when orders can be picked up (e.g. hours, landmarks).",
+      "instructionsHelp": "Where and when orders can be picked up.",
       "save": "Save",
       "saving": "Saving...",
       "saved": "Pickup settings saved.",
       "errors": {
         "forbidden": "You don't have permission to do this.",
         "failed": "Could not save. Please try again."
-      }
+      },
+      "instructionsPlaceholder": "E.g. Monday to Saturday, 9:00 to 18:00. Entrance through the blue door, next to the pharmacy."
     },
     "delivery": {
       "title": "Home delivery",
@@ -958,7 +978,7 @@
           "distance": "A base price up to a distance, then a charge for every extra km (straight line from the store)."
         },
         "baseDistance": "Base distance (km)",
-        "baseDistanceHelp": "Kilometers covered by the base price. E.g. 1.5",
+        "baseDistanceHelp": "Kilometers covered by the base price.",
         "currencyDefault": "{currency} (main currency)",
         "currency": "{currency}",
         "otherCurrencyHelp": "Leave it empty to not offer delivery when the customer shops in this currency.",
@@ -984,7 +1004,9 @@
           "forbidden": "You are not allowed to change the settings.",
           "deliveryNeedsArea": "To switch delivery on, first save the store location and the area on the map.",
           "failed": "Could not save. Try again."
-        }
+        },
+        "amountPlaceholder": "E.g. {example}",
+        "baseDistancePlaceholder": "E.g. 1.5"
       }
     },
     "footer": {
@@ -1051,7 +1073,8 @@
           "forbidden": "You don't have permission to do this.",
           "failed": "Could not save. Please try again."
         }
-      }
+      },
+      "linkUrlPlaceholder": "E.g. /faq"
     },
     "pages": {
       "title": "Pages",
@@ -1194,7 +1217,14 @@
       "toasts": {
         "created": "Promotion \"{name}\" created.",
         "saved": "Promotion \"{name}\" saved."
-      }
+      },
+      "datePlaceholder": "Pick a day",
+      "startsAtTime": "Start time",
+      "startsAtClear": "Remove the start date",
+      "endsAtTime": "End time",
+      "endsAtClear": "Remove the end date",
+      "percentOffPlaceholder": "E.g. 20",
+      "promoPricePlaceholder": "E.g. {example}"
     },
     "toasts": {
       "activated": "Promotion \"{name}\" activated.",

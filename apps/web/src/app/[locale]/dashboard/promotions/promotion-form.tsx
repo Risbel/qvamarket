@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
+import { DateTimePicker } from "@/components/date-time-picker";
 import { isoToLocalInput, localInputToIso } from "@/components/local-date-time";
 import { formatMoney, minorToInput, parsePriceToMinor } from "@/lib/money";
 import { percentOff } from "@/lib/promotions";
@@ -20,15 +21,22 @@ import {
 import { createPromotionAction, updatePromotionAction } from "@/server/promotion-actions";
 import type { PromotableProduct } from "@/server/promotions";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+  FieldTitle,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TextField } from "../products/price-fields";
-
-const selectClass = cn(
-  "h-8 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-base outline-none md:text-sm",
-  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
-);
 
 type Props = {
   promotionId?: string;
@@ -81,6 +89,7 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
     group.rows.push({ index, variant: info.variant });
   });
   const added = new Set(groups.map((g) => g.product.id));
+  const productLabel = (p: PromotableProduct) => (p.status === "draft" ? t("draftProduct", { name: p.name }) : p.name);
   const available = products.filter((p) => !added.has(p.id) && p.status !== "archived" && p.variants.some((v) => Object.keys(v.regular).length > 0));
   const rowCount = items.fields.length;
 
@@ -173,39 +182,28 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
           name="kind"
           control={form.control}
           render={({ field }) => (
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium">{t("kind")}</legend>
-              <div className="grid gap-2 sm:grid-cols-2">
+            <FieldSet>
+              <FieldLegend variant="label">{t("kind")}</FieldLegend>
+              <RadioGroup value={field.value} onValueChange={field.onChange} className="grid gap-2 sm:grid-cols-2">
                 {PROMOTION_KINDS.map((value) => (
-                  <label
-                    key={value}
-                    className={cn(
-                      "flex cursor-pointer gap-2 rounded-lg border p-3 text-sm",
-                      field.value === value && "border-foreground",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name={field.name}
-                      value={value}
-                      checked={field.value === value}
-                      onChange={() => field.onChange(value)}
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="font-medium">{t(`kinds.${value}`)}</span>
-                      <span className="block text-muted-foreground">{t(`kindHelp.${value}`)}</span>
-                    </span>
-                  </label>
+                  <FieldLabel key={value} htmlFor={`promotion-kind-${value}`}>
+                    <Field orientation="horizontal">
+                      <RadioGroupItem value={value} id={`promotion-kind-${value}`} />
+                      <FieldContent>
+                        <FieldTitle>{t(`kinds.${value}`)}</FieldTitle>
+                        <FieldDescription>{t(`kindHelp.${value}`)}</FieldDescription>
+                      </FieldContent>
+                    </Field>
+                  </FieldLabel>
                 ))}
-              </div>
-            </fieldset>
+              </RadioGroup>
+            </FieldSet>
           )}
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField control={form.control} name="startsAt" label={t("startsAt")} description={t("startsAtHelp")} type="datetime-local" />
-          <TextField control={form.control} name="endsAt" label={t("endsAt")} description={t("endsAtHelp")} type="datetime-local" />
+          <DateField control={form.control} name="startsAt" defaultTime="00:00" locale={locale} />
+          <DateField control={form.control} name="endsAt" defaultTime="23:59" locale={locale} />
         </div>
         {timeZone && <p className="-mt-3 text-xs text-muted-foreground">{t("timeZone", { zone: timeZone })}</p>}
 
@@ -214,12 +212,10 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
           control={form.control}
           render={({ field }) => (
             <Field orientation="horizontal">
-              <input
+              <Checkbox
                 id="promotion-active"
-                type="checkbox"
                 checked={field.value === "active"}
-                onChange={(event) => field.onChange(event.target.checked ? "active" : "draft")}
-                className="size-4"
+                onCheckedChange={(checked) => field.onChange(checked ? "active" : "draft")}
               />
               <FieldLabel htmlFor="promotion-active" className="font-normal">
                 {t("active")}
@@ -241,14 +237,28 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
             <label className="sr-only" htmlFor="add-product">
               {t("addProduct")}
             </label>
-            <select id="add-product" value={adding} onChange={(e) => setAdding(e.target.value)} className={selectClass}>
-              <option value="">{available.length ? t("chooseProduct") : t("noMoreProducts")}</option>
-              {available.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.status === "draft" ? t("draftProduct", { name: p.name }) : p.name}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={adding || null}
+              onValueChange={(value) => setAdding(typeof value === "string" ? value : "")}
+              disabled={available.length === 0}
+            >
+              <SelectTrigger id="add-product" className="min-w-0 flex-1">
+                <SelectValue>
+                  {(id: string | null) => {
+                    const product = id ? products.find((p) => p.id === id) : undefined;
+                    if (product) return productLabel(product);
+                    return available.length ? t("chooseProduct") : t("noMoreProducts");
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} align="start">
+                {available.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {productLabel(p)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               type="button"
               variant="outline"
@@ -266,6 +276,7 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
                 <Input
                   id="percent-off"
                   inputMode="numeric"
+                  placeholder={t("percentOffPlaceholder")}
                   value={percent}
                   onChange={(e) => setPercent(e.target.value.replace(/[^\d]/g, "").slice(0, 2))}
                 />
@@ -318,6 +329,44 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
   );
 }
 
+/** Start or end of the promotion: a day and a time in the merchant's timezone, or empty. */
+function DateField({
+  control,
+  name,
+  defaultTime,
+  locale,
+}: {
+  control: Control<PromotionFormValues>;
+  name: "startsAt" | "endsAt";
+  /** time set when a day is picked first */
+  defaultTime: string;
+  locale: string;
+}) {
+  const t = useTranslations("Promotions.form");
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldLabel htmlFor={name}>{t(name)}</FieldLabel>
+          <DateTimePicker
+            id={name}
+            value={field.value}
+            onChange={field.onChange}
+            defaultTime={defaultTime}
+            locale={locale}
+            invalid={fieldState.invalid}
+            labels={{ placeholder: t("datePlaceholder"), time: t(`${name}Time`), clear: t(`${name}Clear`) }}
+          />
+          <FieldDescription>{t(`${name}Help`)}</FieldDescription>
+          <FieldError errors={[fieldState.error]} />
+        </Field>
+      )}
+    />
+  );
+}
+
 /** Promotion price inputs of one variant: one per currency it has a regular price in. */
 function VariantPrices({
   control,
@@ -352,7 +401,14 @@ function VariantPrices({
                 return (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>{t("promoPrice", { currency: currency.code })}</FieldLabel>
-                    <Input {...field} id={field.name} inputMode="decimal" autoComplete="off" aria-invalid={fieldState.invalid} />
+                    <Input
+                      {...field}
+                      id={field.name}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      placeholder={t("promoPricePlaceholder", { example: minorToInput(percentOff(base, 10), currency.digits) })}
+                      aria-invalid={fieldState.invalid}
+                    />
                     <FieldDescription>
                       {t("regularPrice", { price: formatMoney(base, currency.code, locale) })}
                       {off !== null && off > 0 && <span className="font-medium text-foreground"> · −{off} %</span>}

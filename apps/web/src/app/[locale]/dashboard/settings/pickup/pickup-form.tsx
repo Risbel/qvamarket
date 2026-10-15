@@ -47,7 +47,13 @@ export function PickupForm({ initialValues }: { initialValues: PickupValues }) {
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="pickupInstructions">{t("instructions")}</FieldLabel>
-              <Textarea {...field} id="pickupInstructions" rows={4} aria-invalid={fieldState.invalid} />
+              <Textarea
+                {...field}
+                id="pickupInstructions"
+                rows={4}
+                placeholder={t("instructionsPlaceholder")}
+                aria-invalid={fieldState.invalid}
+              />
               <FieldDescription>{t("instructionsHelp")}</FieldDescription>
               <FieldError errors={[fieldState.error]} />
             </Field>

@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { DELIVERY_FEE_MODES, type DeliveryFeeMode } from "@/lib/delivery";
+import { minorToInput } from "@/lib/money";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createDeliveryChargesSchema, type DeliveryChargesValues } from "@/lib/validation/delivery-charges";
 import type { FormCurrency } from "@/lib/validation/product";
@@ -18,6 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 
 type AmountField = "baseFee" | "perKm" | "freeAbove" | "minOrder";
+
+/** Example amounts (in major units) shown as placeholders */
+const EXAMPLE_AMOUNTS: Record<AmountField, number> = { baseFee: 5, perKm: 1, freeAbove: 50, minOrder: 10 };
 
 /**
  * Settings > Delivery, charges: pickup / delivery on-off, how the fee is computed and the
@@ -109,7 +113,13 @@ export function DeliveryChargesForm({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid} className="sm:max-w-72">
                 <FieldLabel htmlFor="delivery-base-distance">{t("baseDistance")}</FieldLabel>
-                <Input {...field} id="delivery-base-distance" inputMode="decimal" aria-invalid={fieldState.invalid} />
+                <Input
+                  {...field}
+                  id="delivery-base-distance"
+                  inputMode="decimal"
+                  placeholder={t("baseDistancePlaceholder")}
+                  aria-invalid={fieldState.invalid}
+                />
                 <FieldDescription>{t("baseDistanceHelp")}</FieldDescription>
                 <FieldError errors={[fieldState.error]} />
               </Field>
@@ -135,7 +145,16 @@ export function DeliveryChargesForm({
                     <FieldLabel htmlFor={`rate-${currency.code}-${name}`}>
                       {t(`fields.${name === "baseFee" && mode === "flat" ? "flatFee" : name}`)}
                     </FieldLabel>
-                    <Input {...field} id={`rate-${currency.code}-${name}`} inputMode="decimal" autoComplete="off" aria-invalid={fieldState.invalid} />
+                    <Input
+                      {...field}
+                      id={`rate-${currency.code}-${name}`}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      placeholder={t("amountPlaceholder", {
+                        example: minorToInput(EXAMPLE_AMOUNTS[name] * 10 ** currency.digits, currency.digits),
+                      })}
+                      aria-invalid={fieldState.invalid}
+                    />
                     <FieldDescription>{t(`fieldHelp.${name === "baseFee" && mode === "flat" ? "flatFee" : name}`)}</FieldDescription>
                     <FieldError errors={[fieldState.error]} />
                   </Field>

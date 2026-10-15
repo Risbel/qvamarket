@@ -171,7 +171,7 @@ function GroupLinks({ control, groupIndex }: { control: FormControl; groupIndex:
                         inputMode="url"
                         autoComplete="off"
                         spellCheck={false}
-                        placeholder="https://"
+                        placeholder={t("linkUrlPlaceholder")}
                         aria-invalid={fieldState.invalid}
                         // "tienda.com" becomes "https://tienda.com" when leaving the field
                         onBlur={() => {

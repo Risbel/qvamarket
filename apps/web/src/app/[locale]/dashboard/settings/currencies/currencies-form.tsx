@@ -7,12 +7,8 @@ import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { setStoreCurrenciesAction } from "@/server/catalog-actions";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-const selectClass = cn(
-  "h-8 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-base outline-none md:text-sm",
-  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
-);
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /**
  * Currencies the store sells in. Each product needs its own price in a currency to be sold in
@@ -58,17 +54,16 @@ export function CurrenciesForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex flex-col divide-y rounded-lg border" aria-label={t("enabled")}>
+      <RadioGroup
+        value={current}
+        onValueChange={(value) => typeof value === "string" && setCurrent(value)}
+        aria-label={t("enabled")}
+        className="flex flex-col gap-0 divide-y rounded-lg border"
+      >
         {codes.map((code) => (
-          <li key={code} className="flex items-center justify-between gap-3 p-3" data-currency={code}>
+          <div key={code} className="flex items-center justify-between gap-3 p-3" data-currency={code}>
             <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="default-currency"
-                checked={current === code}
-                onChange={() => setCurrent(code)}
-                aria-label={t("makeDefault", { code })}
-              />
+              <RadioGroupItem value={code} aria-label={t("makeDefault", { code })} />
               <span className="font-medium">{labelOf.get(code) ?? code}</span>
               {current === code && <span className="text-xs text-muted-foreground">· {t("default")}</span>}
             </label>
@@ -81,24 +76,30 @@ export function CurrenciesForm({
             >
               {t("remove")}
             </Button>
-          </li>
+          </div>
         ))}
-      </ul>
+      </RadioGroup>
 
       <div className="flex gap-2">
         <label className="sr-only" htmlFor="add-currency">
           {t("add")}
         </label>
-        <select id="add-currency" value={adding} onChange={(e) => setAdding(e.target.value)} className={selectClass}>
-          <option value="">{t("choose")}</option>
-          {available
-            .filter((c) => !codes.includes(c.code))
-            .map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.label}
-              </option>
-            ))}
-        </select>
+        <Select value={adding || null} onValueChange={(value) => setAdding(typeof value === "string" ? value : "")}>
+          <SelectTrigger id="add-currency" className="min-w-0 flex-1">
+            <SelectValue placeholder={t("choose")}>
+              {(code: string | null) => (code ? (labelOf.get(code) ?? code) : t("choose"))}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false} align="start">
+            {available
+              .filter((c) => !codes.includes(c.code))
+              .map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.label}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           variant="outline"

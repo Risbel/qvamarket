@@ -246,7 +246,12 @@ function CategoryForm({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={`${mode}-${category?.id ?? "new"}-name`}>{t("name")}</FieldLabel>
-              <Input {...field} id={`${mode}-${category?.id ?? "new"}-name`} aria-invalid={fieldState.invalid} />
+              <Input
+                {...field}
+                id={`${mode}-${category?.id ?? "new"}-name`}
+                placeholder={t("namePlaceholder")}
+                aria-invalid={fieldState.invalid}
+              />
               {name !== "" && <FieldDescription>{t("anchorPreview", { anchor: `#${preview}` })}</FieldDescription>}
               <FieldError errors={[fieldState.error]} />
             </Field>

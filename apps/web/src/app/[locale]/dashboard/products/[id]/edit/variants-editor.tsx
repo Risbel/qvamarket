@@ -129,12 +129,19 @@ export function VariantsEditor({
                 {/* Collapsed cards stay mounted (hidden), so their fields keep validating */}
                 <div id={regionId} hidden={!expanded} className="flex flex-col gap-4 border-t p-3">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField control={form.control} name={`variants.${index}.sku`} label={tf("sku")} autoComplete="off" />
+                    <TextField
+                      control={form.control}
+                      name={`variants.${index}.sku`}
+                      label={tf("sku")}
+                      placeholder={tf("skuPlaceholder")}
+                      autoComplete="off"
+                    />
                     <TextField
                       control={form.control}
                       name={`variants.${index}.stock`}
                       label={tf("stock")}
                       description={tf("stockHelp")}
+                      placeholder={tf("stockPlaceholder")}
                       inputMode="numeric"
                       autoComplete="off"
                     />

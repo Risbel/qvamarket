@@ -26,8 +26,8 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { CurrencyPrices, TextField } from "./price-fields";
 
 type Props = {
@@ -40,11 +40,8 @@ type Props = {
   simple?: boolean;
 };
 
-const selectClass = cn(
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base outline-none transition-colors md:text-sm",
-  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-  "aria-invalid:border-destructive dark:bg-input/30",
-);
+/** The "no category" item; the form value for it is "" */
+const NO_CATEGORY = "__none__";
 
 export function ProductForm({ productId, initialValues, currencies, categories, simple = true }: Props) {
   const t = useTranslations("Products.form");
@@ -53,6 +50,7 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
   const router = useRouter();
   const hydrated = useHydrated();
   const [formError, setFormError] = useState<string | null>(null);
+  const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   const schema = useMemo(() => createProductSchema(tv, currencies, { simple }), [tv, currencies, simple]);
   const form = useForm<ProductFormValues>({
@@ -106,14 +104,20 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
         {/* ---- basics */}
-        <TextField control={form.control} name="name" label={t("name")} />
+        <TextField control={form.control} name="name" label={t("name")} placeholder={t("namePlaceholder")} />
         <Controller
           name="description"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="description">{t("description")}</FieldLabel>
-              <Textarea {...field} id="description" rows={4} aria-invalid={fieldState.invalid} />
+              <Textarea
+                {...field}
+                id="description"
+                rows={4}
+                placeholder={t("descriptionPlaceholder")}
+                aria-invalid={fieldState.invalid}
+              />
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}
@@ -125,14 +129,30 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="categoryId">{t("category")}</FieldLabel>
-                <select {...field} id="categoryId" aria-invalid={fieldState.invalid} className={selectClass}>
-                  <option value="">{t("noCategory")}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={field.value || NO_CATEGORY}
+                  onValueChange={(value) => field.onChange(typeof value === "string" && value !== NO_CATEGORY ? value : "")}
+                >
+                  <SelectTrigger
+                    ref={field.ref}
+                    id="categoryId"
+                    aria-invalid={fieldState.invalid || undefined}
+                    onBlur={field.onBlur}
+                    className="w-full"
+                  >
+                    <SelectValue>
+                      {(value: string) => categoryNames.get(value) ?? t("noCategory")}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CATEGORY}>{t("noCategory")}</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {categories.length === 0 && (
                   <FieldDescription>
                     <Link href="/dashboard/categories" className="underline underline-offset-4">
@@ -150,13 +170,24 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="status">{t("status")}</FieldLabel>
-                <select {...field} id="status" aria-invalid={fieldState.invalid} className={selectClass}>
-                  {PRODUCT_STATUS_VALUES.map((status) => (
-                    <option key={status} value={status}>
-                      {t(`statuses.${status}`)}
-                    </option>
-                  ))}
-                </select>
+                <Select value={field.value} onValueChange={(value) => value && field.onChange(value)}>
+                  <SelectTrigger
+                    ref={field.ref}
+                    id="status"
+                    aria-invalid={fieldState.invalid || undefined}
+                    onBlur={field.onBlur}
+                    className="w-full"
+                  >
+                    <SelectValue>{(value: ProductFormValues["status"]) => t(`statuses.${value}`)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_STATUS_VALUES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {t(`statuses.${status}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FieldDescription>{t(`statusHelp.${field.value}`)}</FieldDescription>
                 <FieldError errors={[fieldState.error]} />
               </Field>
@@ -183,12 +214,20 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
 
             {/* ---- inventory */}
             <div className="grid gap-4 sm:grid-cols-2">
-              <TextField control={form.control} name="sku" label={t("sku")} description={t("skuHelp")} autoComplete="off" />
+              <TextField
+                control={form.control}
+                name="sku"
+                label={t("sku")}
+                description={t("skuHelp")}
+                placeholder={t("skuPlaceholder")}
+                autoComplete="off"
+              />
               <TextField
                 control={form.control}
                 name="stock"
                 label={t("stock")}
                 description={t("stockHelp")}
+                placeholder={t("stockPlaceholder")}
                 inputMode="numeric"
                 autoComplete="off"
               />
@@ -211,15 +250,24 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
             name="slug"
             label={t("slug")}
             description={t("slugHelp", { path: `/products/${slug || "..."}` })}
+            placeholder={t("slugPlaceholder")}
             autoCapitalize="none"
             autoComplete="off"
           />
-          <TextField control={form.control} name="tags" label={t("tags")} description={t("tagsHelp")} autoComplete="off" />
+          <TextField
+            control={form.control}
+            name="tags"
+            label={t("tags")}
+            description={t("tagsHelp")}
+            placeholder={t("tagsPlaceholder")}
+            autoComplete="off"
+          />
           <TextField
             control={form.control}
             name="metaTitle"
             label={t("metaTitle")}
             description={t("metaTitleHelp", { count: form.watch("metaTitle").length })}
+            placeholder={t("metaTitlePlaceholder")}
           />
           <Controller
             name="metaDescription"
@@ -227,7 +275,13 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="metaDescription">{t("metaDescription")}</FieldLabel>
-                <Textarea {...field} id="metaDescription" rows={2} aria-invalid={fieldState.invalid} />
+                <Textarea
+                  {...field}
+                  id="metaDescription"
+                  rows={2}
+                  placeholder={t("metaDescriptionPlaceholder")}
+                  aria-invalid={fieldState.invalid}
+                />
                 <FieldDescription>{t("metaDescriptionHelp", { count: field.value.length })}</FieldDescription>
                 <FieldError errors={[fieldState.error]} />
               </Field>

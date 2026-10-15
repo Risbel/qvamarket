@@ -532,7 +532,7 @@
       "slug": "Dirección del producto",
       "slugHelp": "Aparece en el enlace: {path}",
       "tags": "Etiquetas",
-      "tagsHelp": "Palabras separadas por comas (ej. algodón, verano).",
+      "tagsHelp": "Palabras separadas por comas.",
       "metaTitle": "Título para buscadores",
       "metaTitleHelp": "{count}/70. Si lo dejas vacío se usa el nombre.",
       "metaDescription": "Descripción para buscadores",
@@ -540,7 +540,17 @@
       "pricesInVariants": "Este producto tiene opciones: el precio, el SKU y el stock se editan en cada variante, más abajo.",
       "toasts": {
         "saved": "Producto \"{name}\" guardado."
-      }
+      },
+      "namePlaceholder": "Ej.: Camiseta de algodón",
+      "descriptionPlaceholder": "Ej.: Camiseta 100 % algodón, corte clásico. Lavar a máquina con agua fría.",
+      "amountPlaceholder": "Ej.: {example}",
+      "tierFromPlaceholder": "Ej.: 10",
+      "skuPlaceholder": "Ej.: CAM-ALG-001",
+      "stockPlaceholder": "Ej.: 25",
+      "slugPlaceholder": "camiseta-de-algodon",
+      "tagsPlaceholder": "Ej.: algodón, verano",
+      "metaTitlePlaceholder": "Ej.: Camiseta de algodón para hombre | Mi tienda",
+      "metaDescriptionPlaceholder": "Ej.: Camiseta 100 % algodón, fresca y resistente. Recógela en la tienda o te la llevamos a casa."
     },
     "delete": {
       "button": "Eliminar",
@@ -598,11 +608,11 @@
       "add": "Añadir otra opción",
       "optionLegend": "Opción {number}",
       "name": "Nombre de la opción",
-      "namePlaceholder": "Ej. Talla",
+      "namePlaceholder": "Ej.: Talla",
       "remove": "Quitar opción",
       "values": "Valores",
       "valueLabel": "Valor {number}",
-      "valuePlaceholder": "Ej. M",
+      "valuePlaceholder": "Ej.: M",
       "removeValue": "Quitar {value}",
       "addValue": "+ Valor",
       "combinations": "{count, plural, one {# variante} other {# variantes}}",
@@ -679,7 +689,8 @@
       "primaryHelp": "Cabecera y botones de tu tienda.",
       "accent": "Color de acento",
       "accentHelp": "Etiquetas y destacados.",
-      "picker": "{label} (selector de color)"
+      "picker": "{label} (selector de color)",
+      "placeholder": "#1d4ed8"
     },
     "preview": {
       "title": "Vista previa",
@@ -841,7 +852,8 @@
       "hidden": "\"{name}\" ya no se muestra en tu tienda.",
       "shown": "\"{name}\" se muestra en tu tienda.",
       "deleted": "Categoría \"{name}\" eliminada."
-    }
+    },
+    "namePlaceholder": "Ej.: Camisetas"
   },
   "Settings": {
     "nav": {
@@ -894,20 +906,28 @@
       },
       "phoneCountry": "País de los teléfonos",
       "phoneCountryNone": "Ninguno (solo números con +)",
-      "phoneCountryHelp": "Se preselecciona al hacer un pedido: si el cliente escribe su número sin +, se le añade el código de este país (ej. 5 435 3930 → +53 5435 3930)."
+      "phoneCountryHelp": "Se preselecciona al hacer un pedido: si el cliente escribe su número sin +, se le añade el código de este país (ej. 5 435 3930 → +53 5435 3930).",
+      "descriptionPlaceholder": "Ej.: Ropa hecha a mano en La Habana desde 2015. Tallas de la S a la XXL.",
+      "phonePlaceholder": "Ej.: 7 832 1234",
+      "whatsappPlaceholder": "Ej.: 5 435 3930",
+      "contactEmailPlaceholder": "Ej.: ventas@mitienda.com",
+      "addressPlaceholder": "Ej.: Calle 23 #456, entre L y M, Vedado, La Habana",
+      "metaTitlePlaceholder": "Ej.: Mi tienda | Ropa hecha a mano en La Habana",
+      "metaDescriptionPlaceholder": "Ej.: Ropa hecha a mano en La Habana. Recoge en la tienda o recíbela en casa."
     },
     "pickup": {
       "title": "Recogida en tienda",
       "description": "Cómo recogen tus clientes sus pedidos.",
       "instructions": "Instrucciones de recogida",
-      "instructionsHelp": "Dónde y cuándo pueden recoger los pedidos (ej. horario, referencias).",
+      "instructionsHelp": "Dónde y cuándo pueden recoger los pedidos.",
       "save": "Guardar",
       "saving": "Guardando...",
       "saved": "Ajustes de recogida guardados.",
       "errors": {
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo guardar. Inténtalo de nuevo."
-      }
+      },
+      "instructionsPlaceholder": "Ej.: De lunes a sábado, de 9:00 a 18:00. Entrada por el portal azul, junto a la farmacia."
     },
     "delivery": {
       "title": "Entrega a domicilio",
@@ -958,7 +978,7 @@
           "distance": "Un precio base hasta cierta distancia y un cargo por cada km extra (en línea recta desde la tienda)."
         },
         "baseDistance": "Distancia base (km)",
-        "baseDistanceHelp": "Kilómetros incluidos en el precio base. Ej.: 1,5",
+        "baseDistanceHelp": "Kilómetros incluidos en el precio base.",
         "currencyDefault": "{currency} (moneda principal)",
         "currency": "{currency}",
         "otherCurrencyHelp": "Déjala vacía si no quieres ofrecer entrega cuando el cliente compra en esta moneda.",
@@ -984,7 +1004,9 @@
           "forbidden": "No tienes permiso para cambiar los ajustes.",
           "deliveryNeedsArea": "Para activar la entrega, primero guarda la ubicación de la tienda y la zona en el mapa.",
           "failed": "No se pudo guardar. Inténtalo de nuevo."
-        }
+        },
+        "amountPlaceholder": "Ej.: {example}",
+        "baseDistancePlaceholder": "Ej.: 1,5"
       }
     },
     "footer": {
@@ -1051,7 +1073,8 @@
           "forbidden": "No tienes permiso para hacer esto.",
           "failed": "No se pudo guardar. Inténtalo de nuevo."
         }
-      }
+      },
+      "linkUrlPlaceholder": "Ej.: /preguntas-frecuentes"
     },
     "pages": {
       "title": "Páginas",
@@ -1154,7 +1177,7 @@
     },
     "form": {
       "name": "Nombre",
-      "namePlaceholder": "Ej. Black Friday",
+      "namePlaceholder": "Ej.: Black Friday",
       "kind": "Tipo",
       "kinds": {
         "sale": "Rebaja",
@@ -1194,7 +1217,14 @@
       "toasts": {
         "created": "Promoción \"{name}\" creada.",
         "saved": "Promoción \"{name}\" guardada."
-      }
+      },
+      "datePlaceholder": "Elige un día",
+      "startsAtTime": "Hora de inicio",
+      "startsAtClear": "Quitar la fecha de inicio",
+      "endsAtTime": "Hora de fin",
+      "endsAtClear": "Quitar la fecha de fin",
+      "percentOffPlaceholder": "Ej.: 20",
+      "promoPricePlaceholder": "Ej.: {example}"
     },
     "toasts": {
       "activated": "Promoción \"{name}\" activada.",

@@ -10,6 +10,7 @@ import {
   type Path,
 } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { minorToInput } from "@/lib/money";
 import { MAX_TIERS, type FormCurrency } from "@/lib/validation/product";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
@@ -67,6 +68,8 @@ export function CurrencyPrices<T extends FieldValues>({
   const t = useTranslations("Products.form");
   const tiers = useFieldArray({ control, name: `${base}.tiers` as ArrayPath<T> });
   const path = (rest: string) => `${base}.${rest}` as Path<T>;
+  // An example amount written with the currency's decimals ("25.00", or "25" for a currency without decimals)
+  const example = (major: number) => t("amountPlaceholder", { example: minorToInput(major * 10 ** currency.digits, currency.digits) });
 
   return (
     <fieldset className="flex flex-col gap-3 rounded-lg border p-4" data-currency={currency.code}>
@@ -79,6 +82,7 @@ export function CurrencyPrices<T extends FieldValues>({
           name={path("price")}
           label={t("price", { currency: currency.code })}
           description={currency.isDefault ? undefined : t("priceOptional")}
+          placeholder={example(25)}
           inputMode="decimal"
           autoComplete="off"
         />
@@ -87,6 +91,7 @@ export function CurrencyPrices<T extends FieldValues>({
           name={path("compareAt")}
           label={t("compareAt", { currency: currency.code })}
           description={t("compareAtHelp")}
+          placeholder={example(30)}
           inputMode="decimal"
           autoComplete="off"
         />
@@ -101,6 +106,7 @@ export function CurrencyPrices<T extends FieldValues>({
                 control={control}
                 name={path(`tiers.${k}.minQuantity`)}
                 label={t("tierFrom")}
+                placeholder={t("tierFromPlaceholder")}
                 inputMode="numeric"
                 autoComplete="off"
               />
@@ -108,6 +114,7 @@ export function CurrencyPrices<T extends FieldValues>({
                 control={control}
                 name={path(`tiers.${k}.price`)}
                 label={t("tierPrice", { currency: currency.code })}
+                placeholder={example(22)}
                 inputMode="decimal"
                 autoComplete="off"
               />

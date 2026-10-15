@@ -49,10 +49,23 @@ export function StoreProfileForm({
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
-        <Area control={form.control} name="description" label={t("descriptionField")} rows={3} />
+        <Area
+          control={form.control}
+          name="description"
+          label={t("descriptionField")}
+          placeholder={t("descriptionPlaceholder")}
+          rows={3}
+        />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Text control={form.control} name="phone" label={t("phone")} type="tel" autoComplete="tel" />
-          <Text control={form.control} name="whatsapp" label={t("whatsapp")} type="tel" />
+          <Text
+            control={form.control}
+            name="phone"
+            label={t("phone")}
+            placeholder={t("phonePlaceholder")}
+            type="tel"
+            autoComplete="tel"
+          />
+          <Text control={form.control} name="whatsapp" label={t("whatsapp")} placeholder={t("whatsappPlaceholder")} type="tel" />
         </div>
         <Controller
           name="phoneCountry"
@@ -74,10 +87,29 @@ export function StoreProfileForm({
             </Field>
           )}
         />
-        <Text control={form.control} name="contactEmail" label={t("contactEmail")} type="email" autoComplete="email" />
-        <Area control={form.control} name="address" label={t("address")} rows={2} />
-        <Text control={form.control} name="metaTitle" label={t("metaTitle")} help={t("metaHelp")} />
-        <Area control={form.control} name="metaDescription" label={t("metaDescription")} rows={2} />
+        <Text
+          control={form.control}
+          name="contactEmail"
+          label={t("contactEmail")}
+          placeholder={t("contactEmailPlaceholder")}
+          type="email"
+          autoComplete="email"
+        />
+        <Area control={form.control} name="address" label={t("address")} placeholder={t("addressPlaceholder")} rows={2} />
+        <Text
+          control={form.control}
+          name="metaTitle"
+          label={t("metaTitle")}
+          help={t("metaHelp")}
+          placeholder={t("metaTitlePlaceholder")}
+        />
+        <Area
+          control={form.control}
+          name="metaDescription"
+          label={t("metaDescription")}
+          placeholder={t("metaDescriptionPlaceholder")}
+          rows={2}
+        />
         {formError && (
           <p role="alert" className="text-sm text-destructive">
             {formError}
@@ -117,7 +149,7 @@ function Text({ control, name, label, help, ...inputProps }: FieldProps & Omit<R
   );
 }
 
-function Area({ control, name, label, help, rows }: FieldProps & { rows: number }) {
+function Area({ control, name, label, help, placeholder, rows }: FieldProps & { placeholder: string; rows: number }) {
   return (
     <Controller
       name={name}
@@ -125,7 +157,7 @@ function Area({ control, name, label, help, rows }: FieldProps & { rows: number 
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel htmlFor={name}>{label}</FieldLabel>
-          <Textarea {...field} id={name} rows={rows} aria-invalid={fieldState.invalid} />
+          <Textarea {...field} id={name} rows={rows} placeholder={placeholder} aria-invalid={fieldState.invalid} />
           {help && <FieldDescription>{help}</FieldDescription>}
           <FieldError errors={[fieldState.error]} />
         </Field>
