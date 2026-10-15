@@ -1,0 +1,2 @@
+ALTER TABLE "store" ADD COLUMN "footer_links" jsonb;--> statement-breakpoint
+ALTER TABLE "store" ADD CONSTRAINT "store_footer_links_array" CHECK ("store"."footer_links" is null or jsonb_typeof("store"."footer_links") = 'array');

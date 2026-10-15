@@ -234,6 +234,10 @@
         "limited": "Showing your latest {count} orders.",
         "signedInOnly": "Orders placed while signed in appear here. Orders placed without an account are not added, even with the same phone."
       }
+    },
+    "footer": {
+      "label": "Store links",
+      "newTab": "(opens in a new tab)"
     }
   },
   "Validation": {
@@ -286,7 +290,11 @@
     "fulfillmentRequired": "Turn on at least one way to get the order.",
     "deliveryFeeRequired": "Enter an amount (it can be 0).",
     "distanceInvalid": "Enter the km with up to 3 decimals, between 0 and {max}.",
-    "deliveryPinRequired": "Mark on the map where to deliver the order."
+    "deliveryPinRequired": "Mark on the map where to deliver the order.",
+    "linkUrlInvalid": "Use an address starting with https://, / , mailto: or tel:",
+    "footerLinksRequired": "Add at least one link or remove the group.",
+    "footerTooManyLinks": "At most {max} links per group.",
+    "footerTooManyGroups": "At most {max} groups."
   },
   "Admin": {
     "title": "Admin panel",
@@ -796,7 +804,8 @@
       "banner": "Banner",
       "currencies": "Currencies",
       "pickup": "Pickup",
-      "delivery": "Home delivery"
+      "delivery": "Home delivery",
+      "footer": "Footer"
     },
     "currencies": {
       "title": "Currencies",
@@ -927,6 +936,55 @@
           "forbidden": "You are not allowed to change the settings.",
           "deliveryNeedsArea": "To switch delivery on, first save the store location and the area on the map.",
           "failed": "Could not save. Try again."
+        }
+      }
+    },
+    "footer": {
+      "title": "Footer",
+      "description": "What is shown at the bottom of every page of your store.",
+      "tabs": {
+        "label": "Footer sections",
+        "about": "About the store",
+        "links": "Links",
+        "social": "Social media",
+        "soon": "Soon"
+      },
+      "empty": "No link groups yet. Add one, for example “Quick links” with “FAQ” and “Contact”.",
+      "group": "Group {number}",
+      "groupTitle": "Group title",
+      "groupTitlePlaceholder": "e.g. Quick links",
+      "groupAdd": "Add group",
+      "groupMoveUp": "Move group {number} up",
+      "groupMoveDown": "Move group {number} down",
+      "groupRemove": "Remove group {number}",
+      "links": "Links",
+      "linkLabel": "Text",
+      "linkLabelPlaceholder": "e.g. FAQ",
+      "linkUrl": "Address (URL)",
+      "linkUrlHelp": "A website (https://...), a page of your store (/products/...), an email (mailto:...) or a phone (tel:...).",
+      "linkNewTab": "Open in a new tab",
+      "linkAdd": "Add link",
+      "linkMoveUp": "Move link {number} up",
+      "linkMoveDown": "Move link {number} down",
+      "linkRemove": "Remove link {number}",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Footer saved.",
+      "errors": {
+        "invalid": "Check the highlighted fields.",
+        "forbidden": "You don't have permission to do this.",
+        "failed": "Could not save. Please try again."
+      },
+      "about": {
+        "text": "Short text",
+        "placeholder": "e.g. Handmade clothes and accessories from Havana since 2015.",
+        "help": "Shown under your store's logo and name at the bottom of every page. Leave it empty to show no text.",
+        "save": "Save",
+        "saving": "Saving...",
+        "saved": "Text saved.",
+        "errors": {
+          "forbidden": "You don't have permission to do this.",
+          "failed": "Could not save. Please try again."
         }
       }
     }

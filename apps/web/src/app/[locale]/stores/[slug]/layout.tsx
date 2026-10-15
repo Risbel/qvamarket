@@ -17,6 +17,7 @@ import { AccountMenu } from "./account-menu";
 import { CartLink } from "./cart-link";
 import { CartProvider } from "./cart-provider";
 import { CurrencySwitcher } from "./currency-switcher";
+import { StoreFooter } from "./store-footer";
 
 export async function generateMetadata({
   params,
@@ -107,6 +108,13 @@ export default async function StoreLayout({
           </div>
         </header>
         {children}
+        <StoreFooter
+          name={store.name}
+          logoUrl={store.logoKey ? publicUrl(store.logoKey) : null}
+          logotypeUrl={store.logotypeKey ? publicUrl(store.logotypeKey) : null}
+          text={store.footerText}
+          groups={store.footerLinks}
+        />
       </div>
     </CartProvider>
   );

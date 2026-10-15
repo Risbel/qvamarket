@@ -97,6 +97,13 @@ export const store = pgTable(
     pickupInstructions: text("pickup_instructions"),
     // e.g. { "mon": [["09:00","18:00"]], "sun": [] } (shape validated in the app)
     openingHours: jsonb("opening_hours"),
+    // Storefront footer: groups of links, in display order (array order = position), e.g.
+    // [{ "title": "Accesos", "links": [{ "label": "Contacto", "url": "/contact", "newTab": false }] }].
+    // Always read and written whole, so jsonb instead of tables. Shape and URL safety are
+    // validated in the app (src/lib/footer.ts) on write AND on read. null = no footer links.
+    footerLinks: jsonb("footer_links"),
+    // Short text under the logo + name in the storefront footer (plain text). null = none.
+    footerText: text("footer_text"),
     metaTitle: text("meta_title"),
     metaDescription: text("meta_description"),
     // Counter behind order.number: checkout increments it with UPDATE ... RETURNING inside the
@@ -126,6 +133,10 @@ export const store = pgTable(
     check(
       "store_accent_color_format",
       sql`${table.accentColor} is null or ${table.accentColor} ~ '^#[0-9a-f]{6}$'`,
+    ),
+    check(
+      "store_footer_links_array",
+      sql`${table.footerLinks} is null or jsonb_typeof(${table.footerLinks}) = 'array'`,
     ),
   ],
 );

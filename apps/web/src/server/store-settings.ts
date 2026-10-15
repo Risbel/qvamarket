@@ -1,5 +1,7 @@
 import { and, db, eq, store } from "@qvashop/db";
+import { parseFooterLinks, type FooterLinkGroup } from "@/lib/footer";
 import type { PickupValues, StoreProfileValues } from "@/lib/validation/catalog-settings";
+import type { FooterLinksValues, FooterTextValues } from "@/lib/validation/footer";
 
 type Scope = { tenantId: string; storeId: string };
 const owns = ({ tenantId, storeId }: Scope) => and(eq(store.id, storeId), eq(store.tenantId, tenantId));
@@ -39,6 +41,40 @@ export async function updateStoreProfile(scope: Scope, values: StoreProfileValue
       metaTitle: orNull(values.metaTitle),
       metaDescription: orNull(values.metaDescription),
     })
+    .where(owns(scope))
+    .returning({ id: store.id });
+  return rows.length === 1;
+}
+
+/** Footer settings: the short text and the link groups in display order (unsafe or malformed links are dropped). */
+export async function getFooterSettings(scope: Scope): Promise<{ text: string; groups: FooterLinkGroup[] }> {
+  const [row] = await db
+    .select({ footerText: store.footerText, footerLinks: store.footerLinks })
+    .from(store)
+    .where(owns(scope))
+    .limit(1);
+  return { text: row?.footerText ?? "", groups: parseFooterLinks(row?.footerLinks) };
+}
+
+/** Saves the footer's short text; empty = NULL. */
+export async function updateFooterText(scope: Scope, values: FooterTextValues) {
+  const rows = await db
+    .update(store)
+    .set({ footerText: orNull(values.footerText) })
+    .where(owns(scope))
+    .returning({ id: store.id });
+  return rows.length === 1;
+}
+
+/** Replaces the footer links (validated values; array order = display order). None = NULL. */
+export async function updateFooterLinks(scope: Scope, values: FooterLinksValues) {
+  const groups: FooterLinkGroup[] = values.groups.map((group) => ({
+    title: group.title,
+    links: group.links.map(({ label, url, newTab }) => ({ label, url, newTab })),
+  }));
+  const rows = await db
+    .update(store)
+    .set({ footerLinks: groups.length > 0 ? groups : null })
     .where(owns(scope))
     .returning({ id: store.id });
   return rows.length === 1;

@@ -234,6 +234,10 @@
         "limited": "Se muestran tus últimos {count} pedidos.",
         "signedInOnly": "Aquí aparecen los pedidos hechos con la sesión iniciada. Los pedidos hechos sin cuenta no se añaden, aunque uses el mismo teléfono."
       }
+    },
+    "footer": {
+      "label": "Enlaces de la tienda",
+      "newTab": "(se abre en una pestaña nueva)"
     }
   },
   "Validation": {
@@ -286,7 +290,11 @@
     "fulfillmentRequired": "Activa al menos una forma de entrega.",
     "deliveryFeeRequired": "Indica un importe (puede ser 0).",
     "distanceInvalid": "Introduce los km con hasta 3 decimales, entre 0 y {max}.",
-    "deliveryPinRequired": "Marca en el mapa dónde entregamos el pedido."
+    "deliveryPinRequired": "Marca en el mapa dónde entregamos el pedido.",
+    "linkUrlInvalid": "Usa una dirección que empiece por https://, / , mailto: o tel:",
+    "footerLinksRequired": "Añade al menos un enlace o quita el grupo.",
+    "footerTooManyLinks": "Máximo {max} enlaces por grupo.",
+    "footerTooManyGroups": "Máximo {max} grupos."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -796,7 +804,8 @@
       "banner": "Banner",
       "currencies": "Monedas",
       "pickup": "Recogida",
-      "delivery": "Entrega a domicilio"
+      "delivery": "Entrega a domicilio",
+      "footer": "Pie de página"
     },
     "currencies": {
       "title": "Monedas",
@@ -926,6 +935,55 @@
           "invalid": "Revisa los campos marcados.",
           "forbidden": "No tienes permiso para cambiar los ajustes.",
           "deliveryNeedsArea": "Para activar la entrega, primero guarda la ubicación de la tienda y la zona en el mapa.",
+          "failed": "No se pudo guardar. Inténtalo de nuevo."
+        }
+      }
+    },
+    "footer": {
+      "title": "Pie de página",
+      "description": "Lo que se muestra al final de cada página de tu tienda.",
+      "tabs": {
+        "label": "Secciones del pie de página",
+        "about": "Sobre la tienda",
+        "links": "Enlaces",
+        "social": "Redes sociales",
+        "soon": "Pronto"
+      },
+      "empty": "Aún no hay grupos de enlaces. Añade uno, por ejemplo «Accesos» con «Preguntas frecuentes» y «Contacto».",
+      "group": "Grupo {number}",
+      "groupTitle": "Título del grupo",
+      "groupTitlePlaceholder": "Ej.: Accesos",
+      "groupAdd": "Añadir grupo",
+      "groupMoveUp": "Subir el grupo {number}",
+      "groupMoveDown": "Bajar el grupo {number}",
+      "groupRemove": "Quitar el grupo {number}",
+      "links": "Enlaces",
+      "linkLabel": "Texto",
+      "linkLabelPlaceholder": "Ej.: Preguntas frecuentes",
+      "linkUrl": "Dirección (URL)",
+      "linkUrlHelp": "Una web (https://...), una página de tu tienda (/products/...), un correo (mailto:...) o un teléfono (tel:...).",
+      "linkNewTab": "Abrir en una pestaña nueva",
+      "linkAdd": "Añadir enlace",
+      "linkMoveUp": "Subir el enlace {number}",
+      "linkMoveDown": "Bajar el enlace {number}",
+      "linkRemove": "Quitar el enlace {number}",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "saved": "Pie de página guardado.",
+      "errors": {
+        "invalid": "Revisa los campos marcados.",
+        "forbidden": "No tienes permiso para hacer esto.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      },
+      "about": {
+        "text": "Texto corto",
+        "placeholder": "Ej.: Ropa y accesorios hechos a mano en La Habana desde 2015.",
+        "help": "Aparece debajo del logo y el nombre de tu tienda, al final de cada página. Déjalo vacío para no mostrar texto.",
+        "save": "Guardar",
+        "saving": "Guardando...",
+        "saved": "Texto guardado.",
+        "errors": {
+          "forbidden": "No tienes permiso para hacer esto.",
           "failed": "No se pudo guardar. Inténtalo de nuevo."
         }
       }

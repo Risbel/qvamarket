@@ -12,6 +12,7 @@ import {
 } from "@/lib/validation/catalog-settings";
 import { createDeliveryAreaSchema } from "@/lib/validation/delivery";
 import { createDeliveryChargesSchema, toDeliveryChargesInput } from "@/lib/validation/delivery-charges";
+import { createFooterLinksSchema, createFooterTextSchema } from "@/lib/validation/footer";
 import {
   createCategory,
   deleteCategory,
@@ -21,7 +22,7 @@ import {
 } from "./categories";
 import { setStoreCurrencies } from "./currencies";
 import { saveDeliveryArea, saveDeliveryCharges } from "./delivery-settings";
-import { updatePickupSettings, updateStoreProfile } from "./store-settings";
+import { updateFooterLinks, updateFooterText, updatePickupSettings, updateStoreProfile } from "./store-settings";
 import { getMerchantOrNull } from "./tenant";
 import type { PermissionRequest } from "@/lib/permissions";
 
@@ -120,6 +121,27 @@ export async function updatePickupSettingsAction(values: unknown, locale: string
   const parsed = createPickupSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(async () => ((await updatePickupSettings(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
+}
+
+export async function updateFooterTextAction(values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf({ store: ["update"] });
+  if (!scope) return { ok: false, error: "forbidden" };
+  const parsed = createFooterTextSchema(await translator(locale)).safeParse(values);
+  if (!parsed.success) return invalid(parsed.error);
+  return guard(async () => ((await updateFooterText(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
+}
+
+export async function updateFooterLinksAction(values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf({ store: ["update"] });
+  if (!scope) return { ok: false, error: "forbidden" };
+  const parsed = createFooterLinksSchema(await translator(locale)).safeParse(values);
+  if (!parsed.success) {
+    // Nested fields: keyed by their full path ("groups.0.links.2.url") so the form marks the right one
+    const fieldErrors: Record<string, string[]> = {};
+    for (const issue of parsed.error.issues) (fieldErrors[issue.path.join(".")] ??= []).push(issue.message);
+    return { ok: false, error: "invalid", fieldErrors };
+  }
+  return guard(async () => ((await updateFooterLinks(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
 export async function saveDeliveryAreaAction(values: unknown, locale: string): Promise<CatalogActionResult> {
