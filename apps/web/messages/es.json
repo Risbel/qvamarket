@@ -1350,6 +1350,7 @@
     "detail": {
       "title": "Pedido {number}",
       "items": "Productos",
+      "itemCount": "{count, plural, one {# unidad} other {# unidades}}",
       "product": "Producto",
       "quantity": "Cant.",
       "unitPrice": "Precio",
@@ -1403,6 +1404,8 @@
       "confirmCancel": "Las unidades vuelven a tu inventario (en los productos que controlan stock). Un pedido cancelado no se puede reactivar.",
       "note": "Nota (opcional)",
       "reason": "Motivo (opcional)",
+      "notePlaceholder": "Ej.: Lo recogió un familiar en la tienda.",
+      "reasonPlaceholder": "Ej.: El cliente ya no puede recogerlo.",
       "noteHelp": "Queda en el historial del pedido. Solo la ve tu equipo.",
       "back": "Volver",
       "errors": {
@@ -1430,12 +1433,24 @@
         "other": "Otro"
       },
       "kindLabel": "Tipo",
+      "kindHelp": {
+        "payment": "Dinero que recibiste del cliente.",
+        "refund": "Dinero que le devolviste al cliente."
+      },
       "methodLabel": "Forma de pago",
-      "amount": "Importe ({currency})",
+      "amount": "Importe",
+      "amountPlaceholder": "Ej.: {example}",
       "paidAt": "Fecha del pago",
       "refundedAt": "Fecha del reembolso",
       "paidAtHelp": "Déjala vacía para usar la fecha y hora actuales.",
+      "datePlaceholder": "Ahora",
+      "paidTime": "Hora del pago",
+      "refundTime": "Hora del reembolso",
+      "dateClear": "Quitar la fecha (usar la actual)",
+      "timeZone": "Horas en tu zona horaria ({zone}).",
       "note": "Nota (opcional)",
+      "notePlaceholder": "Ej.: Transferencia n.º 48213 recibida en la cuenta de la tienda",
+      "refundNotePlaceholder": "Ej.: Devuelto en efectivo por un producto agotado",
       "noteHelp": "Por ejemplo, el número de la transferencia. Solo la ve tu equipo.",
       "record": "Registrar pago",
       "recordRefund": "Registrar reembolso",

@@ -42,6 +42,7 @@ export function DateTimePicker({
   value,
   onChange,
   defaultTime,
+  maxDate,
   locale,
   invalid,
   labels,
@@ -52,6 +53,8 @@ export function DateTimePicker({
   onChange: (value: string) => void;
   /** time used when a day is picked and none was set yet, e.g. "00:00" or "23:59" */
   defaultTime: string;
+  /** last day that can be picked (later days are disabled), e.g. today for something that already happened */
+  maxDate?: Date;
   locale: string;
   invalid?: boolean;
   labels: { placeholder: string; time: string; clear: string };
@@ -86,6 +89,8 @@ export function DateTimePicker({
             mode="single"
             selected={selected}
             defaultMonth={selected}
+            disabled={maxDate ? { after: maxDate } : undefined}
+            endMonth={maxDate}
             locale={CALENDAR_LOCALES[locale as keyof typeof CALENDAR_LOCALES] ?? enUS}
             onSelect={(date) => {
               if (!date) return;

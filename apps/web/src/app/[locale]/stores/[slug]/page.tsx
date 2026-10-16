@@ -46,7 +46,7 @@ export default async function StoreCatalogPage({
         // Index of the categories, right under the header: jumps to each section of the page
         <CategoryIndex label={t("categoriesLabel")} sections={sections.map(({ id, title }) => ({ id, title }))} />
       )}
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6">
         {/* One hero per screen size, each only where the merchant uploaded images for it */}
         {BANNER_DEVICES.map(
           (device) =>

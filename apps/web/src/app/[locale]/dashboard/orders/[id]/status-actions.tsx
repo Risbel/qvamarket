@@ -181,7 +181,13 @@ function ConfirmForm({
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
             <FieldLabel htmlFor="status-note">{t(cancelling ? "reason" : "note")}</FieldLabel>
-            <Textarea {...field} id="status-note" rows={3} aria-invalid={fieldState.invalid} />
+            <Textarea
+              {...field}
+              id="status-note"
+              rows={3}
+              placeholder={t(cancelling ? "reasonPlaceholder" : "notePlaceholder")}
+              aria-invalid={fieldState.invalid}
+            />
             <FieldDescription>{t("noteHelp")}</FieldDescription>
             <FieldError errors={[fieldState.error]} />
           </Field>

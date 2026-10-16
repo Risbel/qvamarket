@@ -1350,6 +1350,7 @@
     "detail": {
       "title": "Order {number}",
       "items": "Products",
+      "itemCount": "{count, plural, one {# unit} other {# units}}",
       "product": "Product",
       "quantity": "Qty",
       "unitPrice": "Price",
@@ -1403,6 +1404,8 @@
       "confirmCancel": "The units go back to your stock (for products that track stock). A cancelled order cannot be reopened.",
       "note": "Note (optional)",
       "reason": "Reason (optional)",
+      "notePlaceholder": "E.g. A relative picked it up at the store.",
+      "reasonPlaceholder": "E.g. The customer can no longer pick it up.",
       "noteHelp": "Kept in the order history. Only your team sees it.",
       "back": "Back",
       "errors": {
@@ -1430,12 +1433,24 @@
         "other": "Other"
       },
       "kindLabel": "Type",
+      "kindHelp": {
+        "payment": "Money you received from the customer.",
+        "refund": "Money you gave back to the customer."
+      },
       "methodLabel": "Payment method",
-      "amount": "Amount ({currency})",
+      "amount": "Amount",
+      "amountPlaceholder": "E.g. {example}",
       "paidAt": "Payment date",
       "refundedAt": "Refund date",
       "paidAtHelp": "Leave it empty to use the current date and time.",
+      "datePlaceholder": "Now",
+      "paidTime": "Payment time",
+      "refundTime": "Refund time",
+      "dateClear": "Remove the date (use the current one)",
+      "timeZone": "Times in your timezone ({zone}).",
       "note": "Note (optional)",
+      "notePlaceholder": "E.g. Transfer no. 48213 received in the store account",
+      "refundNotePlaceholder": "E.g. Given back in cash for a sold-out product",
       "noteHelp": "For example, the transfer number. Only your team sees it.",
       "record": "Record payment",
       "recordRefund": "Record refund",
