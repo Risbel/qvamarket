@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePathname } from "@/i18n/navigation";
 import { SearchAutocomplete } from "./search-autocomplete";
+import { useHideOnScroll } from "./use-hide-on-scroll";
 
 /** Storefront pages without the search: the checkout stays free of distractions. */
 const NO_SEARCH = ["/checkout"];
@@ -28,9 +29,6 @@ export function HeaderSearch({ storeName }: { storeName: string }) {
   return <SearchForm storeName={storeName} className="mx-auto hidden max-w-md flex-1 md:block" />;
 }
 
-/** How far (px) the page must scroll in one direction before the row hides or comes back. */
-const SCROLL_TOLERANCE = 8;
-
 /**
  * Phones: a second row under the main bar, with the same brand background. It slides away
  * while the shopper scrolls down (more room for products) and comes back as soon as they
@@ -40,33 +38,8 @@ const SCROLL_TOLERANCE = 8;
  */
 export function MobileSearchRow({ storeName }: { storeName: string }) {
   const show = useShowSearch();
-  const [hidden, setHidden] = useState(false);
   const row = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!show) return;
-    let last = window.scrollY;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const y = Math.max(window.scrollY, 0); // iOS bounces below 0
-      const height = row.current?.offsetHeight ?? 0;
-      if (y <= height) setHidden(false); // back at the top: always shown
-      else if (row.current?.contains(document.activeElement)) setHidden(false); // typing
-      else if (y - last > SCROLL_TOLERANCE) setHidden(true);
-      else if (last - y > SCROLL_TOLERANCE) setHidden(false);
-      else return; // small moves keep the anchor point, so slow scrolls still count
-      last = y;
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, [show]);
+  const hidden = useHideOnScroll(row, show);
 
   if (!show) return null;
   return (

@@ -60,11 +60,12 @@ export default async function StoreLayout({
   return (
     <CartProvider storeId={store.id} storeSlug={store.slug} currency={currency.code}>
       {/* --store-header: the main bar's height; --store-search: the phone search row's;
+          --store-index: the catalog's category index (under them, see category-index.tsx);
           --store-sticky: what is pinned at the top right now, for whatever sticks below it
           (the main bar alone from md up, where the search sits inside it, or while the
           phone row is scrolled away) */}
       <div
-        className="flex flex-1 flex-col [--store-header:3.5rem] [--store-search:3rem] [--store-sticky:calc(var(--store-header)+var(--store-search))] has-[[data-search-hidden]]:[--store-sticky:var(--store-header)] md:[--store-sticky:var(--store-header)]"
+        className="flex flex-1 flex-col [--store-header:3.5rem] [--store-search:3rem] [--store-index:3rem] [--store-sticky:calc(var(--store-header)+var(--store-search))] has-[[data-search-hidden]]:[--store-sticky:var(--store-header)] md:[--store-sticky:var(--store-header)]"
         style={brand}
       >
         <header
