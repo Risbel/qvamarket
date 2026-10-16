@@ -2,12 +2,10 @@
 
 import { HeartIcon, LogInIcon, LogOutIcon, PackageIcon, UserIcon, UserPlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { initials } from "@/lib/initials";
 import { customerSignOutAction } from "@/server/customer-account-actions";
-import { THEMES } from "@/components/mode-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -15,8 +13,6 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -25,14 +21,11 @@ export type AccountMenuUser = { name: string; email: string; image: string | nul
 
 /**
  * The shopper's menu in the store header: the avatar (or a person icon for guests) opens
- * the account links, sign in / sign out and the light / dark theme.
+ * the account links and sign in / sign out (the theme has its own button in the header).
  */
 export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
   const t = useTranslations("Store.account");
-  const tTheme = useTranslations("Theme");
   const router = useRouter();
-  // `theme` is undefined until mounted; the menu only opens after hydration anyway
-  const { theme = "system", setTheme } = useTheme();
 
   async function signOut() {
     await customerSignOutAction().catch(() => null);
@@ -99,17 +92,6 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
             </DropdownMenuItem>
           </DropdownMenuGroup>
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{tTheme("title")}</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={theme} onValueChange={(value: string) => setTheme(value)}>
-            {THEMES.map((key) => (
-              <DropdownMenuRadioItem key={key} value={key}>
-                {tTheme(key)}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
         {user && (
           <>
             <DropdownMenuSeparator />

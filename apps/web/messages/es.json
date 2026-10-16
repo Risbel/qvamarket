@@ -490,11 +490,7 @@
     "stop": "Volver al panel de administración"
   },
   "Theme": {
-    "title": "Tema",
-    "toggle": "Cambiar tema",
-    "light": "Claro",
-    "dark": "Oscuro",
-    "system": "Sistema"
+    "toggle": "Cambiar tema"
   },
   "Panel": {
     "nav": {

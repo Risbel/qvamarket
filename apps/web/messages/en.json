@@ -490,11 +490,7 @@
     "stop": "Back to the admin panel"
   },
   "Theme": {
-    "title": "Theme",
-    "toggle": "Toggle theme",
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System"
+    "toggle": "Toggle theme"
   },
   "Panel": {
     "nav": {

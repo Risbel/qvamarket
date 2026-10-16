@@ -14,6 +14,7 @@ import { listFavoriteIds } from "@/server/favorites";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
+import { ModeToggle } from "@/components/mode-toggle";
 import { AccountMenu } from "./account-menu";
 import { CartLink } from "./cart-link";
 import { CartProvider } from "./cart-provider";
@@ -109,6 +110,7 @@ export default async function StoreLayout({
                 {store.currencies.length > 1 && (
                   <CurrencySwitcher codes={store.currencies.map((c) => c.code)} current={currency.code} />
                 )}
+                <ModeToggle className="size-9 rounded-full hover:bg-current/15 hover:text-current focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-current dark:hover:bg-current/15 [&_svg:not([class*='size-'])]:size-5" />
                 <CartLink />
                 <AccountMenu
                   user={
