@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { MinusIcon, PlusIcon, ShoppingCartIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { MAX_LINE_QUANTITY } from "@/lib/cart";
 import { useHydrated } from "@/lib/use-hydrated";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { useCart } from "../../cart-provider";
 
 /** Quantity picker + "add to cart". `stock` null = not tracked. */
@@ -25,7 +28,7 @@ export function AddToCart({ variantId, stock }: { variantId: string; stock: numb
     return (
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">{t("atMax", { count: inCart })}</p>
-        <Link href="/cart" className="w-fit text-sm font-medium underline underline-offset-4">
+        <Link href="/cart" className={buttonVariants({ variant: "outline", className: "w-fit" })}>
           {t("view")}
         </Link>
       </div>
@@ -33,46 +36,47 @@ export function AddToCart({ variantId, stock }: { variantId: string; stock: numb
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center rounded-md border" role="group" aria-label={t("quantity")}>
-          <button
-            type="button"
-            className="size-9 text-lg disabled:opacity-40"
-            aria-label={t("decrease")}
-            disabled={chosen <= 1}
-            onClick={() => setQuantity(chosen - 1)}
-          >
-            −
-          </button>
-          <span className="min-w-8 text-center tabular-nums" aria-live="polite">
-            {chosen}
-          </span>
-          <button
-            type="button"
-            className="size-9 text-lg disabled:opacity-40"
-            aria-label={t("increase")}
-            disabled={chosen >= room}
-            onClick={() => setQuantity(chosen + 1)}
-          >
-            +
-          </button>
-        </div>
-
-        <button
+    <div className="flex flex-wrap items-center gap-3">
+      <ButtonGroup aria-label={t("quantity")}>
+        <Button
           type="button"
-          disabled={!hydrated}
-          onClick={() => {
-            add(variantId, chosen, max);
-            setQuantity(1);
-            toast.success(t("added"), { action: { label: t("view"), onClick: () => router.push("/cart") } });
-          }}
-          className="h-9 rounded-md px-5 text-sm font-medium disabled:opacity-50"
-          style={{ backgroundColor: "var(--brand)", color: "var(--brand-foreground)" }}
+          variant="outline"
+          size="icon-lg"
+          aria-label={t("decrease")}
+          disabled={chosen <= 1}
+          onClick={() => setQuantity(chosen - 1)}
         >
-          {t("add")}
-        </button>
-      </div>
+          <MinusIcon aria-hidden />
+        </Button>
+        <ButtonGroupText className="min-w-10 justify-center bg-background tabular-nums dark:bg-input/30" aria-live="polite">
+          {chosen}
+        </ButtonGroupText>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-lg"
+          aria-label={t("increase")}
+          disabled={chosen >= room}
+          onClick={() => setQuantity(chosen + 1)}
+        >
+          <PlusIcon aria-hidden />
+        </Button>
+      </ButtonGroup>
+
+      <Button
+        type="button"
+        size="lg"
+        disabled={!hydrated}
+        onClick={() => {
+          add(variantId, chosen, max);
+          setQuantity(1);
+          toast.success(t("added"), { action: { label: t("view"), onClick: () => router.push("/cart") } });
+        }}
+        className="px-5 bg-(--brand) text-(--brand-foreground) hover:bg-(--brand)/85"
+      >
+        <ShoppingCartIcon aria-hidden />
+        {t("add")}
+      </Button>
     </div>
   );
 }

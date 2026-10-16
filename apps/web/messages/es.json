@@ -85,7 +85,23 @@
       "tiersTitle": "Precio por cantidad",
       "tierLine": "Desde {count} unidades: {price} c/u",
       "notInCurrency": "Este producto no está disponible en {currency}. Elige otra moneda arriba.",
-      "variantNotInCurrency": "Esta variante no está disponible en {currency}. Elige otra variante u otra moneda."
+      "variantNotInCurrency": "Esta variante no está disponible en {currency}. Elige otra variante u otra moneda.",
+      "zoom": "Ampliar imagen",
+      "closeZoom": "Cerrar imagen ampliada",
+      "previousImage": "Imagen anterior",
+      "nextImage": "Imagen siguiente",
+      "imageCount": "{number} de {total}",
+      "share": {
+        "title": "Compartir",
+        "copy": "Copiar enlace",
+        "copiedShort": "Copiado",
+        "copied": "Enlace copiado.",
+        "copyFailed": "No se pudo copiar el enlace. Cópialo desde la barra de direcciones.",
+        "whatsapp": "WhatsApp",
+        "whatsappLabel": "Compartir en WhatsApp (se abre en una pestaña nueva)",
+        "whatsappText": "Mira {name}: {url}"
+      },
+      "category": "Categoría: {name}"
     },
     "cart": {
       "title": "Tu carrito",

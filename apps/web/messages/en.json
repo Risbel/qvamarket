@@ -85,7 +85,23 @@
       "tiersTitle": "Price by quantity",
       "tierLine": "From {count} units: {price} each",
       "notInCurrency": "This product is not available in {currency}. Choose another currency above.",
-      "variantNotInCurrency": "This variant is not available in {currency}. Choose another variant or currency."
+      "variantNotInCurrency": "This variant is not available in {currency}. Choose another variant or currency.",
+      "zoom": "Enlarge image",
+      "closeZoom": "Close enlarged image",
+      "previousImage": "Previous image",
+      "nextImage": "Next image",
+      "imageCount": "{number} of {total}",
+      "share": {
+        "title": "Share",
+        "copy": "Copy link",
+        "copiedShort": "Copied",
+        "copied": "Link copied.",
+        "copyFailed": "Could not copy the link. Copy it from the address bar.",
+        "whatsapp": "WhatsApp",
+        "whatsappLabel": "Share on WhatsApp (opens in a new tab)",
+        "whatsappText": "Check out {name}: {url}"
+      },
+      "category": "Category: {name}"
     },
     "cart": {
       "title": "Your cart",

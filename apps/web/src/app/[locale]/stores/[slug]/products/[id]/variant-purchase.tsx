@@ -6,6 +6,7 @@ import { PriceTag } from "@/components/price-tag";
 import { formatMoney } from "@/lib/money";
 import type { ResolvedPrice, VolumeTier } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { AddToCart } from "./add-to-cart";
 
 /** Only low stock is worth showing to a customer. */
@@ -92,21 +93,22 @@ export function VariantPurchase({
               const sellable = withValue.some((v) => v.price !== null);
               const unavailable = sameRest ? !buyable(sameRest) : !withValue.some(buyable);
               return (
-                <button
+                <Button
                   key={value.id}
                   type="button"
+                  variant="outline"
+                  size="lg"
                   aria-pressed={selected}
                   disabled={!sellable}
                   onClick={() => choose(optionIndex, value.id)}
                   className={cn(
-                    "min-w-11 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-                    selected ? "border-2 font-medium" : "hover:bg-muted",
+                    "min-w-11 px-3 disabled:opacity-40",
+                    selected && "border-(--brand) ring-1 ring-(--brand) dark:border-(--brand)",
                     unavailable && "text-muted-foreground line-through",
                   )}
-                  style={selected ? { borderColor: "var(--brand)" } : undefined}
                 >
                   {value.value}
-                </button>
+                </Button>
               );
             })}
           </div>
