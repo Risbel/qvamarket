@@ -829,6 +829,36 @@ export const customer = pgTable(
   ],
 );
 
+/**
+ * A product a signed-in customer marked with the heart on a storefront. Belongs to the
+ * company's customer record; the store comes with the product (composite FK), so the list of
+ * one store never shows another's products. Deleting the product or the customer removes it.
+ */
+export const favorite = pgTable(
+  "favorite",
+  {
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    customerId: uuid("customer_id").notNull(),
+    productId: uuid("product_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "favorite_pk", columns: [table.customerId, table.productId] }),
+    foreignKey({
+      name: "favorite_customer_tenant_fk",
+      columns: [table.customerId, table.tenantId],
+      foreignColumns: [customer.id, customer.tenantId],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "favorite_product_store_tenant_fk",
+      columns: [table.productId, table.storeId, table.tenantId],
+      foreignColumns: [product.id, product.storeId, product.tenantId],
+    }).onDelete("cascade"),
+    index("favorite_customer_store_idx").on(table.customerId, table.storeId, table.createdAt),
+  ],
+);
+
 export const ORDER_STATUSES = [
   "pending",
   "confirmed",

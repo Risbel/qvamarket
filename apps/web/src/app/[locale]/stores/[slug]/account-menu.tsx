@@ -1,6 +1,6 @@
 "use client";
 
-import { LogInIcon, LogOutIcon, PackageIcon, UserIcon, UserPlusIcon } from "lucide-react";
+import { HeartIcon, LogInIcon, LogOutIcon, PackageIcon, UserIcon, UserPlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
@@ -76,6 +76,10 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
               <DropdownMenuItem render={<Link href="/account/orders" />}>
                 <PackageIcon />
                 {t("orders.title")}
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/account/favorites" />}>
+                <HeartIcon />
+                {t("menu.favorites")}
               </DropdownMenuItem>
               <DropdownMenuItem render={<Link href="/account" />}>
                 <UserIcon />

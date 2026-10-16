@@ -2,6 +2,7 @@ import { Link } from "@/i18n/navigation";
 import { PriceTag } from "@/components/price-tag";
 import type { PublicListItem } from "@/server/public-catalog";
 import { publicUrl } from "@/server/storage";
+import { FavoriteButton } from "./favorite-button";
 
 export type ProductCardLabels = { soldOut: string; noImage: string; from: string; sale: string; was: string };
 
@@ -21,7 +22,9 @@ export function ProductCard({
 }) {
   const badge = product.soldOut ? labels.soldOut : product.price.promotion || product.price.compareAtMinor ? labels.sale : null;
   return (
-    <li>
+    // relative: the heart sits over the image's corner. It is a sibling of the link, since a
+    // button inside an <a> is invalid HTML.
+    <li className="relative">
       <Link
         href={`/products/${product.slug}`}
         className="group flex flex-col gap-2 rounded-lg outline-offset-4 focus-visible:outline-2"
@@ -61,6 +64,7 @@ export function ProductCard({
           />
         </div>
       </Link>
+      <FavoriteButton productId={product.id} productName={product.name} className="absolute right-2 top-2" />
     </li>
   );
 }

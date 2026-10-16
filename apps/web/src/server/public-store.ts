@@ -3,6 +3,7 @@ import { and, asc, db, eq, isNotNull, store, storeBannerImage, storePage, storeS
 import { parseFooterLinks } from "@/lib/footer";
 import type { BannerDevice } from "@/lib/images";
 import { parseFooterSocial } from "@/lib/social";
+import { getStoreSlug } from "@/lib/tenancy";
 import { getStoreCurrencies } from "./currencies";
 import { publicUrl } from "./storage";
 
@@ -56,6 +57,16 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
     defaultCurrency,
   };
 });
+
+/**
+ * The store of the subdomain a request came to. Taken from the Host header, never from the
+ * browser's input, so what a shopper does (account, favorites) is only ever attached to the
+ * store it is done on (the session cookie is set for that host too).
+ */
+export async function getHostStore(requestHeaders: Headers) {
+  const slug = getStoreSlug(requestHeaders.get("host"), process.env.ROOT_DOMAIN ?? "localhost");
+  return slug ? getPublicStoreBySlug(slug) : null;
+}
 
 /**
  * Hero banner images of a store, one list per device, each in display order. Only call it

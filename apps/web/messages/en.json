@@ -201,6 +201,7 @@
       "title": "My account",
       "menu": {
         "label": "Account menu",
+        "favorites": "My favorites",
         "profile": "My profile",
         "signIn": "Sign in",
         "signUp": "Create account"
@@ -258,6 +259,29 @@
       "newTab": "(opens in a new tab)",
       "socialLabel": "Social media",
       "social": "{name} (opens in a new tab)"
+    },
+    "favorites": {
+      "add": "Add {name} to favorites",
+      "remove": "Remove {name} from favorites",
+      "title": "My favorites",
+      "empty": "You have no favorites in this store yet. Tap a product's heart to save it here.",
+      "unavailableNote": "Products the store no longer sells, or that are not sold in your currency, are not shown.",
+      "dialog": {
+        "title": "Save your favorites",
+        "description": "Sign in to keep the products you like in your account and find them from any device.",
+        "signIn": "Sign in",
+        "signUp": "Create account"
+      },
+      "toasts": {
+        "added": "Saved to your favorites.",
+        "view": "View"
+      },
+      "errors": {
+        "limitReached": "You reached the limit of {max} favorites in this store. Remove one to add another.",
+        "notFound": "This product is no longer available.",
+        "tooManyAttempts": "Too many changes in a row. Wait a moment.",
+        "failed": "The change could not be saved. Try again."
+      }
     }
   },
   "Validation": {

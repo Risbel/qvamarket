@@ -6,11 +6,10 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { auth } from "@/lib/auth";
-import { getStoreSlug } from "@/lib/tenancy";
 import { createLoginSchema } from "@/lib/validation/auth";
 import { createCustomerSignupSchema } from "@/lib/validation/customer-account";
 import { registerCustomer, signInCustomer, type CustomerLoginResult, type CustomerSignupResult } from "./customer-accounts";
-import { getPublicStoreBySlug } from "./public-store";
+import { getHostStore } from "./public-store";
 import type { SignupMeta } from "./signup";
 
 type Invalid = { ok: false; error: "invalid"; fieldErrors: Record<string, string[]> };
@@ -21,19 +20,9 @@ export type CustomerLoginActionResult = CustomerLoginResult | Invalid | NoStore;
 const validationTranslator = (locale: string) =>
   getTranslations({ locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale, namespace: "Validation" });
 
-/**
- * The store of the subdomain this request came to. Taken from the Host header, never from
- * the browser's input, so an account is only ever attached to the store it is used on (the
- * session cookie is set for that host too).
- */
-async function currentStore(requestHeaders: Headers) {
-  const slug = getStoreSlug(requestHeaders.get("host"), process.env.ROOT_DOMAIN ?? "localhost");
-  return slug ? getPublicStoreBySlug(slug) : null;
-}
-
 export async function customerSignupAction(values: unknown, meta: SignupMeta, locale: string): Promise<CustomerSignupActionResult> {
   const requestHeaders = await headers();
-  const store = await currentStore(requestHeaders);
+  const store = await getHostStore(requestHeaders);
   if (!store) return { ok: false, error: "notFound" };
   const parsed = createCustomerSignupSchema(await validationTranslator(locale)).safeParse(values);
   if (!parsed.success) {
@@ -48,7 +37,7 @@ export async function customerSignupAction(values: unknown, meta: SignupMeta, lo
 
 export async function customerLoginAction(values: unknown, locale: string): Promise<CustomerLoginActionResult> {
   const requestHeaders = await headers();
-  const store = await currentStore(requestHeaders);
+  const store = await getHostStore(requestHeaders);
   if (!store) return { ok: false, error: "notFound" };
   const parsed = createLoginSchema(await validationTranslator(locale)).safeParse(values);
   if (!parsed.success) {

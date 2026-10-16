@@ -134,6 +134,29 @@ export async function listPublicCatalog(
   return { categories, products };
 }
 
+/**
+ * The given products of a store in a currency, in the order of `ids` (e.g. a customer's
+ * favorites). Products that are not public or not sold in the currency are left out.
+ */
+export async function listPublicProductsByIds(storeId: string, currencyCode: string, ids: string[]): Promise<PublicListItem[]> {
+  const wanted = ids.filter((id) => UUID.test(id));
+  if (wanted.length === 0) return [];
+  const rows = await db
+    .select({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      categoryId: product.categoryId,
+      imageKey: mainImage,
+    })
+    .from(product)
+    .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
+    .where(and(publicProducts(storeId), inArray(product.id, wanted)));
+  const order = new Map(wanted.map((id, index) => [id, index]));
+  rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return toListItems(storeId, currencyCode, rows);
+}
+
 export const SEARCH_RESULTS_MAX = 60;
 
 /**

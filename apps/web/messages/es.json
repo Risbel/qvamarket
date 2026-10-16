@@ -201,6 +201,7 @@
       "title": "Mi cuenta",
       "menu": {
         "label": "Menú de la cuenta",
+        "favorites": "Mis favoritos",
         "profile": "Mi perfil",
         "signIn": "Iniciar sesión",
         "signUp": "Crear cuenta"
@@ -258,6 +259,29 @@
       "newTab": "(se abre en una pestaña nueva)",
       "socialLabel": "Redes sociales",
       "social": "{name} (se abre en una pestaña nueva)"
+    },
+    "favorites": {
+      "add": "Añadir {name} a favoritos",
+      "remove": "Quitar {name} de favoritos",
+      "title": "Mis favoritos",
+      "empty": "Aún no tienes favoritos en esta tienda. Toca el corazón de un producto para guardarlo aquí.",
+      "unavailableNote": "Los productos que la tienda ya no vende o que no están a la venta en tu moneda no se muestran.",
+      "dialog": {
+        "title": "Guarda tus favoritos",
+        "description": "Inicia sesión para guardar los productos que te gustan en tu cuenta y encontrarlos desde cualquier dispositivo.",
+        "signIn": "Iniciar sesión",
+        "signUp": "Crear cuenta"
+      },
+      "toasts": {
+        "added": "Guardado en tus favoritos.",
+        "view": "Ver"
+      },
+      "errors": {
+        "limitReached": "Llegaste al máximo de {max} favoritos en esta tienda. Quita alguno para añadir otro.",
+        "notFound": "Este producto ya no está disponible.",
+        "tooManyAttempts": "Demasiados cambios seguidos. Espera un momento.",
+        "failed": "No se pudo guardar el cambio. Inténtalo de nuevo."
+      }
     }
   },
   "Validation": {

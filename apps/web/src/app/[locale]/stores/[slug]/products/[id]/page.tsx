@@ -6,6 +6,7 @@ import { getPublicProduct } from "@/server/public-catalog";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
+import { FavoriteButton } from "../../favorite-button";
 import { ProductGallery } from "./product-gallery";
 import { VariantPurchase } from "./variant-purchase";
 
@@ -68,7 +69,10 @@ export default async function StoreProductPage({
         <ProductGallery images={product.imageKeys.map((key) => publicUrl(key))} alt={product.name} />
 
         <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-semibold leading-tight">{product.name}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-3xl font-semibold leading-tight">{product.name}</h1>
+            <FavoriteButton productId={product.id} productName={product.name} className="shrink-0 border" />
+          </div>
 
           <VariantPurchase
             options={product.options}
