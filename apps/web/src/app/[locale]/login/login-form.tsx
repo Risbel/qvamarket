@@ -11,6 +11,7 @@ import { createLoginSchema, type LoginValues } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 
 export function LoginForm() {
   const t = useTranslations("Login");
@@ -63,10 +64,9 @@ export function LoginForm() {
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
-              <Input
+              <PasswordInput
                 {...field}
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 aria-invalid={fieldState.invalid}
               />

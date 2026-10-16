@@ -17,6 +17,7 @@ import {
   user,
 } from "@qvashop/db";
 import type { DateRange } from "@/lib/date-range";
+import type { OrderListParams, OrderSort } from "@/lib/order-list";
 import { canChangeStatus, type OrderStatus } from "@/lib/orders";
 
 // Orders of the merchant's store. Every query matches tenant_id AND store_id (from
@@ -24,18 +25,6 @@ import { canChangeStatus, type OrderStatus } from "@/lib/orders";
 
 type Scope = { tenantId: string; storeId: string };
 const inScope = ({ tenantId, storeId }: Scope) => and(eq(order.tenantId, tenantId), eq(order.storeId, storeId));
-
-export const ORDERS_PAGE_SIZE = 50;
-
-export type OrderListFilter = {
-  status: OrderStatus | null;
-  /** days in the viewer's timezone; null = any date */
-  range: DateRange | null;
-  /** order number ("12" or "#12"), or part of the customer's name / phone */
-  query: string;
-  /** 1-based */
-  page: number;
-};
 
 function searchCondition(query: string) {
   const text = query.trim();
@@ -67,14 +56,31 @@ function inDateRange(range: DateRange | null) {
   );
 }
 
-/** A page of orders, newest first, with the number of units of each. */
-export async function listOrders(scope: Scope, filter: OrderListFilter) {
-  const where = and(
+/** The list's filters (each optional); `except` leaves one out, for that filter's own counts. */
+function listCondition(scope: Scope, params: OrderListParams, except?: "status" | "payment") {
+  return and(
     inScope(scope),
-    filter.status ? eq(order.status, filter.status) : undefined,
-    inDateRange(filter.range),
-    searchCondition(filter.query),
+    except !== "status" && params.statuses.length ? inArray(order.status, params.statuses) : undefined,
+    except !== "payment" && params.payments.length ? inArray(order.paymentStatus, params.payments) : undefined,
+    inDateRange(params.range),
+    searchCondition(params.query),
   );
+}
+
+function listOrderBy({ id, desc: descending }: OrderSort) {
+  const dir = descending ? desc : asc;
+  // Equal names / totals end newest first
+  const newest = [desc(order.createdAt), desc(order.number)];
+  // ICU collation: accents and case sort as people expect ("Ángel" next to "Andrés")
+  if (id === "customer") return [dir(sql`${order.customerName} collate "und-x-icu"`), ...newest];
+  // Amounts only compare within one currency: group by currency first
+  if (id === "total") return [asc(order.currencyCode), dir(order.totalMinor), ...newest];
+  return [dir(order.createdAt), dir(order.number)];
+}
+
+/** A page of orders with the number of units of each. */
+export async function listOrders(scope: Scope, params: OrderListParams) {
+  const where = listCondition(scope, params);
   const [rows, [{ total }]] = await Promise.all([
     db
       .select({
@@ -91,9 +97,9 @@ export async function listOrders(scope: Scope, filter: OrderListFilter) {
       })
       .from(order)
       .where(where)
-      .orderBy(desc(order.createdAt), desc(order.number))
-      .limit(ORDERS_PAGE_SIZE)
-      .offset((filter.page - 1) * ORDERS_PAGE_SIZE),
+      .orderBy(...listOrderBy(params.sort))
+      .limit(params.pageSize)
+      .offset((params.page - 1) * params.pageSize),
     db.select({ total: count() }).from(order).where(where),
   ]);
 
@@ -120,14 +126,26 @@ export async function listOrders(scope: Scope, filter: OrderListFilter) {
   };
 }
 
-/** Number of orders in each status (for the filter chips), within the date range if any. */
-export async function countOrdersByStatus(scope: Scope, range: DateRange | null): Promise<Record<string, number>> {
-  const rows = await db
-    .select({ status: order.status, total: count() })
-    .from(order)
-    .where(and(inScope(scope), inDateRange(range)))
-    .groupBy(order.status);
-  return Object.fromEntries(rows.map((row) => [row.status, row.total]));
+/**
+ * Number of orders per status and per payment status (the counts in the filters). Each one
+ * follows every filter but its own, so it says what ticking that value would add.
+ */
+export async function countOrderFacets(scope: Scope, params: OrderListParams) {
+  const [statuses, payments] = await Promise.all([
+    db
+      .select({ value: order.status, total: count() })
+      .from(order)
+      .where(listCondition(scope, params, "status"))
+      .groupBy(order.status),
+    db
+      .select({ value: order.paymentStatus, total: count() })
+      .from(order)
+      .where(listCondition(scope, params, "payment"))
+      .groupBy(order.paymentStatus),
+  ]);
+  const byValue = (rows: { value: string; total: number }[]): Record<string, number> =>
+    Object.fromEntries(rows.map((row) => [row.value, row.total]));
+  return { status: byValue(statuses), payment: byValue(payments) };
 }
 
 /** One order with its items, status history and payments; null when not this store's. */

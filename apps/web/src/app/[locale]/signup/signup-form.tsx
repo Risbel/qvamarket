@@ -18,6 +18,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 
 export function SignupForm() {
   const t = useTranslations("Signup");
@@ -151,6 +152,7 @@ function TextField({
   name,
   label,
   description,
+  type,
   ...inputProps
 }: {
   control: Control<SignupValues>;
@@ -165,7 +167,11 @@ function TextField({
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel htmlFor={name}>{label}</FieldLabel>
-          <Input {...inputProps} {...field} id={name} aria-invalid={fieldState.invalid} />
+          {type === "password" ? (
+            <PasswordInput {...inputProps} {...field} id={name} aria-invalid={fieldState.invalid} />
+          ) : (
+            <Input {...inputProps} {...field} id={name} type={type} aria-invalid={fieldState.invalid} />
+          )}
           {description && <FieldDescription>{description}</FieldDescription>}
           <FieldError errors={[fieldState.error]} />
         </Field>

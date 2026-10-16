@@ -11,6 +11,7 @@ import { customerLoginAction } from "@/server/customer-account-actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 
 /** Sign-in on the store's subdomain; `next` is an already-sanitized path to return to. */
 export function CustomerLoginForm({ next }: { next: string }) {
@@ -60,7 +61,7 @@ export function CustomerLoginForm({ next }: { next: string }) {
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
-              <Input {...field} id="password" type="password" autoComplete="current-password" aria-invalid={fieldState.invalid} />
+              <PasswordInput {...field} id="password" autoComplete="current-password" aria-invalid={fieldState.invalid} />
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}

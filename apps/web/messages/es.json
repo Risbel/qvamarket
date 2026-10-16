@@ -492,6 +492,10 @@
   "Theme": {
     "toggle": "Cambiar tema"
   },
+  "PasswordInput": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
+  },
   "Panel": {
     "nav": {
       "label": "Navegación",
@@ -1308,15 +1312,11 @@
     "title": "Pedidos",
     "empty": "Aún no tienes pedidos. Aparecerán aquí cuando tus clientes compren en tu tienda.",
     "noMatches": "Ningún pedido coincide con los filtros.",
+    "count": "{count, plural, =0 {Ningún pedido} one {# pedido} other {# pedidos}}",
     "back": "Pedidos",
-    "filters": {
-      "label": "Filtrar por estado",
-      "all": "Todos"
-    },
     "search": {
       "label": "Buscar pedidos",
-      "placeholder": "Número, nombre o teléfono",
-      "submit": "Buscar"
+      "placeholder": "Número, nombre o teléfono"
     },
     "columns": {
       "number": "Pedido",
@@ -1325,7 +1325,8 @@
       "units": "Artículos",
       "total": "Total",
       "status": "Estado",
-      "payment": "Pago"
+      "payment": "Pago",
+      "actions": "Acciones"
     },
     "status": {
       "pending": "Pendiente",
@@ -1345,12 +1346,6 @@
     "fulfillment": {
       "pickup": "Recogida en tienda",
       "delivery": "Entrega a domicilio"
-    },
-    "pagination": {
-      "label": "Páginas",
-      "previous": "Anterior",
-      "next": "Siguiente",
-      "page": "Página {page} de {pages}"
     },
     "detail": {
       "title": "Pedido {number}",
@@ -1468,8 +1463,6 @@
     },
     "dates": {
       "label": "Fecha",
-      "from": "Desde",
-      "to": "Hasta",
       "apply": "Aplicar",
       "clear": "Quitar fechas",
       "presets": {
@@ -1479,6 +1472,28 @@
         "thisMonth": "Este mes"
       },
       "otherTimeZone": "Días según la zona horaria {timeZone}."
+    },
+    "rowActions": {
+      "menu": "Acciones del pedido {reference}",
+      "view": "Ver pedido",
+      "call": "Llamar al cliente",
+      "whatsapp": "Escribir por WhatsApp"
+    }
+  },
+  "DataTable": {
+    "view": "Columnas",
+    "toggleColumns": "Mostrar columnas",
+    "reset": "Quitar filtros",
+    "clearFilter": "Limpiar selección",
+    "selected": "{count} seleccionados",
+    "pagination": {
+      "label": "Páginas",
+      "rowsPerPage": "Filas por página",
+      "page": "Página {page} de {pages}",
+      "first": "Primera página",
+      "previous": "Página anterior",
+      "next": "Página siguiente",
+      "last": "Última página"
     }
   }
 }

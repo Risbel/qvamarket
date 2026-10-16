@@ -11,6 +11,7 @@ import { customerSignupAction } from "@/server/customer-account-actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 
 type FieldName = keyof CustomerSignupValues;
 
@@ -63,7 +64,11 @@ export function CustomerSignupForm({ next }: { next: string }) {
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel htmlFor={name}>{t(name)}</FieldLabel>
-          <Input {...field} id={name} type={type} autoComplete={autoComplete} aria-invalid={fieldState.invalid} />
+          {type === "password" ? (
+            <PasswordInput {...field} id={name} autoComplete={autoComplete} aria-invalid={fieldState.invalid} />
+          ) : (
+            <Input {...field} id={name} type={type} autoComplete={autoComplete} aria-invalid={fieldState.invalid} />
+          )}
           <FieldError errors={[fieldState.error]} />
         </Field>
       )}

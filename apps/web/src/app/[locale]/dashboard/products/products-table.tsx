@@ -8,20 +8,12 @@ import {
   rowSortingFeature,
   tableFeatures,
   useTable,
-  type SortDirection,
   type SortFn,
 } from "@tanstack/react-table";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronsUpDownIcon,
-  ExternalLinkIcon,
-  MoreHorizontalIcon,
-  PencilIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { ExternalLinkIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/money";
+import { SortButton } from "@/components/data-table/sort-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -250,24 +242,6 @@ export function ProductsTable({
         ))}
       </TableBody>
     </Table>
-  );
-}
-
-function SortButton({
-  label,
-  sorted,
-  onClick,
-}: {
-  label: string;
-  sorted: false | SortDirection;
-  onClick: ((event: unknown) => void) | undefined;
-}) {
-  const Icon = sorted === "asc" ? ArrowUpIcon : sorted === "desc" ? ArrowDownIcon : ChevronsUpDownIcon;
-  return (
-    <Button variant="ghost" size="sm" className="-ml-2.5" onClick={onClick}>
-      {label}
-      <Icon data-icon="inline-end" className={sorted ? undefined : "text-muted-foreground"} />
-    </Button>
   );
 }
 

@@ -14,7 +14,7 @@ import {
 import { changePasswordAction } from "@/server/account-actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 
 export function ChangePasswordForm() {
   const t = useTranslations("ChangePassword");
@@ -99,10 +99,9 @@ function PasswordField({
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel htmlFor={name}>{label}</FieldLabel>
-          <Input
+          <PasswordInput
             {...field}
             id={name}
-            type="password"
             autoComplete={autoComplete}
             aria-invalid={fieldState.invalid}
           />
