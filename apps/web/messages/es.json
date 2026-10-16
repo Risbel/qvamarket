@@ -546,9 +546,15 @@
       "archived": "Archivado"
     },
     "newButton": "Nuevo producto",
-    "editButton": "Editar",
+    "actions": {
+      "menu": "Acciones de \"{name}\"",
+      "edit": "Editar",
+      "viewInStore": "Ver en la tienda",
+      "delete": "Eliminar"
+    },
     "new": "Nuevo producto",
     "edit": "Editar producto",
+    "backToList": "Volver a productos",
     "form": {
       "name": "Nombre",
       "description": "Descripción",
@@ -619,7 +625,6 @@
       "metaDescriptionPlaceholder": "Ej.: Camiseta 100 % algodón, fresca y resistente. Recógela en la tienda o te la llevamos a casa."
     },
     "delete": {
-      "button": "Eliminar",
       "title": "Eliminar producto",
       "confirm": "¿Eliminar \"{name}\"? También se borrarán sus imágenes. Esta acción no se puede deshacer.",
       "confirmButton": "Eliminar",

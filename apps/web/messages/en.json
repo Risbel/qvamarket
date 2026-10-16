@@ -546,9 +546,15 @@
       "archived": "Archived"
     },
     "newButton": "New product",
-    "editButton": "Edit",
+    "actions": {
+      "menu": "Actions for \"{name}\"",
+      "edit": "Edit",
+      "viewInStore": "View in store",
+      "delete": "Delete"
+    },
     "new": "New product",
     "edit": "Edit product",
+    "backToList": "Back to products",
     "form": {
       "name": "Name",
       "description": "Description",
@@ -619,7 +625,6 @@
       "metaDescriptionPlaceholder": "E.g. 100% cotton T-shirt, cool and durable. Pick it up at the store or get it delivered."
     },
     "delete": {
-      "button": "Delete",
       "title": "Delete product",
       "confirm": "Delete \"{name}\"? Its images will be deleted too. This cannot be undone.",
       "confirmButton": "Delete",

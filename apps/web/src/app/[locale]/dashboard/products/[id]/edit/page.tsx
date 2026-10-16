@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import { ArrowLeftIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
+import { Link } from "@/i18n/navigation";
+import { buttonVariants } from "@/components/ui/button";
 import { listCategories } from "@/server/categories";
 import { listProductImages } from "@/server/product-images";
 import { getProduct } from "@/server/products";
@@ -38,6 +41,13 @@ export default async function EditProductPage({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 p-4">
       <div className="flex flex-col gap-2">
+        <Link
+          href="/dashboard/products"
+          className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2.5 self-start text-muted-foreground" })}
+        >
+          <ArrowLeftIcon aria-hidden />
+          {t("backToList")}
+        </Link>
         <h1 className="text-2xl font-semibold">{t("edit")}</h1>
         {created && (
           <p role="status" className="rounded-md bg-muted p-3 text-sm">

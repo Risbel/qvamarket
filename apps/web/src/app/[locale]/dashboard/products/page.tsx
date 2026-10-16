@@ -1,21 +1,13 @@
+import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { formatMoney } from "@/lib/money";
-import { Badge } from "@/components/ui/badge";
+import { buildStoreUrl } from "@/lib/tenancy";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { mainImageKeys } from "@/server/product-images";
 import { listProducts } from "@/server/products";
 import { publicUrl } from "@/server/storage";
 import { requireMerchantPermission } from "@/server/tenant";
-import { DeleteProductButton } from "./delete-product-button";
+import { ProductsTable, type ProductRow } from "./products-table";
 
 export default async function ProductsPage({
   params,
@@ -32,94 +24,49 @@ export default async function ProductsPage({
     scope,
     products.map((p) => p.id),
   );
+  // Product links only work while the store is public
+  const storeUrl =
+    merchant.store.status === "active"
+      ? buildStoreUrl(merchant.store.slug, (await headers()).get("host"))
+      : null;
 
-  // What the member may do (the Server Actions check it again)
-  const canCreate = merchant.can({ product: ["create"] });
-  const canUpdate = merchant.can({ product: ["update"] });
-  const canDelete = merchant.can({ product: ["delete"] });
-  const showActions = canUpdate || canDelete;
+  const rows: ProductRow[] = products.map((p) => {
+    const imageKey = mainImages.get(p.id);
+    return {
+      id: p.id,
+      name: p.name,
+      status: p.status as ProductRow["status"],
+      categoryName: p.categoryName,
+      priceMinor: p.priceMinor,
+      variantCount: p.variantCount,
+      stock: p.stock,
+      imageUrl: imageKey ? publicUrl(imageKey) : null,
+      publicUrl:
+        storeUrl && p.status === "active" ? `${storeUrl}/${locale}/products/${p.slug}` : null,
+    };
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        {canCreate && (
+        {merchant.can({ product: ["create"] }) && (
           <Link href="/dashboard/products/new" className={buttonVariants()}>
             {t("newButton")}
           </Link>
         )}
       </div>
 
-      {products.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-14">
-                <span className="sr-only">{t("columns.image")}</span>
-              </TableHead>
-              <TableHead>{t("columns.name")}</TableHead>
-              <TableHead>{t("columns.category")}</TableHead>
-              <TableHead>{t("columns.price")}</TableHead>
-              <TableHead>{t("columns.stock")}</TableHead>
-              <TableHead>{t("columns.status")}</TableHead>
-              {showActions && (
-                <TableHead className="text-right">{t("columns.actions")}</TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>
-                  {mainImages.has(p.id) ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
-                    <img
-                      src={publicUrl(mainImages.get(p.id)!)}
-                      alt=""
-                      width={40}
-                      height={40}
-                      loading="lazy"
-                      className="size-10 rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="size-10 rounded-md bg-muted" aria-hidden />
-                  )}
-                </TableCell>
-                <TableCell className="font-medium">{p.name}</TableCell>
-                <TableCell className="text-muted-foreground">{p.categoryName ?? "—"}</TableCell>
-                <TableCell>
-                  {p.priceMinor === null
-                    ? t("noPrice")
-                    : (p.variantCount > 1 ? t("fromPrefix") + " " : "") +
-                      formatMoney(p.priceMinor, currency, locale)}
-                </TableCell>
-                <TableCell>{p.stock ?? t("stockUntracked")}</TableCell>
-                <TableCell>
-                  <Badge variant={p.status === "active" ? "default" : "secondary"}>
-                    {t(`status.${p.status as "draft" | "active" | "archived"}`)}
-                  </Badge>
-                </TableCell>
-                {showActions && (
-                  <TableCell>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      {canUpdate && (
-                        <Link
-                          href={`/dashboard/products/${p.id}/edit`}
-                          className={buttonVariants({ variant: "outline", size: "sm" })}
-                        >
-                          {t("editButton")}
-                        </Link>
-                      )}
-                      {canDelete && <DeleteProductButton id={p.id} name={p.name} />}
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        // What the member may do (the Server Actions check it again)
+        <ProductsTable
+          rows={rows}
+          currency={currency}
+          canUpdate={merchant.can({ product: ["update"] })}
+          canDelete={merchant.can({ product: ["delete"] })}
+        />
       )}
     </div>
   );
