@@ -12,7 +12,7 @@ export default async function CartPage({ params }: PageProps<"/[locale]/stores/[
   const t = await getTranslations("Store.cart");
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <CartView />
     </main>

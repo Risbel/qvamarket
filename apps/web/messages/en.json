@@ -127,7 +127,11 @@
         "tooManyRequests": "Too many requests in a row. Please wait a moment."
       },
       "notInCurrency": "Not available in {currency}: not included in the total.",
-      "checkout": "Check out"
+      "checkout": "Check out",
+      "emptyDescription": "Products you add will show up here.",
+      "summary": "Summary",
+      "subtotalItems": "Subtotal ({count, plural, one {# item} other {# items}})",
+      "deliveryNote": "If you choose home delivery, the fee is calculated at checkout."
     },
     "currency": "Currency",
     "checkout": {

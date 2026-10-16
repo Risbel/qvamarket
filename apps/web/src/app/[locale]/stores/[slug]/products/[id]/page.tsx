@@ -78,7 +78,7 @@ export default async function StoreProductPage({
           )}
           <div className="-mt-2 flex items-start justify-between gap-3">
             <h1 className="text-3xl font-semibold leading-tight">{product.name}</h1>
-            <FavoriteButton productId={product.id} productName={product.name} className="shrink-0 border" />
+            <FavoriteButton productId={product.id} productName={product.name} className="shrink-0" />
           </div>
 
           <VariantPurchase

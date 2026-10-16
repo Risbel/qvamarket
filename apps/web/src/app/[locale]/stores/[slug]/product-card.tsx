@@ -8,11 +8,8 @@ import { PriceTag } from "@/components/price-tag";
 import type { PublicListItem } from "@/server/public-catalog";
 import { publicUrl } from "@/server/storage";
 import { FavoriteButton } from "./favorite-button";
+import { IMAGE_BUTTON } from "./image-button";
 import { ProductCardCta } from "./product-card-actions";
-
-/** the round buttons over the image (the heart uses the same look) */
-const IMAGE_BUTTON =
-  "flex size-9 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 /**
  * A product in a storefront grid (catalog, search results, favorites). The image fills the

@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { savePendingFavorite } from "@/lib/favorites";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useFavorites } from "./favorites-provider";
+import { IMAGE_BUTTON } from "./image-button";
 
 /**
  * Where to come back after signing in: this page as the shopper sees it, without the locale
@@ -60,19 +61,18 @@ export function FavoriteButton({
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="icon-lg"
         onClick={onClick}
         disabled={!hydrated}
         aria-pressed={on}
         aria-label={t(on ? "remove" : "add", { name: productName })}
-        className={cn(
-          "flex size-9 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-100",
-          className,
-        )}
+        className={cn(IMAGE_BUTTON, "disabled:opacity-100", className)}
       >
         <HeartIcon className={cn("size-5", on && "fill-current text-rose-600 dark:text-rose-500")} aria-hidden />
-      </button>
+      </Button>
       <Dialog open={askToSignIn} onOpenChange={setAskToSignIn}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>

@@ -127,7 +127,11 @@
         "tooManyRequests": "Demasiadas consultas seguidas. Espera un momento."
       },
       "notInCurrency": "No disponible en {currency}: no se incluye en el total.",
-      "checkout": "Realizar pedido"
+      "checkout": "Realizar pedido",
+      "emptyDescription": "Cuando añadas productos, aparecerán aquí.",
+      "summary": "Resumen",
+      "subtotalItems": "Subtotal ({count, plural, one {# artículo} other {# artículos}})",
+      "deliveryNote": "Si eliges entrega a domicilio, el envío se calcula al realizar el pedido."
     },
     "currency": "Moneda",
     "checkout": {
