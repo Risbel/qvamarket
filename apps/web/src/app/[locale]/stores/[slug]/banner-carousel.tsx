@@ -6,6 +6,7 @@ import Fade from "embla-carousel-fade";
 import { useTranslations } from "next-intl";
 import {
   BANNER_FORMATS,
+  EMPTY_PIXEL,
   SECONDARY_BANNER_FORMATS,
   type BannerDevice,
 } from "@/lib/images";
@@ -47,8 +48,6 @@ const ASPECTS: Record<BannerKind, Record<BannerDevice, string>> = {
   secondary: { desktop: "aspect-[48/13]", mobile: "aspect-square" },
 };
 const FORMATS = { hero: BANNER_FORMATS, secondary: SECONDARY_BANNER_FORMATS };
-const EMPTY_PIXEL =
-  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
 /**
  * The autoplay plugin, if running. An inactive carousel (one slide: `active: false`) never

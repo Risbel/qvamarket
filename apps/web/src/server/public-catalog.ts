@@ -42,6 +42,13 @@ const mainImage = sql<string | null>`(
   order by pi.position asc limit 1
 )`;
 
+/** the image shown when the pointer is over a card (desktop) */
+const secondImage = sql<string | null>`(
+  select pi.storage_key from product_image pi
+  where pi.product_id = ${product.id} and pi.tenant_id = ${product.tenantId}
+  order by pi.position asc limit 1 offset 1
+)`;
+
 type VariantRow = { id: string; productId: string; stock: number | null; isDefault: boolean; title: string | null; position: number };
 
 async function variantsOf(productIds: string[]): Promise<Map<string, VariantRow[]>> {
@@ -68,7 +75,13 @@ export type PublicListItem = {
   slug: string;
   name: string;
   imageKey: string | null;
+  secondImageKey: string | null;
   categoryId: string | null;
+  /**
+   * The variant a card can add to the cart without opening the product: set only when exactly
+   * one variant is sold in this currency and it is not sold out (stock null = not tracked).
+   */
+  quickAdd: { variantId: string; stock: number | null } | null;
   /** price of the cheapest variant for 1 unit (with promotion and compare-at) */
   price: ResolvedPrice;
   /** variants have different prices ("from ...") */
@@ -79,7 +92,14 @@ export type PublicListItem = {
 
 export type PublicCategory = { id: string; name: string; slug: string };
 
-type ListRow = { id: string; slug: string; name: string; categoryId: string | null; imageKey: string | null };
+type ListRow = {
+  id: string;
+  slug: string;
+  name: string;
+  categoryId: string | null;
+  imageKey: string | null;
+  secondImageKey: string | null;
+};
 
 /** Prices the rows in a currency (cheapest variant, 1 unit); rows not sold in it are dropped. */
 async function toListItems(storeId: string, currencyCode: string, rows: ListRow[]): Promise<PublicListItem[]> {
@@ -93,8 +113,10 @@ async function toListItems(storeId: string, currencyCode: string, rows: ListRow[
       .filter((x): x is { v: VariantRow; price: ResolvedPrice } => x.price !== null);
     if (sellable.length === 0) continue; // not offered in this currency
     const cheapest = sellable.reduce((a, b) => (b.price.unitMinor < a.price.unitMinor ? b : a));
+    const only = sellable.length === 1 ? sellable[0].v : null;
     products.push({
       ...row,
+      quickAdd: only && only.stock !== 0 ? { variantId: only.id, stock: only.stock } : null,
       price: cheapest.price,
       priceVaries: new Set(sellable.map((x) => x.price.unitMinor)).size > 1,
       soldOut: sellable.every((x) => x.v.stock === 0),
@@ -115,6 +137,7 @@ export async function listPublicCatalog(
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
+      secondImageKey: secondImage,
     })
     .from(product)
     .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
@@ -148,6 +171,7 @@ export async function listPublicProductsByIds(storeId: string, currencyCode: str
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
+      secondImageKey: secondImage,
     })
     .from(product)
     .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
@@ -178,6 +202,7 @@ export async function searchPublicCatalog(
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
+      secondImageKey: secondImage,
       tags: product.tags,
       description: product.description,
       // A hidden category does not exist for the public, so its name finds nothing
@@ -195,7 +220,7 @@ export async function searchPublicCatalog(
     .sort((a, b) => b.score - a.score) // stable: equal scores stay newest first
     // Only the best ones get priced; some extra, since products not sold in this currency drop out
     .slice(0, limit * 2)
-    .map(({ row: { id, slug, name, categoryId, imageKey } }) => ({ id, slug, name, categoryId, imageKey }));
+    .map(({ row: { id, slug, name, categoryId, imageKey, secondImageKey } }) => ({ id, slug, name, categoryId, imageKey, secondImageKey }));
   return (await toListItems(storeId, currencyCode, matches)).slice(0, limit);
 }
 

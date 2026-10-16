@@ -12,6 +12,11 @@ export const MAX_IMAGE_DIMENSION = 1600;
 /** Largest original we accept to try compressing in the browser (phone photos are 3–12 MB). */
 export const MAX_ORIGINAL_BYTES = 20_000_000;
 export const MAX_IMAGES_PER_PRODUCT = 6;
+/**
+ * A 1x1 transparent GIF for a `<picture>` `<source>` on screens that must not download an
+ * image (browsers download images hidden with CSS, even lazy ones).
+ */
+export const EMPTY_PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 /** Hero banner of the storefront: at most this many images per screen size. */
 export const MAX_BANNER_IMAGES = 5;
 

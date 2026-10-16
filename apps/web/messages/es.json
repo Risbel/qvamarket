@@ -40,7 +40,14 @@
       "other": "Otros productos",
       "from": "Desde",
       "sale": "Oferta",
-      "was": "Antes"
+      "was": "Antes",
+      "add": "Añadir",
+      "addLabel": "Añadir {name} al carrito",
+      "chooseOptions": "Elegir opciones",
+      "chooseOptionsLabel": "Elegir opciones de {name}",
+      "inCart": "En el carrito",
+      "inCartLabel": "Ya tienes en tu carrito todas las unidades disponibles de {name}",
+      "view": "Ver {name}"
     },
     "search": {
       "label": "Buscar productos",

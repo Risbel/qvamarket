@@ -29,13 +29,8 @@ export default async function AccountFavoritesPage({ params }: PageProps<"/[loca
   await ensureCustomer(store.id, session.user);
 
   const currency = await selectedCurrency(store.currencies);
-  const [t, tc, tAccount] = await Promise.all([
-    getTranslations("Store.favorites"),
-    getTranslations("Store.catalog"),
-    getTranslations("Store.account"),
-  ]);
+  const [t, tAccount] = await Promise.all([getTranslations("Store.favorites"), getTranslations("Store.account")]);
   const products = await listPublicProductsByIds(store.id, currency.code, await listFavoriteIds(store.id, session.user.id));
-  const labels = { soldOut: tc("soldOut"), noImage: tc("noImage"), from: tc("from"), sale: tc("sale"), was: tc("was") };
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
@@ -43,7 +38,7 @@ export default async function AccountFavoritesPage({ params }: PageProps<"/[loca
       <FavoritesList ids={products.map((p) => p.id)} empty={<p className="text-muted-foreground">{t("empty")}</p>}>
         {products.map((product, index) => (
           <WhileFavorite key={product.id} productId={product.id}>
-            <ProductCard product={product} currency={currency.code} locale={locale} eager={index < 4} labels={labels} />
+            <ProductCard product={product} currency={currency.code} locale={locale} eager={index < 4} />
           </WhileFavorite>
         ))}
       </FavoritesList>

@@ -104,7 +104,6 @@ export default async function StoreCatalogPage({
                       currency={currency.code}
                       locale={locale}
                       eager={index < 4}
-                      labels={{ soldOut: t("soldOut"), noImage: t("noImage"), from: t("from"), sale: t("sale"), was: t("was") }}
                     />
                   ))}
                 </ul>

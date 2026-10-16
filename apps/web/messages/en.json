@@ -40,7 +40,14 @@
       "other": "Other products",
       "from": "From",
       "sale": "Sale",
-      "was": "Was"
+      "was": "Was",
+      "add": "Add",
+      "addLabel": "Add {name} to cart",
+      "chooseOptions": "Choose options",
+      "chooseOptionsLabel": "Choose options for {name}",
+      "inCart": "In your cart",
+      "inCartLabel": "Your cart already has every available unit of {name}",
+      "view": "View {name}"
     },
     "search": {
       "label": "Search products",

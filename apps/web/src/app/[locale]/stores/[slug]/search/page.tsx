@@ -33,7 +33,7 @@ export default async function StoreSearchPage({
   if (!store) notFound();
   const currency = await selectedCurrency(store.currencies);
   const q = queryOf((await searchParams).q);
-  const [t, tc] = await Promise.all([getTranslations("Store.search"), getTranslations("Store.catalog")]);
+  const t = await getTranslations("Store.search");
   const results = q ? await searchPublicCatalog(store.id, currency.code, q) : [];
 
   return (
@@ -65,7 +65,6 @@ export default async function StoreSearchPage({
               currency={currency.code}
               locale={locale}
               eager={index < 4}
-              labels={{ soldOut: tc("soldOut"), noImage: tc("noImage"), from: tc("from"), sale: tc("sale"), was: tc("was") }}
             />
           ))}
         </ul>
