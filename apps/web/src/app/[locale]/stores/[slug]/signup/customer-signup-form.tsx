@@ -6,10 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
+import { MIN_PASSWORD_LENGTH } from "@/lib/validation/auth";
 import { createCustomerSignupSchema, type CustomerSignupValues } from "@/lib/validation/customer-account";
 import { customerSignupAction } from "@/server/customer-account-actions";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
 
@@ -57,7 +58,12 @@ export function CustomerSignupForm({ next }: { next: string }) {
     }
   }
 
-  const text = (name: FieldName, type: string, autoComplete: string) => (
+  const text = (
+    name: FieldName,
+    type: string,
+    autoComplete: string,
+    { placeholder, description }: { placeholder?: string; description?: string } = {},
+  ) => (
     <Controller
       name={name}
       control={form.control}
@@ -67,8 +73,16 @@ export function CustomerSignupForm({ next }: { next: string }) {
           {type === "password" ? (
             <PasswordInput {...field} id={name} autoComplete={autoComplete} aria-invalid={fieldState.invalid} />
           ) : (
-            <Input {...field} id={name} type={type} autoComplete={autoComplete} aria-invalid={fieldState.invalid} />
+            <Input
+              {...field}
+              id={name}
+              type={type}
+              autoComplete={autoComplete}
+              placeholder={placeholder}
+              aria-invalid={fieldState.invalid}
+            />
           )}
+          {description && <FieldDescription>{description}</FieldDescription>}
           <FieldError errors={[fieldState.error]} />
         </Field>
       )}
@@ -78,9 +92,11 @@ export function CustomerSignupForm({ next }: { next: string }) {
   return (
     <form onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} method="post" noValidate className="relative">
       <FieldGroup>
-        {text("name", "text", "name")}
-        {text("email", "email", "email")}
-        {text("password", "password", "new-password")}
+        {text("name", "text", "name", { placeholder: t("namePlaceholder") })}
+        {text("email", "email", "email", { placeholder: t("emailPlaceholder") })}
+        {text("password", "password", "new-password", {
+          description: t("passwordHelp", { min: MIN_PASSWORD_LENGTH }),
+        })}
         {text("confirmPassword", "password", "new-password")}
         <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
           <label>

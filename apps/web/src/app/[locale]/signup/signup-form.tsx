@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { slugify } from "@/lib/slug";
+import { MIN_PASSWORD_LENGTH } from "@/lib/validation/auth";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createSignupSchema, type SignupValues } from "@/lib/validation/signup";
 import { signupAction } from "@/server/signup-actions";
@@ -86,11 +87,18 @@ export function SignupForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
-        <TextField control={form.control} name="userName" label={t("userName")} autoComplete="name" />
+        <TextField
+          control={form.control}
+          name="userName"
+          label={t("userName")}
+          placeholder={t("userNamePlaceholder")}
+          autoComplete="name"
+        />
         <TextField
           control={form.control}
           name="userEmail"
           label={t("userEmail")}
+          placeholder={t("userEmailPlaceholder")}
           type="email"
           autoComplete="email"
         />
@@ -99,6 +107,7 @@ export function SignupForm() {
             control={form.control}
             name="password"
             label={t("password")}
+            description={t("passwordHelp", { min: MIN_PASSWORD_LENGTH })}
             type="password"
             autoComplete="new-password"
           />
@@ -110,12 +119,25 @@ export function SignupForm() {
             autoComplete="new-password"
           />
         </div>
-        <TextField control={form.control} name="companyName" label={t("companyName")} autoComplete="organization" />
-        <TextField control={form.control} name="storeName" label={t("storeName")} autoComplete="off" />
+        <TextField
+          control={form.control}
+          name="companyName"
+          label={t("companyName")}
+          placeholder={t("companyNamePlaceholder")}
+          autoComplete="organization"
+        />
+        <TextField
+          control={form.control}
+          name="storeName"
+          label={t("storeName")}
+          placeholder={t("storeNamePlaceholder")}
+          autoComplete="off"
+        />
         <TextField
           control={form.control}
           name="storeSlug"
           label={t("storeSlug")}
+          placeholder={t("storeSlugPlaceholder")}
           description={t("storeSlugHelp", { url: `${storeSlug || "mitienda"}.qvashop.com` })}
           autoComplete="off"
           autoCapitalize="none"

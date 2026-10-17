@@ -17,7 +17,7 @@ import {
   variantOptionValue,
 } from "@qvashop/db";
 import { resolvePrice, volumeTiers, type ResolvedPrice, type VolumeTier } from "@/lib/pricing";
-import { searchScore, searchTerms } from "@/lib/search";
+import { normalizeSearchText, searchScore, searchTerms } from "@/lib/search";
 import { loadPriceRows } from "./pricing";
 
 // Public catalog: what an anonymous visitor may see of a store's products.
@@ -222,6 +222,53 @@ export async function searchPublicCatalog(
     .slice(0, limit * 2)
     .map(({ row: { id, slug, name, categoryId, imageKey, secondImageKey } }) => ({ id, slug, name, categoryId, imageKey, secondImageKey }));
   return (await toListItems(storeId, currencyCode, matches)).slice(0, limit);
+}
+
+export const RELATED_PRODUCTS_MAX = 5;
+
+/**
+ * Other products of the store to show under a product page: same category first, then the
+ * ones sharing more tags, then the newest of the rest, so the row is full even in a store
+ * without categories or tags. Products sold out go last; ones not sold in the currency are
+ * left out. Catalogs are small, so the ranking runs in the app (like the search).
+ */
+export async function listRelatedProducts(
+  storeId: string,
+  currencyCode: string,
+  productId: string,
+  limit = RELATED_PRODUCTS_MAX,
+): Promise<PublicListItem[]> {
+  const rows = await db
+    .select({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      categoryId: product.categoryId,
+      imageKey: mainImage,
+      secondImageKey: secondImage,
+      tags: product.tags,
+    })
+    .from(product)
+    .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
+    .where(publicProducts(storeId))
+    .orderBy(desc(product.createdAt));
+  const current = rows.find((row) => row.id === productId);
+  if (!current) return [];
+
+  const tags = new Set(current.tags.map(normalizeSearchText));
+  const score = (row: (typeof rows)[number]) =>
+    (current.categoryId && row.categoryId === current.categoryId ? 100 : 0) +
+    row.tags.filter((tag) => tags.has(normalizeSearchText(tag))).length;
+
+  const candidates = rows
+    .filter((row) => row.id !== productId)
+    .map((row) => ({ row, score: score(row) }))
+    .sort((a, b) => b.score - a.score) // stable: equal scores stay newest first
+    // Some extra: products not sold in this currency drop out, sold-out ones go last
+    .slice(0, limit * 3)
+    .map(({ row: { id, slug, name, categoryId, imageKey, secondImageKey } }) => ({ id, slug, name, categoryId, imageKey, secondImageKey }));
+  const items = await toListItems(storeId, currencyCode, candidates);
+  return items.sort((a, b) => Number(a.soldOut) - Number(b.soldOut)).slice(0, limit);
 }
 
 export type PublicVariant = {

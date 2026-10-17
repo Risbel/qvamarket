@@ -16,21 +16,25 @@ import { ProductCardCta } from "./product-card-actions";
  * top of the card; the image and the eye button open the product, the call to action adds it
  * to the cart.
  * With a pointer, hovering the image shows the product's second image.
+ * `size="sm"` is the compact card for denser rows (related products): smaller buttons and badge.
  */
 export async function ProductCard({
   product,
   currency,
   locale,
   eager,
+  size = "default",
 }: {
   product: PublicListItem;
   currency: string;
   locale: string;
   eager: boolean;
+  size?: "default" | "sm";
 }) {
   const t = await getTranslations("Store.catalog");
   const badge = product.soldOut ? t("soldOut") : product.price.promotion || product.price.compareAtMinor ? t("sale") : null;
   const second = product.imageKey ? product.secondImageKey : null;
+  const sm = size === "sm";
   return (
     <li className="flex">
       <Card size="sm" className="w-full pt-0">
@@ -78,20 +82,23 @@ export async function ProductCard({
           </Link>
           {badge && (
             <span
-              className="pointer-events-none absolute left-2 top-2 rounded-full px-2.5 py-0.5 text-xs font-medium"
+              className={cn(
+                "pointer-events-none absolute left-2 top-2 rounded-full font-medium",
+                sm ? "px-2 py-0.5 text-[0.7rem]" : "px-2.5 py-0.5 text-xs",
+              )}
               style={{ backgroundColor: "var(--brand-accent)", color: "var(--brand-accent-foreground)" }}
             >
               {badge}
             </span>
           )}
-          <FavoriteButton productId={product.id} productName={product.name} className="absolute right-2 top-2" />
+          <FavoriteButton productId={product.id} productName={product.name} className={cn("absolute right-2 top-2", sm && "size-8")} />
           <Link
             href={`/products/${product.slug}`}
             aria-label={t("view", { name: product.name })}
             title={t("view", { name: product.name })}
-            className={cn(IMAGE_BUTTON, "absolute right-2 bottom-2")}
+            className={cn(IMAGE_BUTTON, "absolute right-2 bottom-2", sm && "size-8")}
           >
-            <EyeIcon className="size-5" aria-hidden />
+            <EyeIcon className={sm ? "size-4" : "size-5"} aria-hidden />
           </Link>
         </div>
         <CardContent className="flex flex-1 flex-col gap-1">
@@ -109,6 +116,7 @@ export async function ProductCard({
           <ProductCardCta
             product={{ name: product.name, slug: product.slug, soldOut: product.soldOut, quickAdd: product.quickAdd }}
             soldOutLabel={t("soldOut")}
+            size={size}
           />
         </CardContent>
       </Card>

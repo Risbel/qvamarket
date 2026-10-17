@@ -12,7 +12,8 @@ import type { PublicListItem } from "@/server/public-catalog";
 import { useCart } from "./cart-provider";
 
 const BRAND = { backgroundColor: "var(--brand)", color: "var(--brand-foreground)" };
-const CTA = "h-9 w-full";
+const CTA = "w-full";
+const CTA_SIZE = { default: "h-9", sm: "h-8 text-[0.8rem]" } as const;
 
 /**
  * The call to action of a product card: adds one unit straight to the cart when the product
@@ -21,10 +22,13 @@ const CTA = "h-9 w-full";
 export function ProductCardCta({
   product,
   soldOutLabel,
+  size = "default",
 }: {
   product: Pick<PublicListItem, "name" | "slug" | "soldOut" | "quickAdd">;
   soldOutLabel: string;
+  size?: "default" | "sm";
 }) {
+  const cta = cn(CTA, CTA_SIZE[size]);
   const t = useTranslations("Store.catalog");
   const tCart = useTranslations("Store.cart");
   const router = useRouter();
@@ -33,7 +37,7 @@ export function ProductCardCta({
 
   if (product.soldOut) {
     return (
-      <Button variant="outline" className={CTA} disabled>
+      <Button variant="outline" className={cta} disabled>
         {soldOutLabel}
       </Button>
     );
@@ -45,7 +49,7 @@ export function ProductCardCta({
       <Link
         href={`/products/${product.slug}`}
         aria-label={t("chooseOptionsLabel", { name: product.name })}
-        className={cn(buttonVariants({ variant: "outline" }), CTA)}
+        className={cn(buttonVariants({ variant: "outline" }), cta)}
       >
         <SlidersHorizontalIcon aria-hidden />
         {t("chooseOptions")}
@@ -58,7 +62,7 @@ export function ProductCardCta({
   const inCart = items.find((item) => item.variantId === quickAdd.variantId)?.quantity ?? 0;
   if (inCart >= max) {
     return (
-      <Button variant="outline" className={CTA} disabled aria-label={t("inCartLabel", { name: product.name })}>
+      <Button variant="outline" className={cta} disabled aria-label={t("inCartLabel", { name: product.name })}>
         <CheckIcon aria-hidden />
         {t("inCart")}
       </Button>
@@ -67,7 +71,7 @@ export function ProductCardCta({
 
   return (
     <Button
-      className={cn(CTA, "hover:opacity-90")}
+      className={cn(cta, "hover:opacity-90")}
       style={BRAND}
       disabled={!hydrated}
       aria-label={t("addLabel", { name: product.name })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 import { holdBars, useHideOnScroll } from "./use-hide-on-scroll";
 
 /**
@@ -30,14 +31,14 @@ export function CategoryIndex({
     >
       <div className="mx-auto flex h-full w-full max-w-5xl items-center gap-2 overflow-x-auto px-4">
         {sections.map((section) => (
-          <a
+          <Badge
             key={section.id}
-            href={`#${section.id}`}
-            onClick={() => holdBars()}
-            className="shrink-0 rounded-full border px-3 py-1 text-sm hover:bg-muted"
+            variant="secondary"
+            render={<a href={`#${section.id}`} onClick={() => holdBars()} />}
+            className="h-7 px-3 text-sm"
           >
             {section.title}
-          </a>
+          </Badge>
         ))}
       </div>
     </nav>
