@@ -35,6 +35,7 @@ export function emptyProductValues(currencies: FormCurrency[]): ProductFormValue
     sku: "",
     stock: "",
     prices: emptyPrices(currencies),
+    images: [],
   };
 }
 
@@ -54,9 +55,13 @@ type SavedProduct = {
 
 /**
  * Saved product -> form strings. One prices entry per currency the store sells in; none for a
- * product with options (its prices belong to the variants form).
+ * product with options (its prices belong to the variants form). `imageIds`: its images, main first.
  */
-export function productToFormValues(saved: SavedProduct, currencies: FormCurrency[]): ProductFormValues {
+export function productToFormValues(
+  saved: SavedProduct,
+  currencies: FormCurrency[],
+  imageIds: string[],
+): ProductFormValues {
   return {
     name: saved.name,
     description: saved.description ?? "",
@@ -69,5 +74,6 @@ export function productToFormValues(saved: SavedProduct, currencies: FormCurrenc
     sku: saved.defaultVariant?.sku ?? "",
     stock: saved.defaultVariant?.stock == null ? "" : String(saved.defaultVariant.stock),
     prices: saved.hasOptions ? [] : pricesToFormValues(saved.prices, currencies),
+    images: imageIds.map((id) => ({ kind: "existing", id })),
   };
 }

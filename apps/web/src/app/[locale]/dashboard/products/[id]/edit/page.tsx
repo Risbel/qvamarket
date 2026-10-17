@@ -13,7 +13,6 @@ import { getProductVariants } from "@/server/variants";
 import { productToFormValues } from "../../form-values";
 import { ProductForm } from "../../product-form";
 import { OptionsEditor } from "./options-editor";
-import { ProductImages } from "./product-images";
 import { VariantsEditor } from "./variants-editor";
 
 export default async function EditProductPage({
@@ -62,16 +61,12 @@ export default async function EditProductPage({
         simple={!product.hasOptions}
         currencies={merchant.store.currencies}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-        initialValues={productToFormValues(product, merchant.store.currencies)}
-      />
-      <ProductImages
-        productId={product.id}
-        productName={product.name}
-        images={images.map((image) => ({
-          id: image.id,
-          url: publicUrl(image.storageKey),
-          sizeBytes: image.sizeBytes,
-        }))}
+        initialValues={productToFormValues(
+          product,
+          merchant.store.currencies,
+          images.map((image) => image.id),
+        )}
+        imageUrls={Object.fromEntries(images.map((image) => [image.id, publicUrl(image.storageKey)]))}
       />
       <OptionsEditor productId={product.id} options={options} />
       {product.hasOptions && (

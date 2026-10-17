@@ -4,7 +4,9 @@ import { listPublicCatalog } from "@/server/public-catalog";
 import { BANNER_DEVICES } from "@/lib/images";
 import { getPublicStoreBySlug, listPublicBannerImages, listPublicSecondaryBanner } from "@/server/public-store";
 import { selectedCurrency } from "@/server/storefront-currency";
+import { cn } from "@/lib/utils";
 import { BannerCarousel } from "./banner-carousel";
+import { BANNER_GAP } from "./banner-layout";
 import { CategoryIndex } from "./category-index";
 import { ProductCard } from "./product-card";
 
@@ -39,6 +41,8 @@ export default async function StoreCatalogPage({
       items: products.filter((p) => !p.categoryId || !known.has(p.categoryId)),
     },
   ].filter((section) => section.items.length > 0);
+  // An empty wrapper would still take a gap in <main>, so it is only rendered with a hero
+  const hasBanner = BANNER_DEVICES.some((device) => hero[device].length > 0);
 
   return (
     <>
@@ -46,36 +50,42 @@ export default async function StoreCatalogPage({
         // Index of the categories, right under the header: jumps to each section of the page
         <CategoryIndex label={t("categoriesLabel")} sections={sections.map(({ id, title }) => ({ id, title }))} />
       )}
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6">
-        {/* One hero per screen size, each only where the merchant uploaded images for it */}
-        {BANNER_DEVICES.map(
-          (device) =>
-            hero[device].length > 0 && (
-              <BannerCarousel
-                key={device}
-                kind="hero"
-                device={device}
-                slides={hero[device].map((image) => ({ id: image.id, images: [image] }))}
-                storeName={store.name}
-              />
-            ),
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6">
+        {hasBanner && (
+          // Hero and secondary tiles in their own column, spaced like the two tiles of a pair
+          // (BANNER_GAP), so the row under the hero sits at the same distance as the tiles
+          <div className={cn("flex flex-col", BANNER_GAP)}>
+            {/* One hero per screen size, each only where the merchant uploaded images for it */}
+            {BANNER_DEVICES.map(
+              (device) =>
+                hero[device].length > 0 && (
+                  <BannerCarousel
+                    key={device}
+                    kind="hero"
+                    device={device}
+                    slides={hero[device].map((image) => ({ id: image.id, images: [image] }))}
+                    storeName={store.name}
+                  />
+                ),
+            )}
+            {/* The secondary banner (pairs of tiles) only sits under a hero on the same screen size,
+                and only while the merchant has it switched on */}
+            {store.secondaryBannerVisible &&
+              BANNER_DEVICES.map(
+                (device) =>
+                  hero[device].length > 0 &&
+                  secondary[device].length > 0 && (
+                    <BannerCarousel
+                      key={device}
+                      kind="secondary"
+                      device={device}
+                      slides={secondary[device]}
+                      storeName={store.name}
+                    />
+                  ),
+              )}
+          </div>
         )}
-        {/* The secondary banner (pairs of tiles) only sits under a hero on the same screen size,
-            and only while the merchant has it switched on */}
-        {store.secondaryBannerVisible &&
-          BANNER_DEVICES.map(
-            (device) =>
-              hero[device].length > 0 &&
-              secondary[device].length > 0 && (
-                <BannerCarousel
-                  key={device}
-                  kind="secondary"
-                  device={device}
-                  slides={secondary[device]}
-                  storeName={store.name}
-                />
-              ),
-          )}
         {products.length === 0 ? (
           <>
             <h1 className="text-2xl font-semibold">{t("title")}</h1>
@@ -93,7 +103,11 @@ export default async function StoreCatalogPage({
                 aria-labelledby={`${section.id}-title`}
                 className="flex scroll-mt-[calc(var(--store-header)+var(--store-search)+var(--store-index)+1rem)] flex-col gap-4 md:scroll-mt-[calc(var(--store-header)+var(--store-index)+1rem)]"
               >
-                <h2 id={`${section.id}-title`} className="text-xl font-semibold">
+                {/* first-letter: a category typed in lowercase ("ropa") still reads as a title */}
+                <h2
+                  id={`${section.id}-title`}
+                  className="text-2xl font-semibold tracking-tight first-letter:uppercase md:text-3xl"
+                >
                   {section.title}
                 </h2>
                 <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

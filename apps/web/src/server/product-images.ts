@@ -1,25 +1,27 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, db, eq, product, productImage, sql } from "@qvashop/db";
-import {
-  checkImageBytes,
-  extensionFor,
-  MAX_IMAGES_PER_PRODUCT,
-  type ImageCheck,
-} from "@/lib/images";
+import { and, asc, count, db, eq, inArray, product, productImage, productUpload, sql, store } from "@qvashop/db";
+import { checkImageBytes, extensionFor, MAX_IMAGES_PER_PRODUCT, type ImageCheck } from "@/lib/images";
+import type { ImageRef } from "@/lib/validation/product";
 import { deleteObject, putObject, tenantKey } from "./storage";
 
 // Product images: rows in `product_image` + files in object storage under
-// tenants/<tenantId>/products/<productId>/. Every function takes the tenant and store
-// from requireMerchant()/getMerchantOrNull() and filters by them; ids come from the
-// client but are only ever matched together with the tenant.
+// tenants/<tenantId>/products/. Every function takes the tenant and store from
+// requireMerchant()/getMerchantOrNull() and filters by them; ids come from the client but are
+// only ever matched together with the tenant.
+//
+// Images are saved with the product form, in two steps: picking a file uploads it right away
+// as a *staged upload* (`product_upload`: a file in storage, not attached to anything), and
+// saving the form attaches the staged uploads, removes the images left out and sets the order
+// (`applyProductImages`, inside the product's transaction). Leaving the form without saving
+// changes nothing; staged uploads nobody saved are swept after a day.
 
 type Scope = { tenantId: string; storeId: string };
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export type ImageError =
-  | Extract<ImageCheck, { ok: false }>["error"]
-  | "notFound"
-  | "limit";
+export type ImageError = Extract<ImageCheck, { ok: false }>["error"] | "limit";
+
+/** Staged uploads a store may hold at once (unsaved forms), so storage cannot be filled. */
+export const MAX_PENDING_UPLOADS = 30;
 
 /** Images of a product, main image (position 0) first. Empty when the product is not in scope. */
 export async function listProductImages({ tenantId, storeId }: Scope, productId: string) {
@@ -46,92 +48,73 @@ export async function listProductImages({ tenantId, storeId }: Scope, productId:
     .orderBy(asc(productImage.position));
 }
 
-async function productInScope({ tenantId, storeId }: Scope, productId: string) {
-  const [row] = await db
-    .select({ id: product.id })
-    .from(product)
-    .where(
-      and(eq(product.id, productId), eq(product.tenantId, tenantId), eq(product.storeId, storeId)),
-    )
-    .limit(1);
-  return Boolean(row);
+async function deleteFiles(keys: string[], context: string) {
+  await Promise.all(
+    keys.map((key) =>
+      deleteObject(key).catch((error) => console.error(`${context}: could not delete file`, key, error)),
+    ),
+  );
 }
 
-async function imageCount(tenantId: string, productId: string) {
-  const [row] = await db
-    .select({ total: count() })
-    .from(productImage)
-    .where(and(eq(productImage.tenantId, tenantId), eq(productImage.productId, productId)));
-  return row.total;
+/** Removes this store's staged uploads older than a day: never saved (rows first, then files). */
+async function sweepStaleUploads({ tenantId, storeId }: Scope) {
+  const rows = await db
+    .delete(productUpload)
+    .where(
+      and(
+        eq(productUpload.tenantId, tenantId),
+        eq(productUpload.storeId, storeId),
+        sql`${productUpload.createdAt} < now() - interval '1 day'`,
+      ),
+    )
+    .returning({ key: productUpload.storageKey });
+  await deleteFiles(rows.map((row) => row.key), "sweepStaleUploads");
 }
 
 /**
- * Validates the bytes (size, real type), uploads the file and then records it as the
- * product's last image. The file goes first, so a row never points at a missing file;
- * if recording fails the file is removed again.
+ * Validates the bytes (size, real type), uploads the file and records it as a staged upload
+ * of the store. The file goes first, so a row never points at a missing file; if recording
+ * fails the file is removed again.
  */
-export async function addProductImage(
+export async function stageProductImage(
   scope: Scope,
-  productId: string,
+  userId: string,
   bytes: Uint8Array,
-): Promise<{ ok: true; id: string } | { ok: false; error: ImageError }> {
+): Promise<{ ok: true; id: string; storageKey: string } | { ok: false; error: ImageError }> {
   const check = checkImageBytes(bytes);
   if (!check.ok) return check;
 
-  if (!(await productInScope(scope, productId))) return { ok: false, error: "notFound" };
-  // Cheap early exit; the authoritative check runs again under the row lock below
-  if ((await imageCount(scope.tenantId, productId)) >= MAX_IMAGES_PER_PRODUCT) {
-    return { ok: false, error: "limit" };
-  }
+  await sweepStaleUploads(scope);
 
-  const key = tenantKey(
-    scope.tenantId,
-    "products",
-    productId,
-    `${randomUUID()}.${extensionFor(check.type)}`,
-  );
+  const key = tenantKey(scope.tenantId, "products", `${randomUUID()}.${extensionFor(check.type)}`);
   await putObject({ key, body: bytes, contentType: check.type });
 
   try {
     const result = await db.transaction(async (tx) => {
-      // Lock the product row so two simultaneous uploads cannot both pass the limit
-      const [locked] = await tx
-        .select({ id: product.id })
-        .from(product)
-        .where(
-          and(
-            eq(product.id, productId),
-            eq(product.tenantId, scope.tenantId),
-            eq(product.storeId, scope.storeId),
-          ),
-        )
-        .for("update")
-        .limit(1);
-      if (!locked) return { ok: false, error: "notFound" } as const;
-
-      const [stats] = await tx
-        .select({
-          total: count(),
-          next: sql<number>`coalesce(max(${productImage.position}) + 1, 0)`,
-        })
-        .from(productImage)
-        .where(
-          and(eq(productImage.tenantId, scope.tenantId), eq(productImage.productId, productId)),
-        );
-      if (stats.total >= MAX_IMAGES_PER_PRODUCT) return { ok: false, error: "limit" } as const;
+      // Lock the store row so simultaneous uploads cannot both pass the limit
+      await tx
+        .select({ id: store.id })
+        .from(store)
+        .where(and(eq(store.id, scope.storeId), eq(store.tenantId, scope.tenantId)))
+        .for("no key update");
+      const [pending] = await tx
+        .select({ total: count() })
+        .from(productUpload)
+        .where(and(eq(productUpload.tenantId, scope.tenantId), eq(productUpload.storeId, scope.storeId)));
+      if (pending.total >= MAX_PENDING_UPLOADS) return { ok: false, error: "limit" } as const;
 
       const [row] = await tx
-        .insert(productImage)
+        .insert(productUpload)
         .values({
           tenantId: scope.tenantId,
-          productId,
+          storeId: scope.storeId,
+          userId,
           storageKey: key,
           contentType: check.type,
           sizeBytes: bytes.length,
-          position: Number(stats.next),
         })
-        .returning({ id: productImage.id });
-      return { ok: true, id: row.id } as const;
+        .returning({ id: productUpload.id });
+      return { ok: true, id: row.id, storageKey: key } as const;
     });
 
     if (!result.ok) await deleteObject(key).catch(() => {});
@@ -142,95 +125,102 @@ export async function addProductImage(
   }
 }
 
-/** Rewrites positions as 0..n-1 following `orderedIds` (the first one is the main image). */
-async function setPositions(tx: Tx, tenantId: string, orderedIds: string[]) {
-  for (const [position, id] of orderedIds.entries()) {
-    await tx
-      .update(productImage)
-      .set({ position })
-      .where(and(eq(productImage.id, id), eq(productImage.tenantId, tenantId)));
-  }
-}
-
-async function findImage({ tenantId, storeId }: Scope, imageId: string) {
-  const [row] = await db
-    .select({
-      id: productImage.id,
-      productId: productImage.productId,
-      storageKey: productImage.storageKey,
-    })
-    .from(productImage)
-    .innerJoin(
-      product,
-      and(eq(product.id, productImage.productId), eq(product.tenantId, productImage.tenantId)),
-    )
+/** Removes a staged upload the merchant took out of the form before saving. */
+export async function discardProductUpload({ tenantId, storeId }: Scope, uploadId: string) {
+  const rows = await db
+    .delete(productUpload)
     .where(
-      and(
-        eq(productImage.id, imageId),
-        eq(productImage.tenantId, tenantId),
-        eq(product.storeId, storeId),
-      ),
+      and(eq(productUpload.id, uploadId), eq(productUpload.tenantId, tenantId), eq(productUpload.storeId, storeId)),
     )
-    .limit(1);
-  return row ?? null;
+    .returning({ key: productUpload.storageKey });
+  await deleteFiles(rows.map((row) => row.key), "discardProductUpload");
 }
 
-/** Removes the row (the next image becomes the main one) and then the file. */
-export async function deleteProductImage(
-  scope: Scope,
-  imageId: string,
-): Promise<{ ok: true } | { ok: false; error: "notFound" }> {
-  const image = await findImage(scope, imageId);
-  if (!image) return { ok: false, error: "notFound" };
+/**
+ * Makes the product's images exactly `refs`, in that order (the first one is the main image):
+ * attaches the staged uploads, removes the images left out and rewrites the positions. Runs
+ * inside the product's save transaction, after the product row was inserted or locked.
+ * `stale`: an id is not one of this product's images or this store's staged uploads (another
+ * save changed them, or the upload was swept). Returns the files to delete after the commit.
+ */
+export async function applyProductImages(
+  tx: Tx,
+  { tenantId, storeId }: Scope,
+  productId: string,
+  refs: ImageRef[],
+): Promise<{ ok: true; removedKeys: string[] } | { ok: false; error: "stale" | "limit" }> {
+  if (refs.length > MAX_IMAGES_PER_PRODUCT) return { ok: false, error: "limit" };
 
-  await db.transaction(async (tx) => {
-    await tx
-      .delete(productImage)
-      .where(and(eq(productImage.id, image.id), eq(productImage.tenantId, scope.tenantId)));
-    const rest = await tx
-      .select({ id: productImage.id })
-      .from(productImage)
-      .where(
-        and(
-          eq(productImage.tenantId, scope.tenantId),
-          eq(productImage.productId, image.productId),
+  const current = await tx
+    .select({ id: productImage.id, storageKey: productImage.storageKey })
+    .from(productImage)
+    .where(and(eq(productImage.tenantId, tenantId), eq(productImage.productId, productId)));
+  const uploadIds = refs.filter((ref) => ref.kind === "upload").map((ref) => ref.id);
+  const uploads =
+    uploadIds.length === 0
+      ? []
+      : await tx
+          .select({
+            id: productUpload.id,
+            storageKey: productUpload.storageKey,
+            contentType: productUpload.contentType,
+            sizeBytes: productUpload.sizeBytes,
+          })
+          .from(productUpload)
+          .where(
+            and(
+              eq(productUpload.tenantId, tenantId),
+              eq(productUpload.storeId, storeId),
+              inArray(productUpload.id, uploadIds),
+            ),
+          )
+          .for("update");
+
+  const currentIds = new Set(current.map((image) => image.id));
+  const uploadsById = new Map(uploads.map((upload) => [upload.id, upload]));
+  const known = refs.every((ref) => (ref.kind === "existing" ? currentIds.has(ref.id) : uploadsById.has(ref.id)));
+  if (!known) return { ok: false, error: "stale" };
+
+  const kept = new Set(refs.filter((ref) => ref.kind === "existing").map((ref) => ref.id));
+  const removed = current.filter((image) => !kept.has(image.id));
+  if (removed.length > 0) {
+    await tx.delete(productImage).where(
+      and(
+        eq(productImage.tenantId, tenantId),
+        inArray(
+          productImage.id,
+          removed.map((image) => image.id),
         ),
-      )
-      .orderBy(asc(productImage.position));
-    await setPositions(tx, scope.tenantId, rest.map((r) => r.id));
-  });
+      ),
+    );
+  }
 
-  // After the rows: a storage failure leaves an orphan file, never a row without a file
-  await deleteObject(image.storageKey).catch((error) =>
-    console.error("deleteProductImage: could not delete file", image.storageKey, error),
-  );
-  return { ok: true };
+  for (const [position, ref] of refs.entries()) {
+    if (ref.kind === "existing") {
+      await tx
+        .update(productImage)
+        .set({ position })
+        .where(and(eq(productImage.id, ref.id), eq(productImage.tenantId, tenantId)));
+      continue;
+    }
+    // The row moves to product_image; the file stays where it was uploaded (same key)
+    const upload = uploadsById.get(ref.id)!;
+    await tx.delete(productUpload).where(and(eq(productUpload.id, upload.id), eq(productUpload.tenantId, tenantId)));
+    await tx.insert(productImage).values({
+      tenantId,
+      productId,
+      storageKey: upload.storageKey,
+      contentType: upload.contentType,
+      sizeBytes: upload.sizeBytes,
+      position,
+    });
+  }
+
+  return { ok: true, removedKeys: removed.map((image) => image.storageKey) };
 }
 
-/** Makes this image the main one (position 0); the others keep their relative order. */
-export async function setMainProductImage(
-  scope: Scope,
-  imageId: string,
-): Promise<{ ok: true } | { ok: false; error: "notFound" }> {
-  const image = await findImage(scope, imageId);
-  if (!image) return { ok: false, error: "notFound" };
-
-  await db.transaction(async (tx) => {
-    const all = await tx
-      .select({ id: productImage.id })
-      .from(productImage)
-      .where(
-        and(
-          eq(productImage.tenantId, scope.tenantId),
-          eq(productImage.productId, image.productId),
-        ),
-      )
-      .orderBy(asc(productImage.position));
-    const ordered = [image.id, ...all.map((r) => r.id).filter((id) => id !== image.id)];
-    await setPositions(tx, scope.tenantId, ordered);
-  });
-  return { ok: true };
-}
+/** Files of images a committed save removed (after the rows: never a row without a file). */
+export const deleteRemovedImageFiles = (keys: string[]) => deleteFiles(keys, "applyProductImages");
 
 /** Main image key per product (for list thumbnails): a map productId -> storage key. */
 export async function mainImageKeys({ tenantId, storeId }: Scope, productIds: string[]) {

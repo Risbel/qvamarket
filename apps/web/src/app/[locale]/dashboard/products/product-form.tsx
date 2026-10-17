@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
+import { MAX_IMAGES_PER_PRODUCT } from "@/lib/images";
 import { slugify } from "@/lib/slug";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
@@ -29,6 +30,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CurrencyPrices, TextField } from "./price-fields";
+import { ProductImagesField } from "./product-images-field";
 
 type Props = {
   /** edit mode when `productId` is given */
@@ -38,18 +40,21 @@ type Props = {
   categories: { id: string; name: string }[];
   /** false: the product has options; its price and stock are edited per variant, not here */
   simple?: boolean;
+  /** url of each saved image, by id (the images themselves are `initialValues.images`) */
+  imageUrls?: Record<string, string>;
 };
 
 /** The "no category" item; the form value for it is "" */
 const NO_CATEGORY = "__none__";
 
-export function ProductForm({ productId, initialValues, currencies, categories, simple = true }: Props) {
+export function ProductForm({ productId, initialValues, currencies, categories, simple = true, imageUrls = {} }: Props) {
   const t = useTranslations("Products.form");
   const tv = useTranslations("Validation");
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
   const [formError, setFormError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   const schema = useMemo(() => createProductSchema(tv, currencies, { simple }), [tv, currencies, simple]);
@@ -73,7 +78,7 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
       : await createProductAction(values, locale);
 
     if (result.ok) {
-      // A new product continues on its edit page, where images can be added (and a notice
+      // A new product continues on its edit page, where options can be added (and a notice
       // there says it was created); an edited one goes back to the list
       if (productId) toast.success(t("toasts.saved", { name: values.name.trim() }));
       router.push(productId ? "/dashboard/products" : `/dashboard/products/${result.id}/edit?created=1`);
@@ -94,6 +99,10 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
         return;
       case "categoryNotFound":
         form.setError("categoryId", { message: t("errors.categoryNotFound") });
+        return;
+      case "imagesStale":
+      case "imagesLimit":
+        form.setError("images", { message: t(`errors.${result.error}`, { max: MAX_IMAGES_PER_PRODUCT }) });
         return;
       default:
         setFormError(t(`errors.${result.error}`));
@@ -121,6 +130,12 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}
+        />
+        <ProductImagesField
+          form={form}
+          productName={name.trim() || t("imageAltFallback")}
+          savedUrls={imageUrls}
+          onBusyChange={setUploading}
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <Controller
@@ -292,8 +307,8 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
         {formError && <FieldError>{formError}</FieldError>}
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? t("saving") : t("save")}
+          <Button type="submit" disabled={!hydrated || uploading || form.formState.isSubmitting}>
+            {uploading ? t("waitingImages") : form.formState.isSubmitting ? t("saving") : t("save")}
           </Button>
           <Link href="/dashboard/products" className={buttonVariants({ variant: "outline" })}>
             {t("cancel")}

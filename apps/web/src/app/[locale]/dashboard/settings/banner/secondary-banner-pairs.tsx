@@ -26,7 +26,7 @@ import {
 } from "@/server/secondary-banner-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dropzone, DropzoneDescription, DropzoneTitle } from "@/components/ui/dropzone";
 import { LINE_TONES, uploadBannerFile, type UploadLine } from "./upload-banner-file";
 
 type PairImage = { url: string; sizeBytes: number } | null;
@@ -86,9 +86,7 @@ export function SecondaryBannerPairs({
     router.refresh();
   }
 
-  async function upload(pairId: string, side: SecondaryBannerSide, input: HTMLInputElement) {
-    const file = input.files?.[0];
-    if (!file) return;
+  async function upload(pairId: string, side: SecondaryBannerSide, file: File) {
     setBusy(true);
     setLines([]);
     const line = await uploadBannerFile({
@@ -109,7 +107,6 @@ export function SecondaryBannerPairs({
     setBusy(false);
     setLines([line]);
     if (line.tone !== "error") toast.success(tb("toasts.uploaded", { count: 1 }));
-    input.value = "";
     router.refresh();
   }
 
@@ -177,14 +174,21 @@ export function SecondaryBannerPairs({
                             <ImageIcon className="size-5" aria-hidden />
                           </div>
                         )}
-                        <Input
-                          type="file"
-                          accept={IMAGE_TYPES.join(",")}
-                          aria-label={image ? t("replace", { label }) : t("upload", { label })}
+                        <Dropzone
+                          accept={IMAGE_TYPES}
                           disabled={disabled}
-                          onChange={(event) => upload(pair.id, side, event.currentTarget)}
-                          className="text-xs"
-                        />
+                          inputProps={{ "aria-label": image ? t("replace", { label }) : t("upload", { label }) }}
+                          onFiles={(files) => upload(pair.id, side, files[0])}
+                          onReject={(files) =>
+                            setLines(
+                              files.map((file) => ({ name: file.name, tone: "error", text: tb("errors.unsupportedType") })),
+                            )
+                          }
+                          className="gap-0.5 p-3"
+                        >
+                          <DropzoneTitle className="text-xs">{image ? t("dropReplace") : t("dropUpload")}</DropzoneTitle>
+                          <DropzoneDescription>{t("dropHint")}</DropzoneDescription>
+                        </Dropzone>
                       </div>
                     );
                   })}

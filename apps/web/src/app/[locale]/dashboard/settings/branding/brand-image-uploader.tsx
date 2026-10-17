@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { ImageUpIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
@@ -16,7 +17,7 @@ import {
 import { useHydrated } from "@/lib/use-hydrated";
 import { removeBrandImageAction, uploadBrandImageAction } from "@/server/branding-actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dropzone, DropzoneDescription, DropzoneIcon, DropzoneTitle } from "@/components/ui/dropzone";
 
 /** Upload / replace / remove the store's logo or logotype (same pipeline, different shape). */
 export function BrandImageUploader({
@@ -32,7 +33,6 @@ export function BrandImageUploader({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const maxDimension = BRAND_IMAGE_MAX_DIMENSION[kind];
@@ -86,7 +86,6 @@ export function BrandImageUploader({
       setMessage({ ok: false, text: t("upload.errors.failed") });
     } finally {
       setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -131,14 +130,19 @@ export function BrandImageUploader({
         <p className="text-sm text-muted-foreground">{t(`${kind}.none`)}</p>
       )}
 
-      <Input
-        ref={inputRef}
-        type="file"
-        accept={IMAGE_TYPES.join(",")}
-        aria-label={imageUrl ? t(`${kind}.replace`) : t(`${kind}.upload`)}
+      <Dropzone
+        accept={IMAGE_TYPES}
         disabled={!hydrated || busy}
-        onChange={(event) => onFile(event.target.files?.[0])}
-      />
+        inputProps={{ "aria-label": imageUrl ? t(`${kind}.replace`) : t(`${kind}.upload`) }}
+        onFiles={(files) => onFile(files[0])}
+        onReject={() => setMessage({ ok: false, text: t("upload.errors.unsupportedType") })}
+      >
+        <DropzoneIcon>
+          <ImageUpIcon aria-hidden />
+        </DropzoneIcon>
+        <DropzoneTitle>{t("upload.dropTitle")}</DropzoneTitle>
+        <DropzoneDescription>{t("upload.dropDescription")}</DropzoneDescription>
+      </Dropzone>
       {message && (
         <p role="status" aria-live="polite" className={message.ok ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
           {message.text}

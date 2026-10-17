@@ -369,7 +369,8 @@
     "socialUrlInvalid": "Use a {name} link starting with https://{domain}",
     "socialDuplicate": "This social network is already in the list.",
     "pageSlugReserved": "The store uses this address; choose another",
-    "pageSlugTaken": "There is already a page with this address"
+    "pageSlugTaken": "There is already a page with this address",
+    "tooManyImages": "At most {max} images"
   },
   "Admin": {
     "title": "Admin panel",
@@ -580,7 +581,9 @@
         "notFound": "Product not found.",
         "failed": "The product could not be saved. Please try again.",
         "categoryNotFound": "That category no longer exists. Choose another one.",
-        "hasVariants": "This product has variants; its price and stock are edited per variant."
+        "hasVariants": "This product has variants; its price and stock are edited per variant.",
+        "imagesStale": "This product's images changed while you were editing (or an upload expired). Reload the page and add them again.",
+        "imagesLimit": "A product can have at most {max} images."
       },
       "category": "Category",
       "noCategory": "No category",
@@ -622,7 +625,9 @@
       "slugPlaceholder": "cotton-t-shirt",
       "tagsPlaceholder": "E.g. cotton, summer",
       "metaTitlePlaceholder": "E.g. Men's cotton T-shirt | My store",
-      "metaDescriptionPlaceholder": "E.g. 100% cotton T-shirt, cool and durable. Pick it up at the store or get it delivered."
+      "metaDescriptionPlaceholder": "E.g. 100% cotton T-shirt, cool and durable. Pick it up at the store or get it delivered.",
+      "waitingImages": "Uploading images...",
+      "imageAltFallback": "Product image"
     },
     "delete": {
       "title": "Delete product",
@@ -638,19 +643,19 @@
         "deleted": "Product \"{name}\" deleted."
       }
     },
-    "createdNotice": "Product created. Now you can add images and, if it comes in several sizes or colors, its options.",
+    "createdNotice": "Product created. If it comes in several sizes or colors, add its options below.",
     "images": {
       "title": "Images",
       "count": "{count}/{max}",
       "help": "JPG, PNG or WebP. They are automatically reduced to under {limit} before uploading. The first one is the main image.",
       "empty": "This product has no images yet.",
       "add": "Add images",
+      "dropTitle": "Drag images here or click to choose them",
+      "dropDescription": "You can add {count} more · JPG, PNG or WebP",
       "main": "Main",
       "makeMain": "Make main",
-      "remove": "Delete",
-      "compressing": "Reducing {name}...",
+      "remove": "Remove",
       "uploading": "Uploading {name}...",
-      "compressedInfo": "uploaded ({from} → {to})",
       "tooMany": "You can only add {count} more image(s) to this product.",
       "errors": {
         "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
@@ -658,17 +663,13 @@
         "couldNotShrink": "Could not reduce it below {limit}. Try another image.",
         "tooLarge": "The image is larger than {limit}.",
         "empty": "The file is empty.",
-        "limit": "This product already has the maximum of {count} images.",
-        "notFound": "Product or image not found.",
+        "limit": "There are too many unsaved uploaded images in this store. Save the product, or wait a little and try again.",
         "forbidden": "You are not allowed to do this.",
         "failed": "The operation could not be completed. Please try again.",
         "unreadable": "The image could not be read. Is it damaged or not an image?"
       },
-      "toasts": {
-        "uploaded": "{count, plural, one {Image uploaded.} other {# images uploaded.}}",
-        "removed": "Image deleted.",
-        "mainChanged": "Main image changed."
-      }
+      "new": "New",
+      "pendingSave": "Changes to the images are saved when you press Save."
     },
     "fromPrefix": "from",
     "noPrice": "No price",
@@ -742,6 +743,8 @@
     },
     "upload": {
       "uploading": "Uploading...",
+      "dropTitle": "Drag an image here or click to choose it",
+      "dropDescription": "JPG, PNG or WebP",
       "errors": {
         "unsupportedType": "Unsupported format. Use JPG, PNG or WebP.",
         "originalTooLarge": "The file is too large (maximum {max}).",
@@ -802,6 +805,8 @@
     },
     "count": "{count}/{max}",
     "add": "Add images ({device})",
+    "dropTitle": "Drag images here or click to choose them",
+    "dropDescription": "You can add {count} more · JPG, PNG or WebP",
     "position": "Image {position}",
     "moveUp": "Move earlier",
     "moveDown": "Move later",
@@ -836,6 +841,9 @@
       "addPair": "Add pair",
       "upload": "Upload image ({label})",
       "replace": "Replace image ({label})",
+      "dropUpload": "Upload image",
+      "dropReplace": "Change image",
+      "dropHint": "Drag here or click",
       "deletePair": "Delete pair",
       "moveUp": "Move earlier",
       "moveDown": "Move later",

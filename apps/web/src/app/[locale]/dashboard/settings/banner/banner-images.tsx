@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { useState } from "react";
+import { ArrowDown, ArrowUp, ImageUpIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
@@ -22,7 +22,7 @@ import {
   type BannerActionResult,
 } from "@/server/banner-actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dropzone, DropzoneDescription, DropzoneIcon, DropzoneTitle } from "@/components/ui/dropzone";
 import { LINE_TONES, uploadBannerFile, type UploadLine } from "./upload-banner-file";
 
 export type BannerImage = { id: string; url: string; sizeBytes: number };
@@ -43,7 +43,6 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [lines, setLines] = useState<UploadLine[]>([]);
@@ -62,7 +61,6 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
     if (files.length > remaining) {
       setLines([{ name: "", tone: "error", text: t("tooMany", { count: remaining }) }]);
       setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
@@ -90,7 +88,6 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
     setLines(results);
     const uploaded = results.filter((line) => line.tone !== "error").length;
     if (uploaded > 0) toast.success(t("toasts.uploaded", { count: uploaded }));
-    if (inputRef.current) inputRef.current.value = "";
     router.refresh();
   }
 
@@ -185,15 +182,22 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
 
       {remaining > 0 && (
         <div className="flex flex-col gap-2">
-          <Input
-            ref={inputRef}
-            type="file"
+          <Dropzone
+            accept={IMAGE_TYPES}
             multiple
-            accept={IMAGE_TYPES.join(",")}
-            aria-label={t("add", { device: t(`devices.${device}.title`) })}
             disabled={!hydrated || busy}
-            onChange={(event) => onFiles(Array.from(event.target.files ?? []))}
-          />
+            inputProps={{ "aria-label": t("add", { device: t(`devices.${device}.title`) }) }}
+            onFiles={onFiles}
+            onReject={(files) =>
+              setLines(files.map((file) => ({ name: file.name, tone: "error", text: t("errors.unsupportedType") })))
+            }
+          >
+            <DropzoneIcon>
+              <ImageUpIcon aria-hidden />
+            </DropzoneIcon>
+            <DropzoneTitle>{t("dropTitle")}</DropzoneTitle>
+            <DropzoneDescription>{t("dropDescription", { count: remaining })}</DropzoneDescription>
+          </Dropzone>
           {status && (
             <p role="status" className="text-sm text-muted-foreground">
               {status}

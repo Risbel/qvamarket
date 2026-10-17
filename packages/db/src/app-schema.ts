@@ -787,6 +787,35 @@ export const productImage = pgTable(
   ],
 );
 
+// A product image uploaded from the product form but not saved yet (staged upload). The file
+// is already in storage; saving the form moves the row to `product_image` (same storage key).
+// Rows the merchant never saved are swept after a day (the app deletes their files too).
+export const productUpload = pgTable(
+  "product_upload",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+    storageKey: text("storage_key").notNull().unique(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "product_upload_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    index("product_upload_tenantId_idx").on(table.tenantId),
+    index("product_upload_storeId_createdAt_idx").on(table.storeId, table.createdAt),
+    check("product_upload_size_positive", sql`${table.sizeBytes} > 0`),
+  ],
+);
+
 // ---------------------------------------------------------------------------------------
 // Customers and orders
 // ---------------------------------------------------------------------------------------

@@ -11,6 +11,7 @@ import {
   type BannerDevice,
 } from "@/lib/images";
 import { cn } from "@/lib/utils";
+import { BANNER_GAP } from "./banner-layout";
 import {
   Carousel,
   CarouselContent,
@@ -130,7 +131,7 @@ export function BannerCarousel({
             }
           >
             <div
-              className={cn(kind === "secondary" && "grid grid-cols-2 gap-3")}
+              className={cn(kind === "secondary" && "grid grid-cols-2", kind === "secondary" && BANNER_GAP)}
             >
               {slide.images.map((image) => (
                 <picture

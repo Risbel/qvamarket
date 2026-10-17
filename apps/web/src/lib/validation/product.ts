@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_IMAGES_PER_PRODUCT } from "@/lib/images";
 import { parsePriceToMinor } from "@/lib/money";
 import { slugify } from "@/lib/slug";
 import type { Translator } from "./types";
@@ -119,6 +120,19 @@ export function createPricesSchema(t: Translator, currencies: FormCurrency[], { 
 }
 
 export type PricesFormValues = z.infer<ReturnType<typeof createPricesSchema>>;
+
+/**
+ * The product's images in display order (the first is the main image): `existing` = a saved
+ * `product_image`, `upload` = a staged upload made from this form (see server/product-images.ts).
+ */
+export const IMAGE_REF_KINDS = ["existing", "upload"] as const;
+export type ImageRef = { kind: (typeof IMAGE_REF_KINDS)[number]; id: string };
+
+const imagesSchema = (t: Translator) =>
+  z
+    .array(z.object({ kind: z.enum(IMAGE_REF_KINDS), id: z.string().refine((value) => UUID.test(value)) }))
+    .max(MAX_IMAGES_PER_PRODUCT, t("tooManyImages", { max: MAX_IMAGES_PER_PRODUCT }))
+    .refine((refs) => new Set(refs.map((ref) => ref.id)).size === refs.length);
 export type PriceRowInput = { currencyCode: string; minQuantity: number; amountMinor: number; compareAtMinor: number | null };
 
 /**
@@ -142,6 +156,7 @@ export function createProductSchema(t: Translator, currencies: FormCurrency[], {
     sku: skuSchema(t),
     stock: stockSchema(t),
     prices: createPricesSchema(t, currencies, { requireDefault: simple }),
+    images: imagesSchema(t),
   });
 }
 
@@ -161,6 +176,8 @@ export type ProductInput = {
   variant: { sku: string | null; stock: number | null };
   /** regular prices of the (default) variant: one row per currency and tier */
   prices: PriceRowInput[];
+  /** the product's images, main first: makes the saved list exactly this */
+  images: ImageRef[];
 };
 
 /** Validated price entries -> variant_price rows (minor units). */
@@ -208,6 +225,7 @@ export function toProductInput(values: ProductFormValues, currencies: FormCurren
       stock: values.stock === "" ? null : Number(values.stock),
     },
     prices: pricesToRows(values.prices, currencies),
+    images: values.images,
   };
 }
 

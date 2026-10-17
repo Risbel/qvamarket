@@ -14,6 +14,7 @@ import {
   variantPrice,
 } from "@qvashop/db";
 import type { ProductInput } from "@/lib/validation/product";
+import { applyProductImages, deleteRemovedImageFiles } from "./product-images";
 import { deleteObject } from "./storage";
 
 // Every function takes `tenantId` + `storeId` and filters by them (CLAUDE.md: never query
@@ -26,6 +27,7 @@ import { deleteObject } from "./storage";
 // variant: its variants are edited in src/server/variants.ts, and here only its own fields.
 
 type Scope = { tenantId: string; storeId: string };
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const inScope = ({ tenantId, storeId }: Scope) =>
   and(eq(product.tenantId, tenantId), eq(product.storeId, storeId));
@@ -143,7 +145,24 @@ export async function productHasOptions(scope: Scope, id: string): Promise<boole
 
 export type SaveProductResult =
   | { ok: true; id: string }
-  | { ok: false; error: "notFound" | "slugTaken" | "skuTaken" | "categoryNotFound" | "hasVariants" };
+  | {
+      ok: false;
+      error: "notFound" | "slugTaken" | "skuTaken" | "categoryNotFound" | "hasVariants" | "imagesStale" | "imagesLimit";
+    };
+
+/** Thrown inside a save transaction to roll it back and answer with `result`. */
+class SaveRefused extends Error {
+  constructor(readonly result: Extract<SaveProductResult, { ok: false }>) {
+    super(result.error);
+  }
+}
+
+/** Sets the product's images inside its save transaction; refuses (rolls back) on stale ids. */
+async function saveImages(tx: Tx, scope: Scope, productId: string, input: ProductInput) {
+  const images = await applyProductImages(tx, scope, productId, input.images);
+  if (!images.ok) throw new SaveRefused({ ok: false, error: images.error === "stale" ? "imagesStale" : "imagesLimit" });
+  return images.removedKeys;
+}
 
 /** Postgres unique violation on a given constraint/index */
 function uniqueViolation(error: unknown, name: string) {
@@ -163,6 +182,7 @@ async function categoryInStore(scope: Scope, categoryId: string | null) {
 }
 
 function mapSaveError(error: unknown): SaveProductResult | null {
+  if (error instanceof SaveRefused) return error.result;
   if (uniqueViolation(error, "product_store_slug_unique")) return { ok: false, error: "slugTaken" };
   if (uniqueViolation(error, "product_variant_tenant_sku_idx")) return { ok: false, error: "skuTaken" };
   return null;
@@ -174,7 +194,7 @@ export async function createProduct(scope: Scope, input: ProductInput): Promise<
     return { ok: false, error: "categoryNotFound" };
   }
   try {
-    return await db.transaction(async (tx) => {
+    const { result, removedKeys } = await db.transaction(async (tx) => {
       const [created] = await tx
         .insert(product)
         .values({ tenantId: scope.tenantId, storeId: scope.storeId, ...input.product })
@@ -196,8 +216,11 @@ export async function createProduct(scope: Scope, input: ProductInput): Promise<
           input.prices.map((price) => ({ tenantId: scope.tenantId, storeId: scope.storeId, variantId: variant.id, ...price })),
         );
       }
-      return { ok: true as const, id: created.id };
+      const removedKeys = await saveImages(tx, scope, created.id, input);
+      return { result: { ok: true as const, id: created.id }, removedKeys };
     });
+    await deleteRemovedImageFiles(removedKeys);
+    return result;
   } catch (error) {
     const mapped = mapSaveError(error);
     if (mapped) return mapped;
@@ -215,21 +238,24 @@ export async function updateProduct(scope: Scope, id: string, input: ProductInpu
     return { ok: false, error: "categoryNotFound" };
   }
   try {
-    return await db.transaction(async (tx) => {
+    const { result, removedKeys } = await db.transaction(async (tx) => {
+      // The update locks the product row, so concurrent saves of its images are serialized
       const rows = await tx
         .update(product)
         .set(input.product)
         .where(and(inScope(scope), eq(product.id, id)))
         .returning({ id: product.id });
-      if (rows.length !== 1) return { ok: false as const, error: "notFound" as const };
+      if (rows.length !== 1) throw new SaveRefused({ ok: false, error: "notFound" });
+      const removedKeys = await saveImages(tx, scope, id, input);
+      const done = { result: { ok: true as const, id }, removedKeys };
 
       const variants = await tx
         .select({ id: productVariant.id, isDefault: productVariant.isDefault })
         .from(productVariant)
         .where(and(eq(productVariant.productId, id), eq(productVariant.tenantId, scope.tenantId)));
       const defaultVariant = variants.find((v) => v.isDefault);
-      if (!defaultVariant) return { ok: true as const, id };
-      if (variants.length !== 1) return { ok: false as const, error: "hasVariants" as const };
+      if (!defaultVariant) return done;
+      if (variants.length !== 1) throw new SaveRefused({ ok: false, error: "hasVariants" });
       const variantId = defaultVariant.id;
 
       await tx
@@ -246,8 +272,10 @@ export async function updateProduct(scope: Scope, id: string, input: ProductInpu
           input.prices.map((price) => ({ tenantId: scope.tenantId, storeId: scope.storeId, variantId, ...price })),
         );
       }
-      return { ok: true as const, id };
+      return done;
     });
+    await deleteRemovedImageFiles(removedKeys);
+    return result;
   } catch (error) {
     const mapped = mapSaveError(error);
     if (mapped) return mapped;

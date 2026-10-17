@@ -369,7 +369,8 @@
     "socialUrlInvalid": "Usa un enlace de {name} que empiece por https://{domain}",
     "socialDuplicate": "Esta red social ya está en la lista.",
     "pageSlugReserved": "Esta dirección la usa la tienda; elige otra",
-    "pageSlugTaken": "Ya hay una página con esta dirección"
+    "pageSlugTaken": "Ya hay una página con esta dirección",
+    "tooManyImages": "Máximo {max} imágenes"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -580,7 +581,9 @@
         "notFound": "No se encontró el producto.",
         "failed": "No se pudo guardar el producto. Inténtalo de nuevo.",
         "categoryNotFound": "La categoría ya no existe. Elige otra.",
-        "hasVariants": "Este producto tiene variantes; su precio y stock se editan por variante."
+        "hasVariants": "Este producto tiene variantes; su precio y stock se editan por variante.",
+        "imagesStale": "Las imágenes de este producto cambiaron mientras editabas (o alguna subida caducó). Recarga la página y vuelve a añadirlas.",
+        "imagesLimit": "Un producto puede tener como máximo {max} imágenes."
       },
       "category": "Categoría",
       "noCategory": "Sin categoría",
@@ -622,7 +625,9 @@
       "slugPlaceholder": "camiseta-de-algodon",
       "tagsPlaceholder": "Ej.: algodón, verano",
       "metaTitlePlaceholder": "Ej.: Camiseta de algodón para hombre | Mi tienda",
-      "metaDescriptionPlaceholder": "Ej.: Camiseta 100 % algodón, fresca y resistente. Recógela en la tienda o te la llevamos a casa."
+      "metaDescriptionPlaceholder": "Ej.: Camiseta 100 % algodón, fresca y resistente. Recógela en la tienda o te la llevamos a casa.",
+      "waitingImages": "Subiendo imágenes...",
+      "imageAltFallback": "Imagen del producto"
     },
     "delete": {
       "title": "Eliminar producto",
@@ -638,19 +643,19 @@
         "deleted": "Producto \"{name}\" eliminado."
       }
     },
-    "createdNotice": "Producto creado. Ahora puedes añadir imágenes y, si viene en varias tallas o colores, sus opciones.",
+    "createdNotice": "Producto creado. Si viene en varias tallas o colores, añade sus opciones abajo.",
     "images": {
       "title": "Imágenes",
       "count": "{count}/{max}",
       "help": "JPG, PNG o WebP. Se reducen automáticamente a menos de {limit} antes de subirlas. La primera es la principal.",
       "empty": "Este producto aún no tiene imágenes.",
       "add": "Añadir imágenes",
+      "dropTitle": "Arrastra imágenes aquí o haz clic para elegirlas",
+      "dropDescription": "Puedes añadir {count} más · JPG, PNG o WebP",
       "main": "Principal",
       "makeMain": "Hacer principal",
-      "remove": "Eliminar",
-      "compressing": "Reduciendo {name}...",
+      "remove": "Quitar",
       "uploading": "Subiendo {name}...",
-      "compressedInfo": "subida ({from} → {to})",
       "tooMany": "Solo puedes añadir {count} imagen(es) más a este producto.",
       "errors": {
         "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
@@ -658,17 +663,13 @@
         "couldNotShrink": "No se pudo reducir por debajo de {limit}. Prueba con otra imagen.",
         "tooLarge": "La imagen supera {limit}.",
         "empty": "El archivo está vacío.",
-        "limit": "Este producto ya tiene el máximo de {count} imágenes.",
-        "notFound": "No se encontró el producto o la imagen.",
+        "limit": "Hay demasiadas imágenes subidas sin guardar en la tienda. Guarda el producto o espera un poco y vuelve a intentarlo.",
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo completar la operación. Inténtalo de nuevo.",
         "unreadable": "No se pudo leer la imagen. ¿Está dañada o no es una imagen?"
       },
-      "toasts": {
-        "uploaded": "{count, plural, one {Imagen subida.} other {# imágenes subidas.}}",
-        "removed": "Imagen eliminada.",
-        "mainChanged": "Imagen principal cambiada."
-      }
+      "new": "Nueva",
+      "pendingSave": "Los cambios en las imágenes se guardan al pulsar Guardar."
     },
     "fromPrefix": "desde",
     "noPrice": "Sin precio",
@@ -742,6 +743,8 @@
     },
     "upload": {
       "uploading": "Subiendo...",
+      "dropTitle": "Arrastra una imagen aquí o haz clic para elegirla",
+      "dropDescription": "JPG, PNG o WebP",
       "errors": {
         "unsupportedType": "Formato no admitido. Usa JPG, PNG o WebP.",
         "originalTooLarge": "El archivo es demasiado grande (máximo {max}).",
@@ -802,6 +805,8 @@
     },
     "count": "{count}/{max}",
     "add": "Añadir imágenes ({device})",
+    "dropTitle": "Arrastra imágenes aquí o haz clic para elegirlas",
+    "dropDescription": "Puedes añadir {count} más · JPG, PNG o WebP",
     "position": "Imagen {position}",
     "moveUp": "Mover antes",
     "moveDown": "Mover después",
@@ -836,6 +841,9 @@
       "addPair": "Añadir pareja",
       "upload": "Subir imagen ({label})",
       "replace": "Cambiar imagen ({label})",
+      "dropUpload": "Subir imagen",
+      "dropReplace": "Cambiar imagen",
+      "dropHint": "Arrastra aquí o haz clic",
       "deletePair": "Eliminar pareja",
       "moveUp": "Mover antes",
       "moveDown": "Mover después",
