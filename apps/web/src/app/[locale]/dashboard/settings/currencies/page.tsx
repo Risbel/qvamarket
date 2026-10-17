@@ -19,9 +19,12 @@ export default async function CurrenciesSettingsPage({
     <>
       <SectionHeader title={t("title")} description={t("description")} />
       <CurrenciesForm
-        enabled={merchant.store.currencies.map((c) => c.code)}
-        defaultCode={merchant.store.defaultCurrency.code}
-        available={available.map((c) => ({ code: c.code, label: `${c.code} · ${names.of(c.code) ?? c.name}` }))}
+        initialValues={{
+          currencies: merchant.store.currencies.map((c) => ({ code: c.code, rate: c.rate ?? "", roundingMinor: c.roundingMinor })),
+          defaultCode: merchant.store.defaultCurrency.code,
+          baseCode: merchant.store.baseCurrency.code,
+        }}
+        available={available.map((c) => ({ code: c.code, digits: c.digits, label: `${c.code} · ${names.of(c.code) ?? c.name}` }))}
       />
     </>
   );

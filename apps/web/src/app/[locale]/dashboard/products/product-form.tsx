@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CurrencyPrices, TextField } from "./price-fields";
+import { TextField, VariantPrices } from "./price-fields";
 import { ProductImagesField } from "./product-images-field";
 
 type Props = {
@@ -222,9 +222,7 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
                   {currencies.length > 1 ? t("pricesHelpMulti") : t("pricesHelp")}
                 </p>
               </div>
-              {currencies.map((currency, index) => (
-                <CurrencyPrices key={currency.code} control={form.control} base={`prices.${index}`} currency={currency} />
-              ))}
+              <VariantPrices control={form.control} base="prices" currencies={currencies} />
             </section>
 
             {/* ---- inventory */}

@@ -8,6 +8,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -195,8 +196,11 @@ export const storePage = pgTable(
 
 /**
  * Currencies a store sells in, chosen by its owner/manager. Exactly one is the default (the
- * storefront's starting currency). A variant is sold in a currency only if it has a price in
- * it (variant_price references this table, so a price can only exist in an enabled currency).
+ * storefront's starting currency) and exactly one is the base (the currency the merchant
+ * types prices in). Every other currency may have an exchange rate: a variant without its
+ * own (manual) prices in that currency is sold at its base prices x rate, rounded to
+ * `rounding_minor` (see src/lib/exchange.ts). No rate = only manual prices are sold there.
+ * variant_price references this table, so a price can only exist in an enabled currency.
  */
 export const storeCurrency = pgTable(
   "store_currency",
@@ -207,6 +211,11 @@ export const storeCurrency = pgTable(
       .notNull()
       .references(() => currency.code),
     isDefault: boolean("is_default").default(false).notNull(),
+    isBase: boolean("is_base").default(false).notNull(),
+    /** units of this currency for 1 unit of the base currency (null = no automatic prices) */
+    exchangeRate: numeric("exchange_rate", { precision: 20, scale: 8 }),
+    /** automatic prices are rounded to a multiple of this, in minor units (null = 1) */
+    roundingMinor: bigint("rounding_minor", { mode: "number" }),
     position: integer("position").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -220,6 +229,12 @@ export const storeCurrency = pgTable(
     uniqueIndex("store_currency_one_default_idx")
       .on(table.storeId)
       .where(sql`${table.isDefault}`),
+    uniqueIndex("store_currency_one_base_idx")
+      .on(table.storeId)
+      .where(sql`${table.isBase}`),
+    check("store_currency_rate_positive", sql`${table.exchangeRate} is null or ${table.exchangeRate} > 0`),
+    check("store_currency_base_no_rate", sql`not (${table.isBase} and ${table.exchangeRate} is not null)`),
+    check("store_currency_rounding_positive", sql`${table.roundingMinor} is null or ${table.roundingMinor} > 0`),
   ],
 );
 

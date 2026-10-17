@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeRate } from "@/lib/exchange";
 import { phoneCountrySchema } from "./checkout";
 import type { Translator } from "./types";
 
@@ -36,12 +37,41 @@ export function createPickupSchema(t: Translator) {
 }
 export type PickupValues = z.infer<ReturnType<typeof createPickupSchema>>;
 
+const CURRENCY_CODE = /^[A-Z]{3}$/;
+export const MAX_STORE_CURRENCIES = 10;
+
+/**
+ * Settings > Currencies: the enabled currencies in display order, the default one (shoppers
+ * see it first) and the base one (prices are typed in it). Every other currency has a rate
+ * per 1 base unit ("" = no automatic prices) and a rounding step for automatic prices, in
+ * minor units (null = none; the server checks it against the currency's steps).
+ */
 export function createCurrenciesSchema(t: Translator) {
   return z
     .object({
-      codes: z.array(z.string().regex(/^[A-Z]{3}$/)).min(1, t("currencyRequired")).max(10, t("tooManyCurrencies", { max: 10 })),
-      defaultCode: z.string().regex(/^[A-Z]{3}$/),
+      currencies: z
+        .array(
+          z.object({
+            code: z.string().regex(CURRENCY_CODE),
+            rate: z.string().trim(),
+            roundingMinor: z.number().int().positive().nullable(),
+          }),
+        )
+        .min(1, t("currencyRequired"))
+        .max(MAX_STORE_CURRENCIES, t("tooManyCurrencies", { max: MAX_STORE_CURRENCIES })),
+      defaultCode: z.string().regex(CURRENCY_CODE),
+      baseCode: z.string().regex(CURRENCY_CODE),
     })
-    .refine((v) => v.codes.includes(v.defaultCode), { path: ["defaultCode"], message: t("currencyRequired") });
+    .superRefine((values, ctx) => {
+      const codes = values.currencies.map((c) => c.code);
+      if (new Set(codes).size !== codes.length) ctx.addIssue({ code: "custom", path: ["currencies"], message: t("currencyRequired") });
+      if (!codes.includes(values.defaultCode)) ctx.addIssue({ code: "custom", path: ["defaultCode"], message: t("currencyRequired") });
+      if (!codes.includes(values.baseCode)) ctx.addIssue({ code: "custom", path: ["baseCode"], message: t("currencyRequired") });
+      values.currencies.forEach((entry, i) => {
+        if (entry.code !== values.baseCode && entry.rate !== "" && normalizeRate(entry.rate) === null) {
+          ctx.addIssue({ code: "custom", path: ["currencies", i, "rate"], message: t("rateInvalid") });
+        }
+      });
+    });
 }
 export type CurrenciesValues = z.infer<ReturnType<typeof createCurrenciesSchema>>;

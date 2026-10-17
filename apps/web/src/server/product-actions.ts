@@ -4,6 +4,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
+import { parsePercent } from "@/lib/money";
 import {
   createProductSchema,
   toProductInput,
@@ -15,6 +16,7 @@ import {
   updateProduct,
   type SaveProductResult,
 } from "./products";
+import { adjustPrices, setPricesAuto, type BulkPricesResult } from "./bulk-prices";
 import { getMerchantOrNull } from "./tenant";
 
 export type ProductActionResult =
@@ -118,4 +120,45 @@ export async function deleteProductAction(id: unknown): Promise<ProductActionRes
     console.error("deleteProductAction failed", e);
     return { ok: false, error: "failed" };
   }
+}
+
+// ---- bulk price changes from the products table (product:update)
+
+export type BulkPricesActionResult =
+  | { ok: true; changed: number }
+  | { ok: false; error: "forbidden" | "invalid" | "failed" | Extract<BulkPricesResult, { ok: false }>["error"] };
+
+const bulkSchema = z.object({
+  productIds: z.array(z.uuid()).min(1).max(1000),
+  currencyCode: z.string().regex(/^[A-Z]{3}$/),
+});
+
+async function bulk(
+  values: unknown,
+  run: (scope: ReturnType<typeof scopeOf>, input: z.infer<typeof bulkSchema>) => Promise<BulkPricesResult | null>,
+): Promise<BulkPricesActionResult> {
+  const merchant = await getMerchantOrNull();
+  if (!merchant || !merchant.can({ product: ["update"] })) return { ok: false, error: "forbidden" };
+  const parsed = bulkSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  try {
+    return (await run(scopeOf(merchant), parsed.data)) ?? { ok: false, error: "invalid" };
+  } catch (e) {
+    console.error("bulk prices action failed", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+/** The chosen products' prices in a currency follow the rate again (manual prices removed). */
+export async function setPricesAutoAction(values: unknown): Promise<BulkPricesActionResult> {
+  return bulk(values, (scope, input) => setPricesAuto(scope, input.productIds, input.currencyCode));
+}
+
+/** Raises or lowers by a percentage the chosen products' manual prices in a currency. */
+export async function adjustPricesAction(values: unknown): Promise<BulkPricesActionResult> {
+  const percent = z.object({ percent: z.string().max(10) }).safeParse(values);
+  const basisPoints = percent.success ? parsePercent(percent.data.percent) : null;
+  return bulk(values, (scope, input) =>
+    basisPoints === null ? Promise.resolve(null) : adjustPrices(scope, input.productIds, input.currencyCode, basisPoints),
+  );
 }

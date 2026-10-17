@@ -11,4 +11,4 @@ export const pool = new Pool({ connectionString });
 export const db = drizzle(pool, { schema });
 export * from "./schema.ts";
 // Query helpers re-exported so apps do not depend on drizzle-orm directly
-export { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+export { and, asc, count, countDistinct, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";

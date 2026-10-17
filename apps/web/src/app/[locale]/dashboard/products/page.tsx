@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { buttonVariants } from "@/components/ui/button";
 import { mainImageKeys } from "@/server/product-images";
-import { listProducts } from "@/server/products";
+import { listProductPrices, listProducts } from "@/server/products";
 import { publicUrl } from "@/server/storage";
 import { requireMerchantPermission } from "@/server/tenant";
 import { ProductsTable, type ProductRow } from "./products-table";
@@ -18,8 +18,7 @@ export default async function ProductsPage({
   const merchant = await requireMerchantPermission(locale, { product: ["read"] });
   const t = await getTranslations("Products");
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
-  const currency = merchant.store.defaultCurrency.code;
-  const products = await listProducts(scope, currency);
+  const [products, prices] = await Promise.all([listProducts(scope), listProductPrices(scope)]);
   const mainImages = await mainImageKeys(
     scope,
     products.map((p) => p.id),
@@ -37,7 +36,7 @@ export default async function ProductsPage({
       name: p.name,
       status: p.status as ProductRow["status"],
       categoryName: p.categoryName,
-      priceMinor: p.priceMinor,
+      prices: prices.get(p.id) ?? {},
       variantCount: p.variantCount,
       stock: p.stock,
       imageUrl: imageKey ? publicUrl(imageKey) : null,
@@ -63,7 +62,7 @@ export default async function ProductsPage({
         // What the member may do (the Server Actions check it again)
         <ProductsTable
           rows={rows}
-          currency={currency}
+          currencies={merchant.store.currencies}
           canUpdate={merchant.can({ product: ["update"] })}
           canDelete={merchant.can({ product: ["delete"] })}
         />

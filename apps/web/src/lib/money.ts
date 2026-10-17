@@ -38,3 +38,21 @@ export function minorToInput(minor: number, digits: number): string {
   const padded = String(minor).padStart(digits + 1, "0");
   return `${padded.slice(0, -digits)}.${padded.slice(-digits)}`;
 }
+
+/** Allowed change of a bulk price adjustment, in percent (products table). */
+export const ADJUST_MIN_PERCENT = -90;
+export const ADJUST_MAX_PERCENT = 1000;
+
+/**
+ * A typed percentage ("10", "-5", "2.5", "2,5") -> basis points (1000 = 10 %), or null when
+ * invalid, zero or outside ADJUST_MIN_PERCENT..ADJUST_MAX_PERCENT. String arithmetic, no floats.
+ */
+export function parsePercent(input: string): number | null {
+  const text = input.trim().replace(/^\+/, "").replace(",", ".");
+  const match = /^(-?)(\d{1,4})(?:\.(\d{1,2}))?$/.exec(text);
+  if (!match) return null;
+  const magnitude = Number(match[2]) * 100 + Number((match[3] ?? "").padEnd(2, "0"));
+  const basisPoints = match[1] ? -magnitude : magnitude;
+  if (basisPoints === 0 || basisPoints < ADJUST_MIN_PERCENT * 100 || basisPoints > ADJUST_MAX_PERCENT * 100) return null;
+  return basisPoints;
+}

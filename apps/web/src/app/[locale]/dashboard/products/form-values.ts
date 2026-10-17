@@ -3,13 +3,17 @@ import type { FormCurrency, PricesFormValues, ProductFormValues } from "@/lib/va
 
 type SavedPrice = { currencyCode: string; minQuantity: number; amountMinor: number; compareAtMinor: number | null };
 
-/** Saved regular price rows -> one form entry per currency the store sells in. */
+/**
+ * Saved regular price rows -> one form entry per currency the store sells in. A currency other
+ * than the base without rows of its own follows the rate (`manual: false`).
+ */
 export function pricesToFormValues(rows: SavedPrice[], currencies: FormCurrency[]): PricesFormValues {
   return currencies.map((c) => {
     const own = rows.filter((p) => p.currencyCode === c.code);
     const regular = own.find((p) => p.minQuantity === 1);
     return {
       currency: c.code,
+      manual: c.isBase || own.length > 0,
       price: regular ? minorToInput(regular.amountMinor, c.digits) : "",
       compareAt: regular?.compareAtMinor != null ? minorToInput(regular.compareAtMinor, c.digits) : "",
       tiers: own
@@ -20,7 +24,7 @@ export function pricesToFormValues(rows: SavedPrice[], currencies: FormCurrency[
 }
 
 const emptyPrices = (currencies: FormCurrency[]): ProductFormValues["prices"] =>
-  currencies.map((c) => ({ currency: c.code, price: "", compareAt: "", tiers: [] }));
+  currencies.map((c) => ({ currency: c.code, manual: c.isBase, price: "", compareAt: "", tiers: [] }));
 
 export function emptyProductValues(currencies: FormCurrency[]): ProductFormValues {
   return {

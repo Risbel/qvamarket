@@ -374,7 +374,9 @@
     "socialDuplicate": "This social network is already in the list.",
     "pageSlugReserved": "The store uses this address; choose another",
     "pageSlugTaken": "There is already a page with this address",
-    "tooManyImages": "At most {max} images"
+    "tooManyImages": "At most {max} images",
+    "manualPriceRequired": "Enter the price or go back to following the rate.",
+    "rateInvalid": "Enter a number greater than 0, with up to 8 decimals."
   },
   "Admin": {
     "title": "Admin panel",
@@ -594,9 +596,7 @@
       "createCategories": "Create categories",
       "pricesTitle": "Prices",
       "pricesHelp": "The price your customers will see.",
-      "pricesHelpMulti": "Set a price in each currency you want to sell this product in. If you leave a currency empty, the product is not shown in it (there is no automatic conversion).",
-      "defaultCurrency": "main",
-      "priceOptional": "Optional. Leave it empty to not sell in this currency.",
+      "pricesHelpMulti": "Enter the price in your base currency. The other currencies convert it with the rate in Settings › Currencies; turn on “Manual price” to set a price of its own in a currency.",
       "compareAt": "Previous price ({currency})",
       "compareAtHelp": "Optional. Shown struck through to signal a discount.",
       "tiersTitle": "Volume prices",
@@ -631,7 +631,16 @@
       "metaTitlePlaceholder": "E.g. Men's cotton T-shirt | My store",
       "metaDescriptionPlaceholder": "E.g. 100% cotton T-shirt, cool and durable. Pick it up at the store or get it delivered.",
       "waitingImages": "Uploading images...",
-      "imageAltFallback": "Product image"
+      "imageAltFallback": "Product image",
+      "baseCurrency": "base currency",
+      "otherCurrencies": "Prices in other currencies ({count})",
+      "manualPrice": "Manual price",
+      "autoValue": "≈ {price} (follows the rate)",
+      "autoNeedsBase": "Follows the rate. Enter the price in {base} first.",
+      "autoNoRate": "No exchange rate: not sold in {currency}. Set a rate in Settings › Currencies or use a manual price.",
+      "autoRate": "1 {base} = {rate} {currency}",
+      "autoRounding": "rounded to {step}",
+      "autoChange": "On save: {from} → {to}"
     },
     "delete": {
       "title": "Delete product",
@@ -719,6 +728,49 @@
         "stale": "The options changed while you were editing. We reloaded the variants: check and save again.",
         "skuTaken": "Another product already uses one of these SKUs.",
         "failed": "The variants could not be saved. Please try again."
+      }
+    },
+    "priceMode": {
+      "auto": "Auto",
+      "manual": "Manual",
+      "mixed": "Mixed"
+    },
+    "bulk": {
+      "currency": "Price currency",
+      "selectAll": "Select all products",
+      "select": "Select {name}",
+      "toolbar": "Actions on the selected products",
+      "selected": "{count} selected",
+      "setAuto": "Follow the rate",
+      "adjust": "Adjust %",
+      "clear": "Clear selection",
+      "noRate": "{currency} has no exchange rate: only products with a manual price are sold in {currency}. Set it in Settings › Currencies.",
+      "rateInfo": "1 {base} = {rate} {currency}. “Auto” follows the rate; “Manual” has a price of its own.",
+      "autoTitle": "Follow the rate in {currency}",
+      "autoConfirm": "{count, plural, =0 {None of the selected products has a manual price in {currency}.} one {# product will drop its manual price in {currency} and follow the rate (1 {base} = {rate} {currency}).} other {# products will drop their manual price in {currency} and follow the rate (1 {base} = {rate} {currency}).}}",
+      "autoSkipped": "{count, plural, one {# already follows the rate.} other {# already follow the rate.}}",
+      "adjustTitle": "Adjust prices in {currency}",
+      "adjustConfirm": "{count, plural, =0 {None of the selected products has a manual price in {currency}.} one {Changes the manual price in {currency} of # product, with its tiers and “was” price.} other {Changes the manual price in {currency} of # products, with their tiers and “was” prices.}}",
+      "adjustConfirmBase": "{count, plural, =0 {None of the selected products has a price in {currency}.} one {Changes the price in {currency} of # product, with its tiers and “was” price. Its automatic prices in other currencies follow.} other {Changes the price in {currency} of # products, with their tiers and “was” prices. Their automatic prices in other currencies follow.}}",
+      "adjustSkipped": "{count, plural, one {# follows the rate in {currency} and does not change.} other {# follow the rate in {currency} and do not change.}}",
+      "adjustSkippedBase": "{count, plural, one {# has no price in {currency}.} other {# have no price in {currency}.}}",
+      "percent": "Percentage",
+      "percentPlaceholder": "E.g. 10 or -5",
+      "percentHelp": "Positive raises, negative lowers. The result is rounded like the currency.",
+      "percentInvalid": "Between {min} and {max}, not 0, with up to 2 decimals.",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "applying": "Applying...",
+      "toasts": {
+        "auto": "{count, plural, =0 {Nothing to change.} one {# variant now follows the rate in {currency}.} other {# variants now follow the rate in {currency}.}}",
+        "adjusted": "{count, plural, =0 {Nothing to change.} one {Prices of # variant updated in {currency}.} other {Prices of # variants updated in {currency}.}}"
+      },
+      "errors": {
+        "forbidden": "You don't have permission to do this.",
+        "noRate": "This currency has no exchange rate.",
+        "isBase": "The base currency does not follow a rate.",
+        "tooHigh": "Some price would go over the maximum. Try a smaller percentage.",
+        "failed": "The prices could not be changed. Please try again."
       }
     }
   },
@@ -965,15 +1017,27 @@
       "remove": "Remove",
       "add": "Add currency",
       "choose": "Choose a currency...",
-      "help": "Each product needs its own price in each currency; there is no automatic conversion. The main currency is shown by default.",
+      "help": "Changing a rate changes every automatic price in that currency at once. Products with a manual price in a currency do not follow the rate. Orders already placed never change.",
       "save": "Save currencies",
       "saving": "Saving...",
       "saved": "Currencies saved.",
-      "inUse": "{codes} can't be removed: some products have prices in it. Delete those prices first.",
+      "inUse": "{codes} can't be removed: some products have manual prices in it. Make them follow the rate (products table) or delete those prices first.",
       "errors": {
         "forbidden": "You don't have permission to do this.",
         "failed": "The currencies could not be saved. Please try again."
-      }
+      },
+      "base": "Base currency",
+      "baseHelp": "You enter prices in it. The other currencies convert them with their exchange rate.",
+      "baseTag": "base",
+      "defaultHelp": "The one marked as main is what your customers see first.",
+      "rate": "Exchange rate",
+      "ratePlaceholder": "E.g. 800",
+      "rateHelp": "Empty = only products with a manual price are sold in this currency.",
+      "rounding": "Rounding",
+      "noRounding": "No rounding",
+      "roundTo": "To {step}",
+      "roundingHelp": "Automatic prices are rounded to this amount.",
+      "baseMissingPrices": "{count, plural, one {# product has no price in {currency}.} other {# products have no price in {currency}.}} Give them a manual price in {currency} before making it the base currency."
     },
     "profile": {
       "title": "Store information",
@@ -1313,7 +1377,9 @@
       "endsAtTime": "End time",
       "endsAtClear": "Remove the end date",
       "percentOffPlaceholder": "E.g. 20",
-      "promoPricePlaceholder": "E.g. {example}"
+      "promoPricePlaceholder": "E.g. {example}",
+      "followsRate": "Empty: follows the rate, ≈ {price}",
+      "emptyFollowsRate": "Empty: follows the {base} price through the rate."
     },
     "toasts": {
       "activated": "Promotion \"{name}\" activated.",

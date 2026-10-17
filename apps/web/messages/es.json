@@ -374,7 +374,9 @@
     "socialDuplicate": "Esta red social ya está en la lista.",
     "pageSlugReserved": "Esta dirección la usa la tienda; elige otra",
     "pageSlugTaken": "Ya hay una página con esta dirección",
-    "tooManyImages": "Máximo {max} imágenes"
+    "tooManyImages": "Máximo {max} imágenes",
+    "manualPriceRequired": "Escribe el precio o vuelve a seguir la tasa.",
+    "rateInvalid": "Escribe un número mayor que 0, con hasta 8 decimales."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -594,9 +596,7 @@
       "createCategories": "Crear categorías",
       "pricesTitle": "Precios",
       "pricesHelp": "El precio que verán tus clientes.",
-      "pricesHelpMulti": "Pon un precio en cada moneda en la que quieras vender este producto. Si dejas una moneda vacía, el producto no se mostrará en ella (no se convierte automáticamente).",
-      "defaultCurrency": "principal",
-      "priceOptional": "Opcional. Déjalo vacío para no vender en esta moneda.",
+      "pricesHelpMulti": "Escribe el precio en tu moneda base. Las demás monedas lo convierten con la tasa de Ajustes › Monedas; activa «Precio manual» para fijar un precio propio en una moneda.",
       "compareAt": "Precio anterior ({currency})",
       "compareAtHelp": "Opcional. Se muestra tachado para indicar una rebaja.",
       "tiersTitle": "Precios por volumen",
@@ -631,7 +631,16 @@
       "metaTitlePlaceholder": "Ej.: Camiseta de algodón para hombre | Mi tienda",
       "metaDescriptionPlaceholder": "Ej.: Camiseta 100 % algodón, fresca y resistente. Recógela en la tienda o te la llevamos a casa.",
       "waitingImages": "Subiendo imágenes...",
-      "imageAltFallback": "Imagen del producto"
+      "imageAltFallback": "Imagen del producto",
+      "baseCurrency": "moneda base",
+      "otherCurrencies": "Precios en otras monedas ({count})",
+      "manualPrice": "Precio manual",
+      "autoValue": "≈ {price} (sigue la tasa)",
+      "autoNeedsBase": "Sigue la tasa. Escribe primero el precio en {base}.",
+      "autoNoRate": "Sin tasa de cambio: no se vende en {currency}. Pon una tasa en Ajustes › Monedas o usa un precio manual.",
+      "autoRate": "1 {base} = {rate} {currency}",
+      "autoRounding": "redondeado a {step}",
+      "autoChange": "Al guardar: {from} → {to}"
     },
     "delete": {
       "title": "Eliminar producto",
@@ -719,6 +728,49 @@
         "stale": "Las opciones cambiaron mientras editabas. Hemos recargado las variantes: revisa y vuelve a guardar.",
         "skuTaken": "Algún SKU ya lo usa otro producto.",
         "failed": "No se pudieron guardar las variantes. Inténtalo de nuevo."
+      }
+    },
+    "priceMode": {
+      "auto": "Auto",
+      "manual": "Manual",
+      "mixed": "Mixto"
+    },
+    "bulk": {
+      "currency": "Moneda de los precios",
+      "selectAll": "Seleccionar todos los productos",
+      "select": "Seleccionar {name}",
+      "toolbar": "Acciones con los productos seleccionados",
+      "selected": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+      "setAuto": "Seguir la tasa",
+      "adjust": "Ajustar %",
+      "clear": "Quitar selección",
+      "noRate": "{currency} no tiene tasa de cambio: solo se venden en {currency} los productos con precio manual. Ponla en Ajustes › Monedas.",
+      "rateInfo": "1 {base} = {rate} {currency}. «Auto» sigue la tasa; «Manual» tiene su propio precio.",
+      "autoTitle": "Seguir la tasa en {currency}",
+      "autoConfirm": "{count, plural, =0 {Ningún producto seleccionado tiene precio manual en {currency}.} one {# producto dejará su precio manual en {currency} y seguirá la tasa (1 {base} = {rate} {currency}).} other {# productos dejarán su precio manual en {currency} y seguirán la tasa (1 {base} = {rate} {currency}).}}",
+      "autoSkipped": "{count, plural, one {# ya sigue la tasa.} other {# ya siguen la tasa.}}",
+      "adjustTitle": "Ajustar precios en {currency}",
+      "adjustConfirm": "{count, plural, =0 {Ningún producto seleccionado tiene precio manual en {currency}.} one {Cambia el precio manual en {currency} de # producto, con sus escalas y su precio anterior.} other {Cambia el precio manual en {currency} de # productos, con sus escalas y su precio anterior.}}",
+      "adjustConfirmBase": "{count, plural, =0 {Ningún producto seleccionado tiene precio en {currency}.} one {Cambia el precio en {currency} de # producto, con sus escalas y su precio anterior. Sus precios automáticos en otras monedas lo siguen.} other {Cambia el precio en {currency} de # productos, con sus escalas y su precio anterior. Sus precios automáticos en otras monedas lo siguen.}}",
+      "adjustSkipped": "{count, plural, one {# sigue la tasa en {currency} y no cambia.} other {# siguen la tasa en {currency} y no cambian.}}",
+      "adjustSkippedBase": "{count, plural, one {# no tiene precio en {currency}.} other {# no tienen precio en {currency}.}}",
+      "percent": "Porcentaje",
+      "percentPlaceholder": "Ej.: 10 o -5",
+      "percentHelp": "Positivo sube, negativo baja. El resultado se redondea como la moneda.",
+      "percentInvalid": "Entre {min} y {max}, distinto de 0, con hasta 2 decimales.",
+      "cancel": "Cancelar",
+      "apply": "Aplicar",
+      "applying": "Aplicando...",
+      "toasts": {
+        "auto": "{count, plural, =0 {Nada que cambiar.} one {# variante sigue ahora la tasa en {currency}.} other {# variantes siguen ahora la tasa en {currency}.}}",
+        "adjusted": "{count, plural, =0 {Nada que cambiar.} one {Precios de # variante actualizados en {currency}.} other {Precios de # variantes actualizados en {currency}.}}"
+      },
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "noRate": "Esta moneda no tiene tasa de cambio.",
+        "isBase": "La moneda base no sigue ninguna tasa.",
+        "tooHigh": "Algún precio pasaría del máximo permitido. Prueba con un porcentaje menor.",
+        "failed": "No se pudieron cambiar los precios. Inténtalo de nuevo."
       }
     }
   },
@@ -965,15 +1017,27 @@
       "remove": "Quitar",
       "add": "Añadir moneda",
       "choose": "Elige una moneda...",
-      "help": "Cada producto necesita su propio precio en cada moneda; no se hace conversión automática. La moneda principal es la que se muestra por defecto.",
+      "help": "Al cambiar una tasa cambian a la vez todos los precios automáticos de esa moneda. Los productos con precio manual en una moneda no siguen la tasa. Los pedidos ya hechos no cambian.",
       "save": "Guardar monedas",
       "saving": "Guardando...",
       "saved": "Monedas guardadas.",
-      "inUse": "No se puede quitar {codes}: hay productos con precio en esa moneda. Borra esos precios primero.",
+      "inUse": "No se puede quitar {codes}: hay productos con precio manual en esa moneda. Ponlos a seguir la tasa (tabla de productos) o borra esos precios primero.",
       "errors": {
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudieron guardar las monedas. Inténtalo de nuevo."
-      }
+      },
+      "base": "Moneda base",
+      "baseHelp": "En ella escribes los precios. Las demás monedas los convierten con su tasa de cambio.",
+      "baseTag": "base",
+      "defaultHelp": "La marcada como principal es la que ven primero tus clientes.",
+      "rate": "Tasa de cambio",
+      "ratePlaceholder": "Ej.: 800",
+      "rateHelp": "Vacía = en esta moneda solo se venden los productos con precio manual.",
+      "rounding": "Redondeo",
+      "noRounding": "Sin redondeo",
+      "roundTo": "A {step}",
+      "roundingHelp": "Los precios automáticos se redondean a este valor.",
+      "baseMissingPrices": "{count, plural, one {# producto no tiene precio en {currency}.} other {# productos no tienen precio en {currency}.}} Ponles un precio manual en {currency} antes de hacerla la moneda base."
     },
     "profile": {
       "title": "Información de la tienda",
@@ -1313,7 +1377,9 @@
       "endsAtTime": "Hora de fin",
       "endsAtClear": "Quitar la fecha de fin",
       "percentOffPlaceholder": "Ej.: 20",
-      "promoPricePlaceholder": "Ej.: {example}"
+      "promoPricePlaceholder": "Ej.: {example}",
+      "followsRate": "Vacío: sigue la tasa, ≈ {price}",
+      "emptyFollowsRate": "Vacío: sigue el precio en {base} con la tasa."
     },
     "toasts": {
       "activated": "Promoción \"{name}\" activada.",

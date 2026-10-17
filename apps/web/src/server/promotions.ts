@@ -4,8 +4,6 @@ import {
   db,
   desc,
   eq,
-  inArray,
-  isNull,
   priceList,
   product,
   productVariant,
@@ -13,6 +11,7 @@ import {
   variantPrice,
 } from "@qvashop/db";
 import type { PromotionInput } from "@/lib/validation/promotion";
+import { loadRegularPrices, type RegularPrice } from "./pricing";
 
 // Promotions = price lists of a store (merchant side). Every function takes the scope from
 // requireMerchant() and filters by tenant AND store. Their prices are variant_price rows with
@@ -70,7 +69,8 @@ export type PromotableProduct = {
   id: string;
   name: string;
   status: string;
-  variants: { id: string; title: string | null; regular: Record<string, number> }[];
+  /** regular price for 1 unit per currency code (manual, or following the rate) */
+  variants: { id: string; title: string | null; regular: Record<string, RegularPrice> }[];
 };
 
 /**
@@ -91,25 +91,12 @@ export async function listPromotableProducts(scope: Scope): Promise<PromotablePr
     .from(productVariant)
     .where(and(eq(productVariant.tenantId, scope.tenantId), eq(productVariant.storeId, scope.storeId)))
     .orderBy(asc(productVariant.position), asc(productVariant.createdAt));
-  const prices = await db
-    .select({ variantId: variantPrice.variantId, currencyCode: variantPrice.currencyCode, amountMinor: variantPrice.amountMinor })
-    .from(variantPrice)
-    .where(
-      and(
-        eq(variantPrice.tenantId, scope.tenantId),
-        eq(variantPrice.storeId, scope.storeId),
-        isNull(variantPrice.priceListId),
-        eq(variantPrice.minQuantity, 1),
-      ),
-    );
-
-  const regularOf = new Map<string, Record<string, number>>();
-  for (const p of prices) regularOf.set(p.variantId, { ...regularOf.get(p.variantId), [p.currencyCode]: p.amountMinor });
+  const regularOf = await loadRegularPrices(scope, variants.map((v) => v.id));
   return products.map((p) => ({
     ...p,
     variants: variants
       .filter((v) => v.productId === p.id)
-      .map((v) => ({ id: v.id, title: v.title, regular: regularOf.get(v.id) ?? {} })),
+      .map((v) => ({ id: v.id, title: v.title, regular: Object.fromEntries(regularOf.get(v.id) ?? []) })),
   }));
 }
 
@@ -120,9 +107,10 @@ export type SavePromotionResult =
 
 /**
  * Creates (id null) or updates a promotion and replaces its prices. Every price must be for a
- * variant of this store that has a regular price in that currency (otherwise `stale`: the
- * form is out of date), and a "sale" price must be lower than the regular price, or it
- * would never apply (`notCheaper`, with the offending rows).
+ * variant of this store that is sold in that currency (a manual regular price or one that
+ * follows the rate; otherwise `stale`: the form is out of date), and a "sale" price must be
+ * lower than that regular price, or it would never apply (`notCheaper`, with the offending
+ * rows). Currencies left empty follow the base promotion price through the rate.
  */
 export async function savePromotion(scope: Scope, id: string | null, input: PromotionInput): Promise<SavePromotionResult> {
   return db.transaction(async (tx) => {
@@ -132,24 +120,10 @@ export async function savePromotion(scope: Scope, id: string | null, input: Prom
     }
 
     const variantIds = [...new Set(input.prices.map((p) => p.variantId))];
-    const regular = variantIds.length
-      ? await tx
-          .select({ variantId: variantPrice.variantId, currencyCode: variantPrice.currencyCode, amountMinor: variantPrice.amountMinor })
-          .from(variantPrice)
-          .where(
-            and(
-              eq(variantPrice.tenantId, scope.tenantId),
-              eq(variantPrice.storeId, scope.storeId),
-              inArray(variantPrice.variantId, variantIds),
-              isNull(variantPrice.priceListId),
-              eq(variantPrice.minQuantity, 1),
-            ),
-          )
-      : [];
-    const regularOf = new Map(regular.map((r) => [`${r.variantId}:${r.currencyCode}`, r.amountMinor]));
+    const regularOf = await loadRegularPrices(scope, variantIds);
     const notCheaper: { variantId: string; currencyCode: string }[] = [];
     for (const price of input.prices) {
-      const base = regularOf.get(`${price.variantId}:${price.currencyCode}`);
+      const base = regularOf.get(price.variantId)?.get(price.currencyCode)?.amountMinor;
       // regular rows only exist for this store's variants: anything else is not ours / outdated
       if (base === undefined) return { ok: false, error: "stale" } as const;
       if (input.kind === "sale" && price.amountMinor >= base) notCheaper.push(price);

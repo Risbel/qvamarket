@@ -16,7 +16,15 @@ export const MAX_VARIANTS = 50;
 /** Product and category URLs: lowercase, digits and hyphens, at most 80 characters. */
 export const URL_SLUG = /^[a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?$/;
 
-export type FormCurrency = { code: string; digits: number; isDefault: boolean };
+/** A store currency as the forms see it (same shape as StoreCurrency, see src/lib/exchange.ts). */
+export type FormCurrency = {
+  code: string;
+  digits: number;
+  isDefault: boolean;
+  isBase: boolean;
+  rate: string | null;
+  roundingMinor: number | null;
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -48,18 +56,20 @@ export const stockSchema = (t: Translator) =>
 
 /**
  * The prices of one variant, as form strings: one entry per currency the store sells in. The
- * default currency's price is required (with `requireDefault`), the others are optional (empty
- * = not sold in that currency). Each currency can have a compare-at ("was") price and volume
- * tiers ("from 10 units: ..."). Converted to rows by `pricesToRows`.
+ * base currency's price is required (with `requireBase`). Another currency is `manual` (its
+ * own prices, price required) or not (it follows the base prices through the rate; its fields
+ * are ignored). Each currency can have a compare-at ("was") price and volume tiers ("from 10
+ * units: ..."). Converted to rows by `pricesToRows`.
  */
-export function createPricesSchema(t: Translator, currencies: FormCurrency[], { requireDefault = true } = {}) {
+export function createPricesSchema(t: Translator, currencies: FormCurrency[], { requireBase = true } = {}) {
   const digitsOf = new Map(currencies.map((c) => [c.code, c.digits]));
-  const defaultCode = currencies.find((c) => c.isDefault)?.code;
+  const baseCode = (currencies.find((c) => c.isBase) ?? currencies.find((c) => c.isDefault))?.code;
 
   return z
     .array(
       z.object({
         currency: z.string().refine((code) => digitsOf.has(code)),
+        manual: z.boolean(),
         price: z.string().trim(),
         compareAt: z.string().trim(),
         tiers: z
@@ -68,16 +78,19 @@ export function createPricesSchema(t: Translator, currencies: FormCurrency[], { 
       }),
     )
     .superRefine((prices, ctx) => {
-      if (requireDefault && !prices.some((entry) => entry.currency === defaultCode)) {
+      if (requireBase && !prices.some((entry) => entry.currency === baseCode)) {
         ctx.addIssue({ code: "custom", path: [], message: t("required") });
       }
       prices.forEach((entry, i) => {
         const digits = digitsOf.get(entry.currency) ?? 2;
-        const isDefault = entry.currency === defaultCode;
+        const isBase = entry.currency === baseCode;
+        if (!isBase && !entry.manual) return; // follows the rate: nothing typed is used
 
         if (entry.price === "") {
-          if (isDefault && requireDefault) {
+          if (isBase && requireBase) {
             ctx.addIssue({ code: "custom", path: [i, "price"], message: t("required") });
+          } else if (!isBase) {
+            ctx.addIssue({ code: "custom", path: [i, "price"], message: t("manualPriceRequired") });
           } else if (entry.compareAt !== "" || entry.tiers.length > 0) {
             ctx.addIssue({ code: "custom", path: [i, "price"], message: t("priceNeededFirst") });
           }
@@ -155,7 +168,7 @@ export function createProductSchema(t: Translator, currencies: FormCurrency[], {
     metaDescription: z.string().trim().max(160, t("tooLong", { max: 160 })),
     sku: skuSchema(t),
     stock: stockSchema(t),
-    prices: createPricesSchema(t, currencies, { requireDefault: simple }),
+    prices: createPricesSchema(t, currencies, { requireBase: simple }),
     images: imagesSchema(t),
   });
 }
@@ -180,16 +193,17 @@ export type ProductInput = {
   images: ImageRef[];
 };
 
-/** Validated price entries -> variant_price rows (minor units). */
+/** Validated price entries -> variant_price rows (minor units). Currencies following the rate get none. */
 export function pricesToRows(prices: PricesFormValues, currencies: FormCurrency[]): PriceRowInput[] {
   const digitsOf = new Map(currencies.map((c) => [c.code, c.digits]));
+  const baseCode = (currencies.find((c) => c.isBase) ?? currencies.find((c) => c.isDefault))?.code;
   const minor = (text: string, code: string) => {
     const value = parsePriceToMinor(text, digitsOf.get(code) ?? 2);
     if (value === null) throw new Error("price was not validated");
     return value;
   };
   return prices
-    .filter((entry) => entry.price !== "")
+    .filter((entry) => (entry.manual || entry.currency === baseCode) && entry.price !== "")
     .flatMap((entry) => [
       {
         currencyCode: entry.currency,

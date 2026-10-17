@@ -14,6 +14,7 @@ import {
   variantPrice,
 } from "@qvashop/db";
 import type { ProductInput } from "@/lib/validation/product";
+import { loadRegularPrices } from "./pricing";
 import { applyProductImages, deleteRemovedImageFiles } from "./product-images";
 import { deleteObject } from "./storage";
 
@@ -32,7 +33,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const inScope = ({ tenantId, storeId }: Scope) =>
   and(eq(product.tenantId, tenantId), eq(product.storeId, storeId));
 
-export async function listProducts(scope: Scope, currencyCode: string) {
+export async function listProducts(scope: Scope) {
   return db
     .select({
       id: product.id,
@@ -51,19 +52,45 @@ export async function listProducts(scope: Scope, currencyCode: string) {
         from product_variant v
         where v.product_id = ${product.id} and v.tenant_id = ${product.tenantId}
       )`,
-      // regular price for 1 unit in the store's default currency (lowest across variants)
-      priceMinor: sql<number | null>`(
-        select min(vp.amount_minor)::bigint from variant_price vp
-        join product_variant v on v.id = vp.variant_id and v.tenant_id = vp.tenant_id
-        where v.product_id = ${product.id} and v.tenant_id = ${product.tenantId}
-          and vp.currency_code = ${currencyCode} and vp.min_quantity = 1 and vp.price_list_id is null
-      )`,
     })
     .from(product)
     .leftJoin(category, and(eq(category.id, product.categoryId), eq(category.tenantId, product.tenantId)))
     .where(inScope(scope))
-    .orderBy(desc(product.createdAt))
-    .then((rows) => rows.map((row) => ({ ...row, priceMinor: row.priceMinor === null ? null : Number(row.priceMinor) })));
+    .orderBy(desc(product.createdAt));
+}
+
+/**
+ * How a product is priced in one currency: its own (manual) prices, following the rate
+ * (auto), or some variants each way (mixed).
+ */
+export type PriceMode = "manual" | "auto" | "mixed";
+export type ProductPrice = { minor: number; mode: PriceMode };
+
+/**
+ * Regular price for 1 unit of every product of the store, per currency (lowest across its
+ * variants), manual or following the rate: product id -> currency code -> price. A currency
+ * is missing when no variant is sold in it.
+ */
+export async function listProductPrices(scope: Scope): Promise<Map<string, Record<string, ProductPrice>>> {
+  const variants = await db
+    .select({ id: productVariant.id, productId: productVariant.productId })
+    .from(productVariant)
+    .where(and(eq(productVariant.tenantId, scope.tenantId), eq(productVariant.storeId, scope.storeId)));
+  const prices = await loadRegularPrices(scope, variants.map((v) => v.id));
+
+  const result = new Map<string, Record<string, ProductPrice>>();
+  for (const variant of variants) {
+    const own = result.get(variant.productId) ?? {};
+    for (const [code, price] of prices.get(variant.id) ?? []) {
+      const mode: PriceMode = price.auto ? "auto" : "manual";
+      const current = own[code];
+      own[code] = current
+        ? { minor: Math.min(current.minor, price.amountMinor), mode: current.mode === mode ? mode : "mixed" }
+        : { minor: price.amountMinor, mode };
+    }
+    result.set(variant.productId, own);
+  }
+  return result;
 }
 
 export async function countProductsByStatus(scope: Scope) {

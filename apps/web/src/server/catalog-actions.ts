@@ -4,6 +4,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
+import { normalizeRate } from "@/lib/exchange";
 import {
   createCategorySchema,
   createCurrenciesSchema,
@@ -36,9 +37,11 @@ export type CatalogActionResult =
   | { ok: true }
   | {
       ok: false;
-      error: "forbidden" | "notFound" | "failed" | "invalid" | "inUse" | "deliveryNeedsArea";
+      error: "forbidden" | "notFound" | "failed" | "invalid" | "inUse" | "deliveryNeedsArea" | "baseMissingPrices";
       fieldErrors?: Record<string, string[]>;
       codes?: string[];
+      /** baseMissingPrices: products without a price in the new base currency */
+      count?: number;
     };
 
 async function scopeIf(request: PermissionRequest) {
@@ -183,9 +186,16 @@ export async function setStoreCurrenciesAction(values: unknown, locale: string):
   const scope = await scopeIf({ store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createCurrenciesSchema(await translator(locale)).safeParse(values);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidByPath(parsed.error);
+  const { currencies, defaultCode, baseCode } = parsed.data;
   return guard(async () => {
-    const result = await setStoreCurrencies(scope, parsed.data.codes, parsed.data.defaultCode);
-    return result.ok ? { ok: true } : { ok: false, error: result.error, codes: result.codes };
+    const result = await setStoreCurrencies(scope, {
+      codes: currencies.map((c) => c.code),
+      defaultCode,
+      baseCode,
+      rates: Object.fromEntries(currencies.map((c) => [c.code, c.rate === "" ? null : normalizeRate(c.rate)])),
+      rounding: Object.fromEntries(currencies.map((c) => [c.code, c.roundingMinor])),
+    });
+    return result.ok ? { ok: true } : result;
   }) as Promise<CatalogActionResult>;
 }

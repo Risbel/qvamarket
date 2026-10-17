@@ -11,7 +11,7 @@ import { createVariantsSchema, type FormCurrency, type VariantsFormValues } from
 import { saveVariantsAction } from "@/server/variant-actions";
 import { Button } from "@/components/ui/button";
 import { pricesToFormValues } from "../../form-values";
-import { CurrencyPrices, TextField } from "../../price-fields";
+import { TextField, VariantPrices } from "../../price-fields";
 
 type Variant = {
   id: string;
@@ -57,8 +57,8 @@ export function VariantsEditor({
     form.reset(toValues(JSON.parse(signature) as Variant[], currencies));
   }, [signature, currencies, form]);
 
-  const defaultCurrency = currencies.find((c) => c.isDefault) ?? currencies[0];
-  const defaultIndex = currencies.indexOf(defaultCurrency);
+  const baseCurrency = currencies.find((c) => c.isBase) ?? currencies[0];
+  const baseIndex = currencies.indexOf(baseCurrency);
   const watched = form.watch("variants");
 
   const toggle = (index: number) =>
@@ -107,7 +107,7 @@ export function VariantsEditor({
           {variants.map((variant, index) => {
             const expanded = open.has(index);
             const current = watched[index];
-            const price = current?.prices[defaultIndex]?.price;
+            const price = current?.prices[baseIndex]?.price;
             const stock = current?.stock;
             const regionId = `variant-${variant.id}`;
             return (
@@ -121,7 +121,7 @@ export function VariantsEditor({
                 >
                   <span className="font-medium">{variant.title}</span>
                   <span className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>{price ? `${price} ${defaultCurrency.code}` : t("noPrice")}</span>
+                    <span>{price ? `${price} ${baseCurrency.code}` : t("noPrice")}</span>
                     <span>{stock === "" || stock === undefined ? t("stockUntracked") : t("stock", { count: Number(stock) })}</span>
                     <span aria-hidden>{expanded ? "▴" : "▾"}</span>
                   </span>
@@ -146,14 +146,7 @@ export function VariantsEditor({
                       autoComplete="off"
                     />
                   </div>
-                  {currencies.map((currency, c) => (
-                    <CurrencyPrices
-                      key={currency.code}
-                      control={form.control}
-                      base={`variants.${index}.prices.${c}`}
-                      currency={currency}
-                    />
-                  ))}
+                  <VariantPrices control={form.control} base={`variants.${index}.prices`} currencies={currencies} />
                 </div>
               </li>
             );

@@ -69,6 +69,7 @@ export async function createCompanyAndStore(
       tenantId: company.id,
       currencyCode,
       isDefault: true,
+      isBase: true,
     });
     return { tenantId: company.id, storeId: created.id };
   } catch (error) {

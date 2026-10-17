@@ -14,6 +14,8 @@ export type MerchantStore = {
   /** currencies the store sells in, default first */
   currencies: StoreCurrency[];
   defaultCurrency: StoreCurrency;
+  /** the currency prices are typed in; the others follow it through their rates */
+  baseCurrency: StoreCurrency;
   /** pending (awaiting approval) | active | suspended */
   status: "pending" | "active" | "suspended";
   logoKey: string | null;
@@ -74,12 +76,13 @@ export const getMerchantContext = cache(
     // currency (created with the store); the fallback only guards against a broken row.
     const typed = stores.map((s): MerchantStore => {
       const list = currencies.get(s.id) ?? [];
-      const fallback = { code: "USD", digits: 2, isDefault: true };
+      const fallback = { code: "USD", digits: 2, isDefault: true, isBase: true, rate: null, roundingMinor: null };
       return {
         ...s,
         status: s.status as MerchantStore["status"],
         currencies: list.length > 0 ? list : [fallback],
         defaultCurrency: list.find((c) => c.isDefault) ?? list[0] ?? fallback,
+        baseCurrency: list.find((c) => c.isBase) ?? list.find((c) => c.isDefault) ?? list[0] ?? fallback,
       };
     });
     return { ...membership, store: typed[0], stores: typed };

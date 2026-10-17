@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Controller, useFieldArray, useForm, type Control } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { isoToLocalInput, localInputToIso } from "@/components/local-date-time";
+import { convertMinor } from "@/lib/exchange";
 import { formatMoney, minorToInput, parsePriceToMinor } from "@/lib/money";
 import { percentOff } from "@/lib/promotions";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -110,7 +111,10 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
     items.remove(indexes);
   }
 
-  /** Fills every price with the regular price minus `percent` % */
+  /**
+   * Fills the prices with the regular price minus `percent` %: in the base currency and where
+   * the regular price is manual. Currencies following the rate stay empty, so they follow it.
+   */
   function applyPercent() {
     const value = Number(percent);
     if (!Number.isFinite(value) || value <= 0 || value >= 100) return;
@@ -119,8 +123,8 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
       item.prices.forEach((entry, k) => {
         const base = regular[entry.currency];
         const currency = currencies.find((c) => c.code === entry.currency);
-        if (base === undefined || !currency) return;
-        form.setValue(`items.${i}.prices.${k}.price`, minorToInput(percentOff(base, value), currency.digits), { shouldDirty: true });
+        if (base === undefined || !currency || (base.auto && !currency.isBase)) return;
+        form.setValue(`items.${i}.prices.${k}.price`, minorToInput(percentOff(base.amountMinor, value), currency.digits), { shouldDirty: true });
       });
     });
   }
@@ -140,7 +144,7 @@ export function PromotionForm({ promotionId, initialValues, products, currencies
     if (values.kind === "sale") {
       const offending = values.items.flatMap((item) =>
         item.prices.flatMap((entry) => {
-          const base = variantInfo.get(item.variantId)?.variant.regular[entry.currency];
+          const base = variantInfo.get(item.variantId)?.variant.regular[entry.currency]?.amountMinor;
           const digits = currencies.find((c) => c.code === entry.currency)?.digits ?? 2;
           const price = entry.price === "" ? null : parsePriceToMinor(entry.price, digits);
           return price !== null && base !== undefined && price >= base ? [{ variantId: item.variantId, currencyCode: entry.currency }] : [];
@@ -367,7 +371,10 @@ function DateField({
   );
 }
 
-/** Promotion price inputs of one variant: one per currency it has a regular price in. */
+/**
+ * Promotion price inputs of one variant: one per currency it is sold in. Outside the base
+ * currency an empty price follows the base promotion price through the rate.
+ */
 function VariantPrices({
   control,
   index,
@@ -379,11 +386,18 @@ function VariantPrices({
   control: Control<PromotionFormValues>;
   index: number;
   title: string | null;
-  regular: Record<string, number>;
+  regular: PromotableProduct["variants"][number]["regular"];
   currencies: FormCurrency[];
   locale: string;
 }) {
   const t = useTranslations("Promotions.form");
+  const baseIndex = Math.max(
+    currencies.findIndex((c) => c.isBase),
+    0,
+  );
+  const baseCurrency = currencies[baseIndex];
+  const basePromo = useWatch({ control, name: `items.${index}.prices.${baseIndex}.price` });
+  const basePromoMinor = basePromo ? parsePriceToMinor(basePromo, baseCurrency.digits) : null;
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4" data-variant={title ?? ""}>
       {title && <span className="text-sm sm:w-28 sm:pt-1.5">{title}</span>}
@@ -395,8 +409,13 @@ function VariantPrices({
               control={control}
               name={`items.${index}.prices.${k}.price`}
               render={({ field, fieldState }) => {
-                const base = regular[currency.code];
-                const price = field.value ? parsePriceToMinor(field.value, currency.digits) : null;
+                const base = regular[currency.code].amountMinor;
+                // Empty outside the base: the base promotion price converted at the rate
+                const auto =
+                  !currency.isBase && !field.value && basePromoMinor !== null
+                    ? convertMinor(basePromoMinor, baseCurrency, currency)
+                    : null;
+                const price = field.value ? parsePriceToMinor(field.value, currency.digits) : auto;
                 const off = price !== null && price < base ? Math.round(((base - price) / base) * 100) : null;
                 return (
                   <Field data-invalid={fieldState.invalid}>
@@ -412,6 +431,13 @@ function VariantPrices({
                     <FieldDescription>
                       {t("regularPrice", { price: formatMoney(base, currency.code, locale) })}
                       {off !== null && off > 0 && <span className="font-medium text-foreground"> · −{off} %</span>}
+                      {!currency.isBase && currency.rate !== null && (
+                        <span className="block">
+                          {auto !== null
+                            ? t("followsRate", { price: formatMoney(auto, currency.code, locale) })
+                            : !field.value && t("emptyFollowsRate", { base: baseCurrency.code })}
+                        </span>
+                      )}
                     </FieldDescription>
                     <FieldError errors={[fieldState.error]} />
                   </Field>
