@@ -25,11 +25,11 @@ export function CurrencySwitcher({ codes, current }: { codes: string[]; current:
         router.refresh();
       }}
     >
-      {/* On the brand color: keep its readable foreground (the chevron too) */}
+      {/* Same look as the other header buttons: no border, round brand-tinted background on
+          hover / while open, and the brand's readable foreground (the chevron too) */}
       <SelectTrigger
-        size="sm"
         aria-label={t("currency")}
-        className="border-current/30 bg-transparent text-inherit hover:bg-current/15 dark:bg-transparent dark:hover:bg-current/15 [&_svg]:text-current"
+        className="gap-1 rounded-full border-0 bg-transparent pr-2 pl-3 font-medium text-inherit hover:bg-current/15 focus-visible:ring-2 focus-visible:ring-current data-popup-open:bg-current/15 data-[size=default]:h-9 dark:bg-transparent dark:hover:bg-current/15 [&_svg]:text-current"
       >
         <SelectValue />
       </SelectTrigger>

@@ -2,9 +2,14 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { listPublicCatalog } from "@/server/public-catalog";
 import { BANNER_DEVICES } from "@/lib/images";
-import { getPublicStoreBySlug, listPublicBannerImages, listPublicSecondaryBanner } from "@/server/public-store";
+import {
+  getPublicStoreBySlug,
+  listPublicBannerImages,
+  listPublicSecondaryBanner,
+} from "@/server/public-store";
 import { selectedCurrency } from "@/server/storefront-currency";
 import { cn } from "@/lib/utils";
+import { Spotlight, Spotlights } from "@/components/spotlight";
 import { BannerCarousel } from "./banner-carousel";
 import { BANNER_GAP } from "./banner-layout";
 import { CategoryIndex } from "./category-index";
@@ -45,10 +50,20 @@ export default async function StoreCatalogPage({
   const hasBanner = BANNER_DEVICES.some((device) => hero[device].length > 0);
 
   return (
-    <>
+    // `isolate` keeps the spotlights (-z-10) behind the page content without going under <body>
+    <div className="relative isolate flex flex-1 flex-col">
+      {/* Brand glows behind the top of the page (dark theme only) */}
+      <Spotlights className="bottom-auto h-full">
+        <Spotlight color="accent" size="40rem" opacity={0.3} className="-top-56 -right-48" />
+        <Spotlight color="accent" size="36rem" opacity={0.2} className="top-80 -left-56" />
+        <Spotlight color="accent" size="36rem" opacity={0.1} className="bottom-0 -right-56" />
+      </Spotlights>
       {sections.length > 1 && (
         // Index of the categories, right under the header: jumps to each section of the page
-        <CategoryIndex label={t("categoriesLabel")} sections={sections.map(({ id, title }) => ({ id, title }))} />
+        <CategoryIndex
+          label={t("categoriesLabel")}
+          sections={sections.map(({ id, title }) => ({ id, title }))}
+        />
       )}
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6">
         {hasBanner && (
@@ -63,7 +78,10 @@ export default async function StoreCatalogPage({
                     key={device}
                     kind="hero"
                     device={device}
-                    slides={hero[device].map((image) => ({ id: image.id, images: [image] }))}
+                    slides={hero[device].map((image) => ({
+                      id: image.id,
+                      images: [image],
+                    }))}
                     storeName={store.name}
                   />
                 ),
@@ -126,6 +144,6 @@ export default async function StoreCatalogPage({
           </>
         )}
       </main>
-    </>
+    </div>
   );
 }

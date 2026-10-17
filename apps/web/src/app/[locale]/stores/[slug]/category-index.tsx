@@ -25,7 +25,7 @@ export function CategoryIndex({
       aria-label={label}
       // Behind the header and the search row (z-20 < z-30 < z-40): hiding slides it up under
       // them. `invisible` takes the links out of the tab order while it is away.
-      className={`sticky top-(--store-sticky) z-20 h-(--store-index) border-b bg-background/95 backdrop-blur transition-[top,translate,opacity,visibility] duration-200 ${
+      className={`sticky top-(--store-sticky) z-20 h-(--store-index) border-b bg-background/60 backdrop-blur transition-[top,translate,opacity,visibility] duration-200 ${
         hidden ? "invisible -translate-y-full opacity-0" : ""
       }`}
     >
