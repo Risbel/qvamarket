@@ -13,7 +13,8 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
 
-export function LoginForm() {
+/** `next`: where to go after signing in (already sanitized by the page). */
+export function LoginForm({ next = "/dashboard" }: { next?: string }) {
   const t = useTranslations("Login");
   const tv = useTranslations("Validation");
   const router = useRouter();
@@ -34,7 +35,7 @@ export function LoginForm() {
       setFormError(error.status === 429 ? t("tooManyAttempts") : t("invalidCredentials"));
       return;
     }
-    router.push("/dashboard");
+    router.push(next);
     router.refresh();
   }
 

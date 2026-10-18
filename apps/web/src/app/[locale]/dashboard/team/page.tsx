@@ -12,9 +12,11 @@ import {
   roleKeys,
 } from "@/lib/permissions";
 import { ensureCompanyRoles, listCompanyRoles } from "@/server/company-roles";
+import { listInvitations } from "@/server/invitations";
 import { listTeamMembers } from "@/server/team";
 import { requirePanelSection } from "@/server/tenant";
 import { AddMemberDialog } from "./add-member-dialog";
+import { InvitationsList } from "./invitations-list";
 import { MemberRowActions } from "./member-row-actions";
 import type { RoleOption } from "./role-select";
 
@@ -25,10 +27,11 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
   const merchant = await requirePanelSection(locale, "team");
   // Companies created before roles existed get the presets, so there is something to give
   await ensureCompanyRoles(merchant.tenantId, locale);
-  const [t, members, roles] = await Promise.all([
+  const [t, members, roles, invitations] = await Promise.all([
     getTranslations("Team"),
     listTeamMembers(merchant.tenantId),
     listCompanyRoles(merchant.tenantId),
+    listInvitations(merchant.tenantId),
   ]);
 
   const rolesByKey = new Map(roles.map((role) => [role.key, role]));
@@ -95,6 +98,15 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
           );
         })}
       </ul>
+      <InvitationsList
+        invitations={invitations.map((invitation) => ({
+          id: invitation.id,
+          email: invitation.email,
+          roleName: invitation.roleName,
+          inviterName: invitation.inviterName,
+          expiresAt: invitation.expiresAt.toISOString(),
+        }))}
+      />
       {merchant.can({ role: ["read"] }) && (
         <p className="text-sm text-muted-foreground">
           {t.rich("rolesHint", {

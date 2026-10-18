@@ -44,10 +44,10 @@ export async function listTeamMembers(tenantId: string): Promise<TeamMemberRow[]
     .orderBy(asc(member.createdAt));
 }
 
-type RoleCheck = "roleNotFound" | "escalation" | null;
+export type RoleCheck = "roleNotFound" | "escalation" | null;
 
 /** Can `actor` give the company role `roleKey`? (it exists, is not owner, grants nothing more) */
-async function checkGrantable(executor: typeof db | Tx, tenantId: string, actor: TeamActor, roleKey: string): Promise<RoleCheck> {
+export async function checkGrantable(executor: typeof db | Tx, tenantId: string, actor: TeamActor, roleKey: string): Promise<RoleCheck> {
   if (roleKey === OWNER_ROLE) return "roleNotFound";
   const [role] = await executor
     .select({ permissions: companyRole.permissions })

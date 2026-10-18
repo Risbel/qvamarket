@@ -1793,7 +1793,9 @@
     "toasts": {
       "added": "{name} has been added to the team.",
       "roleChanged": "{name}'s role changed.",
-      "removed": "{name} is no longer on the team."
+      "removed": "{name} is no longer on the team.",
+      "linkCopied": "Link copied.",
+      "invitationCanceled": "Invitation to {email} canceled."
     },
     "errors": {
       "forbidden": "Your role does not allow this action.",
@@ -1804,6 +1806,51 @@
       "roleNotFound": "That role no longer exists. Choose another one.",
       "emailTaken": "That email already has an account. Use another one.",
       "failed": "Could not complete it. Please try again."
+    },
+    "hasAccount": "{email} already has a QvaShop account, so we do not create another one. You can invite it: they get a link and sign in with their own password.",
+    "inviteInstead": "Create invitation link",
+    "inviting": "Creating link…",
+    "invitedTitle": "Invitation created",
+    "inviteLink": {
+      "help": "Send this link to {email} (by WhatsApp or Telegram, for example). It only works with that account, once, for 7 days.",
+      "copy": "Copy link",
+      "copied": "Copied"
+    },
+    "pendingTitle": "Pending invitations",
+    "invitedBy": "Invited by {name}",
+    "expires": "expires",
+    "copyLink": "Copy link",
+    "cancelInvitation": "Cancel",
+    "invitationErrors": {
+      "forbidden": "Your role does not allow inviting.",
+      "alreadyMember": "That account is already on the team.",
+      "limit": "There are too many pending invitations (20 at most). Cancel some first.",
+      "roleNotFound": "That role no longer exists. Choose another one.",
+      "escalation": "You cannot give a role with permissions you do not have.",
+      "noAccount": "That email no longer has an account: add it with a temporary password.",
+      "failed": "Could not create the invitation. Please try again."
+    }
+  },
+  "Invite": {
+    "title": "Join {company}",
+    "description": "{inviter} invites you to work in {company} with the role {role}.",
+    "signedInAs": "Signed in as {email}",
+    "expires": "expires",
+    "accept": "Accept",
+    "decline": "Decline",
+    "wrongEmailTitle": "This invitation is for another account",
+    "wrongEmail": "The invitation is for {invited} and you are signed in as {email}. Sign in with that account to accept it.",
+    "switchAccount": "Sign in with another account",
+    "alreadyMemberTitle": "You are already on this team",
+    "alreadyMember": "You already work in {company}. Choose it with the company switcher in the panel.",
+    "alreadyMemberShort": "You are already on this team.",
+    "closedTitle": "This invitation is no longer valid",
+    "closed": "It expired, was already used or was canceled. Ask the company for a new link.",
+    "toPanel": "Go to the panel",
+    "failed": "Could not complete it. Please try again.",
+    "toasts": {
+      "accepted": "You are now part of {company}.",
+      "declined": "Invitation declined."
     }
   }
 }

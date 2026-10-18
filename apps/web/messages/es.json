@@ -1793,7 +1793,9 @@
     "toasts": {
       "added": "{name} se ha añadido al equipo.",
       "roleChanged": "Rol de {name} cambiado.",
-      "removed": "{name} ya no forma parte del equipo."
+      "removed": "{name} ya no forma parte del equipo.",
+      "linkCopied": "Enlace copiado.",
+      "invitationCanceled": "Invitación a {email} cancelada."
     },
     "errors": {
       "forbidden": "Tu rol no permite esta acción.",
@@ -1804,6 +1806,51 @@
       "roleNotFound": "Ese rol ya no existe. Elige otro.",
       "emailTaken": "Ese correo ya tiene una cuenta. Usa otro.",
       "failed": "No se pudo completar. Inténtalo de nuevo."
+    },
+    "hasAccount": "{email} ya tiene una cuenta en QvaShop, así que no le creamos otra. Puedes invitarla: recibirá un enlace y entrará con su propia contraseña.",
+    "inviteInstead": "Crear enlace de invitación",
+    "inviting": "Creando enlace…",
+    "invitedTitle": "Invitación creada",
+    "inviteLink": {
+      "help": "Envía este enlace a {email} (por WhatsApp o Telegram, por ejemplo). Solo funciona con esa cuenta, una vez, durante 7 días.",
+      "copy": "Copiar enlace",
+      "copied": "Copiado"
+    },
+    "pendingTitle": "Invitaciones pendientes",
+    "invitedBy": "Invitada por {name}",
+    "expires": "caduca el",
+    "copyLink": "Copiar enlace",
+    "cancelInvitation": "Cancelar",
+    "invitationErrors": {
+      "forbidden": "Tu rol no permite invitar.",
+      "alreadyMember": "Esa cuenta ya forma parte del equipo.",
+      "limit": "Hay demasiadas invitaciones pendientes (máximo 20). Cancela alguna antes.",
+      "roleNotFound": "Ese rol ya no existe. Elige otro.",
+      "escalation": "No puedes dar un rol con permisos que tú no tienes.",
+      "noAccount": "Ese correo ya no tiene cuenta: añádelo con una contraseña temporal.",
+      "failed": "No se pudo crear la invitación. Inténtalo de nuevo."
+    }
+  },
+  "Invite": {
+    "title": "Únete a {company}",
+    "description": "{inviter} te invita a trabajar en {company} con el rol {role}.",
+    "signedInAs": "Entraste como {email}",
+    "expires": "caduca el",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "wrongEmailTitle": "Esta invitación es para otra cuenta",
+    "wrongEmail": "La invitación es para {invited} y entraste como {email}. Entra con esa cuenta para aceptarla.",
+    "switchAccount": "Entrar con otra cuenta",
+    "alreadyMemberTitle": "Ya formas parte de este equipo",
+    "alreadyMember": "Ya trabajas en {company}. Elígela con el selector de empresa del panel.",
+    "alreadyMemberShort": "Ya formas parte de este equipo.",
+    "closedTitle": "Esta invitación ya no es válida",
+    "closed": "Caducó, ya se usó o la cancelaron. Pide a la empresa un enlace nuevo.",
+    "toPanel": "Ir al panel",
+    "failed": "No se pudo completar. Inténtalo de nuevo.",
+    "toasts": {
+      "accepted": "Ahora formas parte de {company}.",
+      "declined": "Invitación rechazada."
     }
   }
 }

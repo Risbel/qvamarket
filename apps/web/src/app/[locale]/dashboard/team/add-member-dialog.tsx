@@ -10,6 +10,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createTeamMemberSchema, type TeamMemberValues } from "@/lib/validation/team";
 import { addTeamMemberAction } from "@/server/team-actions";
+import { createInvitationAction } from "@/server/invitation-actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,11 +23,16 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { CredentialsPanel } from "./credentials-panel";
+import { InviteLinkPanel } from "./invite-link-panel";
 import { RoleSelect, roleDescription, type RoleOption } from "./role-select";
+
+const INVITATION_ERRORS = ["forbidden", "alreadyMember", "limit", "roleNotFound", "escalation", "noAccount"];
 
 /**
  * Adds a team member: name, email and role. The server creates the account with a temporary
- * password, shown here once (the member must change it on first sign-in).
+ * password, shown here once (the member must change it on first sign-in). An email that
+ * already has an account cannot get a new one: the dialog offers an invitation link instead,
+ * which that person accepts with their own account.
  */
 export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
   const t = useTranslations("Team");
@@ -37,6 +43,10 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
   const [open, setOpen] = useState(false);
   const [created, setCreated] = useState<{ email: string; temporaryPassword: string } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  // The email already has an account: offer to invite it instead
+  const [existing, setExisting] = useState<{ email: string; roleKey: string } | null>(null);
+  const [invited, setInvited] = useState<{ id: string; email: string } | null>(null);
+  const [inviting, setInviting] = useState(false);
 
   const schema = useMemo(() => createTeamMemberSchema(tv), [tv]);
   const defaultValues: TeamMemberValues = { name: "", email: "", roleKey: roles[0]?.key ?? "" };
@@ -50,12 +60,30 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
       // Forget the credentials as soon as the dialog closes
       setCreated(null);
       setFormError(null);
+      setExisting(null);
+      setInvited(null);
       form.reset(defaultValues);
     }
   }
 
+  async function invite() {
+    if (!existing) return;
+    setInviting(true);
+    setFormError(null);
+    const result = await createInvitationAction(existing, locale).catch(() => null);
+    setInviting(false);
+    if (result?.ok && result.id) {
+      setInvited({ id: result.id, email: existing.email });
+      router.refresh();
+      return;
+    }
+    const error = result && !result.ok ? result.error : "failed";
+    setFormError(t(`invitationErrors.${INVITATION_ERRORS.includes(error) ? error : "failed"}`));
+  }
+
   async function onSubmit(values: TeamMemberValues) {
     setFormError(null);
+    setExisting(null);
     const result = await addTeamMemberAction(values, locale).catch(() => null);
     if (result?.ok) {
       setCreated({ email: result.email, temporaryPassword: result.temporaryPassword });
@@ -70,7 +98,7 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
         }
         return;
       case "emailTaken":
-        form.setError("email", { message: t("errors.emailTaken") });
+        setExisting({ email: values.email, roleKey: values.roleKey });
         return;
       case "roleNotFound":
       case "escalation":
@@ -92,7 +120,17 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
       </Button>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
-          {created ? (
+          {invited ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("invitedTitle")}</DialogTitle>
+              </DialogHeader>
+              <InviteLinkPanel id={invited.id} email={invited.email} />
+              <DialogFooter>
+                <Button onClick={() => onOpenChange(false)}>{t("close")}</Button>
+              </DialogFooter>
+            </>
+          ) : created ? (
             <>
               <DialogHeader>
                 <DialogTitle>{t("addedTitle")}</DialogTitle>
@@ -163,6 +201,14 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
                     </Field>
                   )}
                 />
+                {existing && (
+                  <div role="status" className="flex flex-col gap-2 rounded-md border bg-muted p-3 text-sm">
+                    <p>{t("hasAccount", { email: existing.email })}</p>
+                    <Button type="button" className="self-start" disabled={inviting} onClick={invite}>
+                      {inviting ? t("inviting") : t("inviteInstead")}
+                    </Button>
+                  </div>
+                )}
                 {formError && <FieldError>{formError}</FieldError>}
               </FieldGroup>
               <DialogFooter>
