@@ -1,4 +1,4 @@
-import { db, eq, impersonationLog, member, user } from "@qvashop/db";
+import { and, db, eq, impersonationLog, member, session as sessionTable, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { getAdminSession } from "./admin";
 
@@ -21,14 +21,16 @@ function requestMeta(requestHeaders: Headers) {
 }
 
 /**
- * Superadmin starts a session as a merchant. Every impersonation is logged:
- * the log row is written BEFORE the session is created (so an impersonation can
- * never exist without a record) and removed again if creating the session fails.
- * Admin accounts cannot be impersonated, and an impersonated session is not an
- * admin session, so impersonations cannot be nested.
+ * Superadmin starts a session as a member of the company `tenantId` (any member, not only
+ * its owner). Every impersonation is logged: the log row is written BEFORE the session is
+ * created (so an impersonation can never exist without a record) and removed again if
+ * creating the session fails. The new session opens that company (its active company), even
+ * when the person also works in others. Admin accounts cannot be impersonated, and an
+ * impersonated session is not an admin session, so impersonations cannot be nested.
  */
 export async function startImpersonation(
   targetUserId: string,
+  tenantId: string,
   requestHeaders: Headers,
 ): Promise<StartImpersonationResult> {
   const admin = await getAdminSession(requestHeaders);
@@ -51,8 +53,9 @@ export async function startImpersonation(
   const [membership] = await db
     .select({ tenantId: member.organizationId })
     .from(member)
-    .where(eq(member.userId, target.id))
+    .where(and(eq(member.userId, target.id), eq(member.organizationId, tenantId)))
     .limit(1);
+  if (!membership) return { ok: false, error: "notFound" };
 
   let logId: string | undefined;
   try {
@@ -64,16 +67,21 @@ export async function startImpersonation(
         adminEmail: admin.user.email,
         targetUserId: target.id,
         targetEmail: target.email,
-        tenantId: membership?.tenantId ?? null,
+        tenantId: membership.tenantId,
         ...requestMeta(requestHeaders),
       })
       .returning({ id: impersonationLog.id });
     logId = row.id;
 
-    await auth.api.impersonateUser({
+    const impersonated = await auth.api.impersonateUser({
       body: { userId: target.id },
       headers: requestHeaders,
     });
+    // Open the chosen company (the person may work in several)
+    await db
+      .update(sessionTable)
+      .set({ activeOrganizationId: membership.tenantId })
+      .where(eq(sessionTable.token, impersonated.session.token));
     return { ok: true };
   } catch (error) {
     console.error("startImpersonation failed", error);
@@ -106,11 +114,15 @@ export async function stopImpersonation(
       .from(user)
       .where(eq(user.id, adminUserId))
       .limit(1);
-    const [membership] = await db
-      .select({ tenantId: member.organizationId })
-      .from(member)
-      .where(eq(member.userId, session.user.id))
-      .limit(1);
+    // The company the impersonated session was in (the one it started in, or switched to)
+    const tenantId = session.session.activeOrganizationId ?? null;
+    const [membership] = tenantId
+      ? await db
+          .select({ tenantId: member.organizationId })
+          .from(member)
+          .where(and(eq(member.userId, session.user.id), eq(member.organizationId, tenantId)))
+          .limit(1)
+      : [];
     await db.insert(impersonationLog).values({
       action: "stop",
       adminUserId,

@@ -71,6 +71,7 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{m.name}</span>
                     {self && <Badge variant="secondary">{t("you")}</Badge>}
+                    {!self && m.otherCompanies && <Badge variant="secondary">{t("otherCompanies")}</Badge>}
                     {roleNames(m.role).map((name, index) => (
                       <Badge key={`${name}-${index}`} variant="outline">
                         {name}
@@ -92,6 +93,7 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
                   roleKey={roleKeys(m.role)[0] ?? ""}
                   roles={grantable}
                   aboveYours={!hasPermissions(merchant.permissions, permissionsOf(m.role))}
+                  sharedAccount={m.sharedAccount}
                 />
               )}
             </li>

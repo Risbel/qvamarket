@@ -448,7 +448,9 @@
         "forbidden": "You are not allowed to do this.",
         "notFound": "You cannot sign in as this user.",
         "failed": "Could not start the session. Please try again."
-      }
+      },
+      "choose": "Sign in as…",
+      "owner": "Owner"
     },
     "status": {
       "pending": "Pending",
@@ -1779,7 +1781,8 @@
       "menu": "Actions for {name}",
       "changeRole": "Change role",
       "resetPassword": "Reset password",
-      "remove": "Remove from team"
+      "remove": "Remove from team",
+      "resetPasswordShared": "Only they can change their password"
     },
     "changeRoleTitle": "Change the role of {name}",
     "changeRoleDescription": "The change applies on their next action in the panel.",
@@ -1789,7 +1792,7 @@
     "resetting": "Resetting…",
     "resetDoneTitle": "Password reset",
     "removeTitle": "Remove from team",
-    "removeConfirm": "{name} will lose access to the panel and their sessions will be ended. Their account is not deleted: the orders and payments they handled keep showing their name.",
+    "removeConfirm": "{name} will lose access to your company's panel. Their account is not deleted: it stays theirs, and the orders and payments they handled keep showing their name.",
     "toasts": {
       "added": "{name} has been added to the team.",
       "roleChanged": "{name}'s role changed.",
@@ -1805,7 +1808,8 @@
       "escalation": "You cannot give or manage permissions you do not have.",
       "roleNotFound": "That role no longer exists. Choose another one.",
       "emailTaken": "That email already has an account. Use another one.",
-      "failed": "Could not complete it. Please try again."
+      "failed": "Could not complete it. Please try again.",
+      "sharedAccount": "This account is also used outside your company: only that person can change its password."
     },
     "hasAccount": "{email} already has a QvaShop account, so we do not create another one. You can invite it: they get a link and sign in with their own password.",
     "inviteInstead": "Create invitation link",
@@ -1829,7 +1833,8 @@
       "escalation": "You cannot give a role with permissions you do not have.",
       "noAccount": "That email no longer has an account: add it with a temporary password.",
       "failed": "Could not create the invitation. Please try again."
-    }
+    },
+    "otherCompanies": "Also works in other companies"
   },
   "Invite": {
     "title": "Join {company}",

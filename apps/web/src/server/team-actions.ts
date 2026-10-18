@@ -23,6 +23,7 @@ type Failure = {
     | "escalation"
     | "roleNotFound"
     | "emailTaken"
+    | "sharedAccount"
     | "failed";
   fieldErrors?: Record<string, string[]>;
 };

@@ -448,7 +448,9 @@
         "forbidden": "No tienes permiso para hacer esto.",
         "notFound": "No se puede entrar como este usuario.",
         "failed": "No se pudo iniciar la sesión. Inténtalo de nuevo."
-      }
+      },
+      "choose": "Entrar como…",
+      "owner": "Propietario"
     },
     "status": {
       "pending": "Pendiente",
@@ -1779,7 +1781,8 @@
       "menu": "Acciones de {name}",
       "changeRole": "Cambiar rol",
       "resetPassword": "Restablecer contraseña",
-      "remove": "Quitar del equipo"
+      "remove": "Quitar del equipo",
+      "resetPasswordShared": "Solo esa persona puede cambiar su contraseña"
     },
     "changeRoleTitle": "Cambiar el rol de {name}",
     "changeRoleDescription": "El cambio se aplica en su próxima acción en el panel.",
@@ -1789,7 +1792,7 @@
     "resetting": "Restableciendo…",
     "resetDoneTitle": "Contraseña restablecida",
     "removeTitle": "Quitar del equipo",
-    "removeConfirm": "{name} dejará de tener acceso al panel y se cerrarán sus sesiones. Su cuenta no se elimina: los pedidos y pagos que gestionó siguen mostrando su nombre.",
+    "removeConfirm": "{name} dejará de tener acceso al panel de tu empresa. Su cuenta no se elimina: sigue siendo suya y los pedidos y pagos que gestionó siguen mostrando su nombre.",
     "toasts": {
       "added": "{name} se ha añadido al equipo.",
       "roleChanged": "Rol de {name} cambiado.",
@@ -1805,7 +1808,8 @@
       "escalation": "No puedes dar ni gestionar permisos que tú no tienes.",
       "roleNotFound": "Ese rol ya no existe. Elige otro.",
       "emailTaken": "Ese correo ya tiene una cuenta. Usa otro.",
-      "failed": "No se pudo completar. Inténtalo de nuevo."
+      "failed": "No se pudo completar. Inténtalo de nuevo.",
+      "sharedAccount": "Esta cuenta también se usa fuera de tu empresa: solo esa persona puede cambiar su contraseña."
     },
     "hasAccount": "{email} ya tiene una cuenta en QvaShop, así que no le creamos otra. Puedes invitarla: recibirá un enlace y entrará con su propia contraseña.",
     "inviteInstead": "Crear enlace de invitación",
@@ -1829,7 +1833,8 @@
       "escalation": "No puedes dar un rol con permisos que tú no tienes.",
       "noAccount": "Ese correo ya no tiene cuenta: añádelo con una contraseña temporal.",
       "failed": "No se pudo crear la invitación. Inténtalo de nuevo."
-    }
+    },
+    "otherCompanies": "También trabaja en otras empresas"
   },
   "Invite": {
     "title": "Únete a {company}",

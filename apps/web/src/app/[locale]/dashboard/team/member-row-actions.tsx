@@ -33,7 +33,7 @@ import { RoleSelect, roleDescription, type RoleOption } from "./role-select";
 
 type Open = "role" | "reset" | "remove" | null;
 
-const KNOWN_ERRORS = ["forbidden", "notFound", "self", "owner", "escalation", "roleNotFound"];
+const KNOWN_ERRORS = ["forbidden", "notFound", "self", "owner", "escalation", "roleNotFound", "sharedAccount"];
 
 /**
  * `...` menu of a team member: change role, reset password (team:update), remove from the
@@ -47,6 +47,7 @@ export function MemberRowActions({
   roleKey,
   roles,
   aboveYours,
+  sharedAccount,
 }: {
   memberId: string;
   name: string;
@@ -55,6 +56,8 @@ export function MemberRowActions({
   roleKey: string;
   roles: RoleOption[];
   aboveYours: boolean;
+  /** the account is also used elsewhere: only the person can change its password */
+  sharedAccount: boolean;
 }) {
   const t = useTranslations("Team");
   const locale = useLocale();
@@ -134,9 +137,9 @@ export function MemberRowActions({
                 <ShieldCheckIcon />
                 {t("actions.changeRole")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => show("reset")}>
+              <DropdownMenuItem disabled={sharedAccount} onClick={() => show("reset")}>
                 <KeyRoundIcon />
-                {t("actions.resetPassword")}
+                {sharedAccount ? t("actions.resetPasswordShared") : t("actions.resetPassword")}
               </DropdownMenuItem>
             </>
           )}

@@ -18,6 +18,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -76,14 +77,17 @@ export function CompanySwitcher({ companies, activeId }: { companies: PanelCompa
           <ChevronsUpDown className="ml-auto size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-56">
-          <DropdownMenuLabel>{t("switch")}</DropdownMenuLabel>
-          {companies.map((company) => (
-            <DropdownMenuItem key={company.id} onClick={() => choose(company)}>
-              <Building2 />
-              <span className="flex-1 truncate">{company.name}</span>
-              {company.id === activeId && <Check aria-label={t("current")} />}
-            </DropdownMenuItem>
-          ))}
+          {/* Base UI: a menu label must live inside a group */}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{t("switch")}</DropdownMenuLabel>
+            {companies.map((company) => (
+              <DropdownMenuItem key={company.id} onClick={() => choose(company)}>
+                <Building2 />
+                <span className="flex-1 truncate">{company.name}</span>
+                {company.id === activeId && <Check aria-label={t("current")} />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>

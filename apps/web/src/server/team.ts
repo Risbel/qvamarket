@@ -1,4 +1,4 @@
-import { and, asc, companyRole, db, eq, member, user } from "@qvashop/db";
+import { and, asc, companyRole, db, eq, member, sql, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { generateTemporaryPassword } from "@/lib/passwords";
 import { OWNER_ROLE, hasPermissions, isOwner, normalizePermissions, type Permissions } from "@/lib/permissions";
@@ -25,7 +25,15 @@ export type TeamMemberRow = {
   role: string;
   joinedAt: Date;
   mustChangePassword: boolean;
+  /** also a member of another company (shown without saying which) */
+  otherCompanies: boolean;
+  /** used elsewhere too (another company, or a customer account of another company's store) */
+  sharedAccount: boolean;
 };
+
+// Correlated checks on the outer `member` row (this query joins, so columns are qualified)
+const inOtherCompany = sql<boolean>`exists (select 1 from "member" m2 where m2.user_id = ${member.userId} and m2.organization_id <> ${member.organizationId})`;
+const customerElsewhere = sql<boolean>`exists (select 1 from "customer" c2 where c2.user_id = ${member.userId} and c2.tenant_id <> ${member.organizationId})`;
 
 export async function listTeamMembers(tenantId: string): Promise<TeamMemberRow[]> {
   return db
@@ -37,6 +45,8 @@ export async function listTeamMembers(tenantId: string): Promise<TeamMemberRow[]
       role: member.role,
       joinedAt: member.createdAt,
       mustChangePassword: user.mustChangePassword,
+      otherCompanies: inOtherCompany,
+      sharedAccount: sql<boolean>`(${inOtherCompany} or ${customerElsewhere})`,
     })
     .from(member)
     .innerJoin(user, eq(user.id, member.userId))
@@ -149,17 +159,32 @@ export async function changeMemberRole(tenantId: string, actor: TeamActor, membe
 
 export type ResetMemberPasswordResult =
   | { ok: true; email: string; temporaryPassword: string }
-  | { ok: false; error: TargetError };
+  | { ok: false; error: TargetError | "sharedAccount" };
+
+/**
+ * Is the account also used outside this company (a member of another company, or a customer
+ * of another company's store)? Then this company must not set its password.
+ */
+async function isSharedAccount(userId: string, tenantId: string): Promise<boolean> {
+  const { rows } = await db.execute<{ shared: boolean }>(sql`
+    select exists (select 1 from "member" where user_id = ${userId} and organization_id <> ${tenantId})
+        or exists (select 1 from "customer" where user_id = ${userId} and tenant_id <> ${tenantId}) as shared`);
+  return rows[0]?.shared === true;
+}
 
 /**
  * Gives a member a new temporary password (MVP recovery: no email provider). Same order as
  * the superadmin's reset: the forced-change flag first, so a failure later never leaves the
  * member signed in with a password they do not know; their sessions are ended last.
+ * Refused (`sharedAccount`) for an account also used outside this company.
  */
 export async function resetMemberPassword(tenantId: string, actor: TeamActor, memberId: string): Promise<ResetMemberPasswordResult> {
   const found = await findTarget(db, tenantId, actor, memberId);
   if ("error" in found) return { ok: false, error: found.error };
   const { target } = found;
+  // The account is the person's, not the company's, once it is used elsewhere: setting its
+  // password would hand this company the person's access to other companies and stores
+  if (await isSharedAccount(target.userId, tenantId)) return { ok: false, error: "sharedAccount" };
 
   const temporaryPassword = generateTemporaryPassword();
   const context = await auth.$context;
@@ -170,9 +195,9 @@ export async function resetMemberPassword(tenantId: string, actor: TeamActor, me
 }
 
 /**
- * Removes a member from the company and ends their sessions. The account stays: order
- * history and payment records keep pointing at it (who did what), and it may also be the
- * person's shopping account. So the same email cannot be added again (`emailTaken`).
+ * Removes a member from the company. The account stays: order history and payment records
+ * keep pointing at it (who did what), and it may be used in other companies or for shopping.
+ * To add the person again, invite the account (an invitation, not a new account).
  */
 export async function removeTeamMember(tenantId: string, actor: TeamActor, memberId: string): Promise<MemberActionResult> {
   const removed = await db.transaction(async (tx): Promise<{ error: TargetError } | { userId: string }> => {
@@ -182,8 +207,7 @@ export async function removeTeamMember(tenantId: string, actor: TeamActor, membe
     await tx.delete(member).where(and(eq(member.organizationId, tenantId), eq(member.id, memberId)));
     return { userId: found.target.userId };
   });
-  if ("error" in removed) return { ok: false, error: removed.error };
-  const context = await auth.$context;
-  await context.internalAdapter.deleteUserSessions(removed.userId);
-  return { ok: true };
+  // No session is ended: membership is checked on every request, so the panel of this company
+  // closes at once, while the person stays signed in for their other companies and stores
+  return "error" in removed ? { ok: false, error: removed.error } : { ok: true };
 }

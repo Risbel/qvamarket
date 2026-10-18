@@ -1,4 +1,5 @@
-import { and, db, desc, eq, member, organization, sql, store, user } from "@qvashop/db";
+import { and, asc, companyRole, db, desc, eq, inArray, member, organization, sql, store, user } from "@qvashop/db";
+import { isOwner, roleKeys } from "@/lib/permissions";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { buildStoreUrl } from "@/lib/tenancy";
@@ -13,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { headers } from "next/headers";
-import { ImpersonateButton } from "./impersonate-button";
+import { ImpersonateMenu, type ImpersonateTarget } from "./impersonate-button";
 import { ResetPasswordDialog } from "./reset-password-dialog";
 import { StoreStatusControls } from "./store-status-controls";
 
@@ -33,6 +34,7 @@ export default async function AdminHomePage({
       slug: store.slug,
       status: store.status,
       company: organization.name,
+      tenantId: store.tenantId,
       ownerId: user.id,
       ownerEmail: user.email,
       createdAt: store.createdAt,
@@ -54,6 +56,34 @@ export default async function AdminHomePage({
     .leftJoin(user, eq(user.id, member.userId))
     // Stores waiting for approval first, then newest first
     .orderBy(sql`(${store.status} = 'pending') desc`, desc(store.createdAt));
+
+  // Every member of the listed companies, for "Sign in as" (admin accounts are never targets)
+  const tenantIds = [...new Set(rows.map((row) => row.tenantId))];
+  const [members, roles] =
+    tenantIds.length === 0
+      ? [[], []]
+      : await Promise.all([
+          db
+            .select({ tenantId: member.organizationId, userId: user.id, name: user.name, email: user.email, role: member.role })
+            .from(member)
+            .innerJoin(user, eq(user.id, member.userId))
+            .where(and(inArray(member.organizationId, tenantIds), sql`${user.role} is distinct from 'admin'`, sql`${user.banned} is not true`))
+            .orderBy(asc(member.createdAt)),
+          db
+            .select({ tenantId: companyRole.tenantId, key: companyRole.key, name: companyRole.name })
+            .from(companyRole)
+            .where(inArray(companyRole.tenantId, tenantIds)),
+        ]);
+  const roleName = (tenantId: string, roleString: string) =>
+    isOwner(roleString)
+      ? t("impersonate.owner")
+      : roleKeys(roleString)
+          .map((key) => roles.find((r) => r.tenantId === tenantId && r.key === key)?.name ?? key)
+          .join(", ");
+  const targetsOf = (tenantId: string): ImpersonateTarget[] =>
+    members
+      .filter((m) => m.tenantId === tenantId)
+      .map((m) => ({ userId: m.userId, name: m.name, email: m.email, role: roleName(tenantId, m.role) }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,14 +143,9 @@ export default async function AdminHomePage({
                       storeName={row.storeName}
                       status={row.status as "pending" | "active" | "suspended"}
                     />
+                    <ImpersonateMenu tenantId={row.tenantId} targets={targetsOf(row.tenantId)} />
                     {row.ownerId && row.ownerEmail && (
-                      <>
-                        <ImpersonateButton userId={row.ownerId} />
-                        <ResetPasswordDialog
-                          userId={row.ownerId}
-                          email={row.ownerEmail}
-                        />
-                      </>
+                      <ResetPasswordDialog userId={row.ownerId} email={row.ownerEmail} />
                     )}
                   </div>
                 </TableCell>
