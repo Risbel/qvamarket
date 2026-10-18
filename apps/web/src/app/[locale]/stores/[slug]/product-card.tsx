@@ -1,7 +1,6 @@
 import { EyeIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { EMPTY_PIXEL } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceTag } from "@/components/price-tag";
@@ -15,7 +14,6 @@ import { ProductCardCta } from "./product-card-actions";
  * A product in a storefront grid (catalog, search results, favorites). The image fills the
  * top of the card; the image and the eye button open the product, the call to action adds it
  * to the cart.
- * With a pointer, hovering the image shows the product's second image.
  * `size="sm"` is the compact card for denser rows (related products): smaller buttons and badge.
  */
 export async function ProductCard({
@@ -33,7 +31,6 @@ export async function ProductCard({
 }) {
   const t = await getTranslations("Store.catalog");
   const badge = product.soldOut ? t("soldOut") : product.price.promotion || product.price.compareAtMinor ? t("sale") : null;
-  const second = product.imageKey ? product.secondImageKey : null;
   const sm = size === "sm";
   return (
     <li className="flex">
@@ -43,39 +40,18 @@ export async function ProductCard({
               screen readers: the eye button is the same link with a proper label. */}
           <Link href={`/products/${product.slug}`} tabIndex={-1} aria-hidden className="block size-full">
             {product.imageKey ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed */}
-                <img
-                  src={publicUrl(product.imageKey)}
-                  alt={product.name}
-                  width={400}
-                  height={400}
-                  loading={eager ? "eager" : "lazy"}
-                  className={cn(
-                    "size-full object-cover transition duration-500",
-                    second ? "group-hover/image:opacity-0" : "group-hover/image:scale-105",
-                    product.soldOut && "opacity-60",
-                  )}
-                />
-                {second && (
-                  // Only screens with a pointer can hover: the others get the empty pixel, so a
-                  // phone never downloads the second image
-                  <picture>
-                    <source media="(hover: none)" srcSet={EMPTY_PIXEL} />
-                    <img
-                      src={publicUrl(second)}
-                      alt=""
-                      width={400}
-                      height={400}
-                      loading="lazy"
-                      className={cn(
-                        "absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-500 group-hover/image:opacity-100",
-                        product.soldOut && "group-hover/image:opacity-60",
-                      )}
-                    />
-                  </picture>
+              // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
+              <img
+                src={publicUrl(product.imageKey)}
+                alt={product.name}
+                width={400}
+                height={400}
+                loading={eager ? "eager" : "lazy"}
+                className={cn(
+                  "size-full object-cover transition duration-500 group-hover/image:scale-105",
+                  product.soldOut && "opacity-60",
                 )}
-              </>
+              />
             ) : (
               <div className="flex size-full items-center justify-center text-xs text-muted-foreground">{t("noImage")}</div>
             )}

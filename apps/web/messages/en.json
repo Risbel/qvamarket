@@ -532,6 +532,10 @@
     },
     "toasts": {
       "signedOut": "You have signed out."
+    },
+    "permissions": {
+      "denied": "Your role does not allow this action.",
+      "readOnly": "Read only: your role does not allow editing this section."
     }
   },
   "Products": {
@@ -1593,6 +1597,30 @@
       "previous": "Previous page",
       "next": "Next page",
       "last": "Last page"
+    }
+  },
+  "Roles": {
+    "presets": {
+      "manager": {
+        "name": "Manager",
+        "description": "Runs the shop: settings, catalog, orders and payments. Sees the team but cannot manage it."
+      },
+      "cashier": {
+        "name": "Sales clerk",
+        "description": "Serves customers: processes orders and takes payments. Sees the catalog without editing it."
+      },
+      "catalog": {
+        "name": "Catalog editor",
+        "description": "Keeps the catalog up to date: products, categories and promotions. No access to orders."
+      },
+      "dispatch": {
+        "name": "Dispatch",
+        "description": "Prepares and delivers orders: changes their status and sees whether they are paid."
+      },
+      "viewer": {
+        "name": "Read only",
+        "description": "Sees the whole shop without changing anything."
+      }
     }
   }
 }

@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { phoneCountryOptions } from "@/lib/countries";
 import { getStoreProfile } from "@/server/store-settings";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { StoreProfileForm } from "./store-profile-form";
 
@@ -11,7 +11,7 @@ export default async function GeneralSettingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const t = await getTranslations("Settings.profile");
   const profile = await getStoreProfile({ tenantId: merchant.tenantId, storeId: merchant.store.id });
 

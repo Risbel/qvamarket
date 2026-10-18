@@ -22,20 +22,26 @@ export type OrderStatusActionResult =
 const validationTranslator = (locale: string) =>
   getTranslations({ locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale, namespace: "Validation" });
 
-/** Changes an order's status (see changeOrderStatus); needs `order:update`. */
+/**
+ * Changes an order's status (see changeOrderStatus); needs `order:update`, or
+ * `order:cancel` to cancel it (cancelling gives stock back and is final).
+ */
 export async function changeOrderStatusAction(
   orderId: unknown,
   values: unknown,
   locale: string,
 ): Promise<OrderStatusActionResult> {
   const merchant = await getMerchantOrNull();
-  if (!merchant || !merchant.can({ order: ["update"] })) return { ok: false, error: "forbidden" };
+  if (!merchant || !merchant.can({ order: ["read"] })) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(orderId);
   if (!parsedId.success) return { ok: false, error: "notFound" };
   const t = await validationTranslator(locale);
   const parsed = createOrderStatusSchema(t).safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
+  }
+  if (!merchant.can({ order: [parsed.data.to === "cancelled" ? "cancel" : "update"] })) {
+    return { ok: false, error: "forbidden" };
   }
   try {
     return await changeOrderStatus(
@@ -56,10 +62,10 @@ export type PaymentActionResult =
       fieldErrors?: Record<string, string[]>;
     };
 
-/** Records a payment or refund on an order (see recordPayment); needs `order:update`. */
+/** Records a payment or refund on an order (see recordPayment); needs `payment:create`. */
 export async function recordPaymentAction(orderId: unknown, values: unknown, locale: string): Promise<PaymentActionResult> {
   const merchant = await getMerchantOrNull();
-  if (!merchant || !merchant.can({ order: ["update"] })) return { ok: false, error: "forbidden" };
+  if (!merchant || !merchant.can({ order: ["read"], payment: ["create"] })) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(orderId);
   if (!parsedId.success) return { ok: false, error: "notFound" };
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
@@ -90,10 +96,10 @@ export async function recordPaymentAction(orderId: unknown, values: unknown, loc
   }
 }
 
-/** Removes a payment record entered by mistake (see deletePayment); needs `order:update`. */
+/** Removes a payment record entered by mistake (see deletePayment); needs `payment:delete`. */
 export async function deletePaymentAction(orderId: unknown, paymentId: unknown): Promise<PaymentActionResult> {
   const merchant = await getMerchantOrNull();
-  if (!merchant || !merchant.can({ order: ["update"] })) return { ok: false, error: "forbidden" };
+  if (!merchant || !merchant.can({ order: ["read"], payment: ["delete"] })) return { ok: false, error: "forbidden" };
   const parsedOrder = z.uuid().safeParse(orderId);
   const parsedPayment = z.uuid().safeParse(paymentId);
   if (!parsedOrder.success || !parsedPayment.success) return { ok: false, error: "notFound" };

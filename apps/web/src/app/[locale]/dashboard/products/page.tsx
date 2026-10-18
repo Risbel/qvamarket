@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { mainImageKeys } from "@/server/product-images";
 import { listProductPrices, listProducts } from "@/server/products";
 import { publicUrl } from "@/server/storage";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { ProductsTable, type ProductRow } from "./products-table";
 
 export default async function ProductsPage({
@@ -15,7 +15,7 @@ export default async function ProductsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { product: ["read"] });
+  const merchant = await requirePanelSection(locale, "products");
   const t = await getTranslations("Products");
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
   const [products, prices] = await Promise.all([listProducts(scope), listProductPrices(scope)]);

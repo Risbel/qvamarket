@@ -2,14 +2,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { hasOrderFilters, parseOrderListParams } from "@/lib/order-list";
 import type { OrderStatus, PaymentStatus } from "@/lib/orders";
 import { countOrderFacets, listOrders } from "@/server/orders";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { OrdersTable, type OrderRow } from "./orders-table";
 
 export default async function OrdersPage({ params, searchParams }: PageProps<"/[locale]/dashboard/orders">) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { order: ["read"] });
+  const merchant = await requirePanelSection(locale, "orders");
   const t = await getTranslations("Orders");
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
 

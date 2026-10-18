@@ -13,6 +13,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { createPaymentSchema, type PaymentFormValues } from "@/lib/validation/payment";
 import { deletePaymentAction, recordPaymentAction, type PaymentActionResult } from "@/server/order-actions";
 import { DateTimePicker } from "@/components/date-time-picker";
+import { useCan } from "@/components/permissions/permissions-provider";
 import { LocalDateTime, localInputToIso } from "@/components/local-date-time";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,14 +76,12 @@ export function PaymentsSection({
   currency,
   totalMinor,
   cancelled,
-  canUpdate,
   payments,
 }: {
   orderId: string;
   currency: string;
   totalMinor: number;
   cancelled: boolean;
-  canUpdate: boolean;
   payments: PaymentRecord[];
 }) {
   const t = useTranslations("Orders.payments");
@@ -96,6 +95,9 @@ export function PaymentsSection({
 
   const money = (minor: number) => formatMoney(minor, currency, locale);
   const { refunded, net, due } = paymentTotals(totalMinor, payments);
+  const can = useCan();
+  const canRecord = can({ payment: ["create"] });
+  const canRemove = can({ payment: ["delete"] });
   const canPay = !cancelled && due > 0;
   const canRefund = net > 0;
 
@@ -116,7 +118,7 @@ export function PaymentsSection({
         <CardTitle>
           <h2 id="payments-title">{t("title")}</h2>
         </CardTitle>
-        {canUpdate && (canPay || canRefund) && (
+        {canRecord && (canPay || canRefund) && (
           <CardAction>
             <Button size="sm" variant="outline" disabled={!hydrated} onClick={() => setRecording(true)}>
               <PlusIcon />
@@ -163,7 +165,7 @@ export function PaymentsSection({
                     {p.kind === "refund" ? "−" : ""}
                     {money(p.amountMinor)}
                   </span>
-                  {canUpdate && (
+                  {canRemove && (
                     <Button
                       size="icon-sm"
                       variant="ghost"

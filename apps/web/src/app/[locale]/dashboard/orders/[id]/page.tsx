@@ -27,7 +27,8 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   if (!placed) notFound();
 
   const t = await getTranslations("Orders");
-  const canUpdate = merchant.can({ order: ["update"] });
+  const canChangeStatus = merchant.can({ order: ["update"] }) || merchant.can({ order: ["cancel"] });
+  const canSeePayments = merchant.can({ payment: ["read"] });
   const money = (minor: number) => formatMoney(minor, placed.currencyCode, locale);
   const status = (value: string) => t(`status.${value as OrderStatus}`);
   // wa.me wants the number with its country code and no "+"; only offered for a full number
@@ -59,7 +60,7 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
               {t(`fulfillment.${placed.fulfillmentType as "pickup" | "delivery"}`)}
             </p>
           </div>
-          {canUpdate && (
+          {canChangeStatus && (
             <StatusActions
               orderId={placed.id}
               reference={orderReference(placed.number)}
@@ -231,14 +232,15 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
             </CardContent>
           </Card>
 
-          <PaymentsSection
-            orderId={placed.id}
-            currency={placed.currencyCode}
-            totalMinor={placed.totalMinor}
-            cancelled={placed.status === "cancelled"}
-            canUpdate={canUpdate}
-            payments={placed.payments.map((p) => ({ ...p, paidAt: p.paidAt.toISOString() }))}
-          />
+          {canSeePayments && (
+            <PaymentsSection
+              orderId={placed.id}
+              currency={placed.currencyCode}
+              totalMinor={placed.totalMinor}
+              cancelled={placed.status === "cancelled"}
+              payments={placed.payments.map((p) => ({ ...p, paidAt: p.paidAt.toISOString() }))}
+            />
+          )}
 
           <Card role="region" aria-labelledby="history-title">
             <CardHeader>

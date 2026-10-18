@@ -11,6 +11,7 @@ import { isFinalStatus, nextStatuses, type OrderStatus } from "@/lib/orders";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createOrderStatusSchema, type OrderStatusValues } from "@/lib/validation/order-status";
 import { changeOrderStatusAction, type OrderStatusActionResult } from "@/server/order-actions";
+import { useCan } from "@/components/permissions/permissions-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,7 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 /**
  * Status buttons of an order: the next step in one click, later steps (skipping) in a menu,
  * and cancel. Completing and cancelling are final, so they ask for confirmation and take an
- * optional note for the history.
+ * optional note for the history. Moving forward needs `order:update`, cancelling
+ * `order:cancel`; the buttons a role does not allow are left out.
  */
 export function StatusActions({
   orderId,
@@ -49,10 +51,13 @@ export function StatusActions({
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState<OrderStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const can = useCan();
+  const canAdvance = can({ order: ["update"] });
+  const canCancel = can({ order: ["cancel"] });
 
   const options = nextStatuses(status, fulfillmentType);
   const [next] = options;
-  const skips = options.slice(1).filter((to) => to !== "cancelled");
+  const skips = canAdvance ? options.slice(1).filter((to) => to !== "cancelled") : [];
 
   async function change(values: OrderStatusValues): Promise<OrderStatusActionResult | null> {
     setBusy(true);
@@ -87,7 +92,7 @@ export function StatusActions({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        {next !== "cancelled" && (
+        {canAdvance && next !== "cancelled" && (
           <Button disabled={!hydrated || busy} onClick={() => choose(next)}>
             {t(`to.${next}`)}
           </Button>
@@ -107,9 +112,11 @@ export function StatusActions({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        <Button variant="destructive" disabled={!hydrated || busy} onClick={() => choose("cancelled")}>
-          {t("to.cancelled")}
-        </Button>
+        {canCancel && options.includes("cancelled") && (
+          <Button variant="destructive" disabled={!hydrated || busy} onClick={() => choose("cancelled")}>
+            {t("to.cancelled")}
+          </Button>
+        )}
       </div>
       {error && (
         <p role="alert" className="text-sm text-destructive">

@@ -532,6 +532,10 @@
     },
     "toasts": {
       "signedOut": "Sesión cerrada."
+    },
+    "permissions": {
+      "denied": "Tu rol no permite esta acción.",
+      "readOnly": "Solo lectura: tu rol no permite editar esta sección."
     }
   },
   "Products": {
@@ -1593,6 +1597,30 @@
       "previous": "Página anterior",
       "next": "Página siguiente",
       "last": "Última página"
+    }
+  },
+  "Roles": {
+    "presets": {
+      "manager": {
+        "name": "Gerente",
+        "description": "Lleva la tienda: ajustes, catálogo, pedidos y pagos. Ve el equipo, pero no lo gestiona."
+      },
+      "cashier": {
+        "name": "Dependiente",
+        "description": "Atiende a los clientes: procesa pedidos y cobra. Ve el catálogo sin editarlo."
+      },
+      "catalog": {
+        "name": "Editor de catálogo",
+        "description": "Mantiene el catálogo al día: productos, categorías y promociones. Sin acceso a pedidos."
+      },
+      "dispatch": {
+        "name": "Despacho",
+        "description": "Prepara y entrega los pedidos: cambia su estado y ve si están pagados."
+      },
+      "viewer": {
+        "name": "Solo lectura",
+        "description": "Ve toda la tienda sin poder cambiar nada."
+      }
     }
   }
 }

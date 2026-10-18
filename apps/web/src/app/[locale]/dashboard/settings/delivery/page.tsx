@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { minorToInput } from "@/lib/money";
 import { getDeliverySettings } from "@/server/delivery-settings";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { DeliveryAreaForm } from "./delivery-area-form";
 import { DeliveryChargesForm } from "./delivery-charges-form";
@@ -10,7 +10,7 @@ export default async function DeliverySettingsPage({ params }: PageProps<"/[loca
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const t = await getTranslations("Settings.delivery");
   const settings = await getDeliverySettings({ tenantId: merchant.tenantId, storeId: merchant.store.id });
   const currencies = merchant.store.currencies;

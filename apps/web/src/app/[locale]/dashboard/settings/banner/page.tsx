@@ -3,7 +3,7 @@ import { BANNER_DEVICES } from "@/lib/images";
 import { getSecondaryBannerVisible, listSecondaryPairs } from "@/server/secondary-banner";
 import { listBannerImages } from "@/server/store-banner";
 import { publicUrl } from "@/server/storage";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { BannerImages } from "./banner-images";
 import { BannerTabs } from "./banner-tabs";
@@ -22,7 +22,7 @@ export default async function BannerSettingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
   const [t, hero, pairs, visible, { tab }] = await Promise.all([
     getTranslations("Banner"),

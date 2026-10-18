@@ -1,5 +1,6 @@
 import { db, eq, organization, store, storeCurrency, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
+import { ensureCompanyRoles } from "./company-roles";
 
 // Building blocks shared by the two ways a merchant comes to exist: created by the
 // superadmin (createMerchant) or registering themselves (registerMerchant).
@@ -39,7 +40,7 @@ export async function findUnavailable(input: {
 
 /**
  * Creates the company (organization, `userId` becomes its owner: passing userId is a
- * server-side-only option) and its first store with the given status. If the store cannot
+ * server-side-only option), its preset roles and its first store with the given status. If the store cannot
  * be created the company is removed again and the error is rethrown; removing the user is
  * up to the caller, who created it.
  */
@@ -55,6 +56,7 @@ export async function createCompanyAndStore(
   });
 
   try {
+    await ensureCompanyRoles(company.id);
     const [created] = await db
       .insert(store)
       .values({

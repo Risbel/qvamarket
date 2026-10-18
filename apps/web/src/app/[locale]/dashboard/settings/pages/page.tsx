@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { MAX_STORE_PAGES } from "@/lib/store-pages";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { listStorePages } from "@/server/store-pages";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { DeletePageButton } from "./delete-page-button";
 
@@ -14,7 +14,7 @@ export default async function PagesSettingsPage({ params }: PageProps<"/[locale]
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const [t, pages, requestHeaders] = await Promise.all([
     getTranslations("Settings.pages"),
     listStorePages({ tenantId: merchant.tenantId, storeId: merchant.store.id }),

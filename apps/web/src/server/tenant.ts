@@ -3,7 +3,9 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
-import { can, type PermissionRequest } from "@/lib/permissions";
+import { hasPermissions, type PermissionRequest, type Permissions } from "@/lib/permissions";
+import { PANEL_ACCESS, type PanelSection } from "@/lib/panel-access";
+import { memberPermissions } from "./company-roles";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
 import { requireUser } from "./session";
 
@@ -28,7 +30,10 @@ export type MerchantContext = {
   /** organization.id: pass it to EVERY query on tenant data */
   tenantId: string;
   companyName: string;
+  /** member.role: role keys, comma-separated ("owner", "manager", "r-...") */
   role: string;
+  /** what the member's role(s) grant; check it with `can`, never the role name */
+  permissions: Permissions;
   /** the store the panel is working on (MVP: the company's first store) */
   store: MerchantStore;
   stores: MerchantStore[];
@@ -85,7 +90,8 @@ export const getMerchantContext = cache(
         baseCurrency: list.find((c) => c.isBase) ?? list.find((c) => c.isDefault) ?? list[0] ?? fallback,
       };
     });
-    return { ...membership, store: typed[0], stores: typed };
+    const permissions = await memberPermissions(membership.tenantId, membership.role);
+    return { ...membership, permissions, store: typed[0], stores: typed };
   },
 );
 
@@ -102,7 +108,7 @@ export async function requireMerchant(locale: string) {
     session,
     ...context,
     /** Does the member's role grant ALL of these permissions? e.g. can({ product: ["update"] }) */
-    can: (request: PermissionRequest) => can(context.role, request),
+    can: (request: PermissionRequest) => hasPermissions(context.permissions, request),
   };
 }
 
@@ -120,7 +126,7 @@ export async function getMerchantOrNull() {
   return {
     session,
     ...context,
-    can: (request: PermissionRequest) => can(context.role, request),
+    can: (request: PermissionRequest) => hasPermissions(context.permissions, request),
   };
 }
 
@@ -136,4 +142,9 @@ export async function requireMerchantPermission(
   const merchant = await requireMerchant(locale);
   if (!merchant.can(request)) notFound();
   return merchant;
+}
+
+/** requireMerchantPermission with the section's permission from PANEL_ACCESS. */
+export async function requirePanelSection(locale: string, section: PanelSection) {
+  return requireMerchantPermission(locale, PANEL_ACCESS[section]);
 }

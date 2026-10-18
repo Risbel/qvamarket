@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getFooterSettings } from "@/server/store-settings";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { FooterLinksForm } from "./footer-links-form";
 import { FooterSocialForm } from "./footer-social-form";
@@ -15,7 +15,7 @@ export default async function FooterSettingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const [t, footer, { tab }] = await Promise.all([
     getTranslations("Settings.footer"),
     getFooterSettings({ tenantId: merchant.tenantId, storeId: merchant.store.id }),

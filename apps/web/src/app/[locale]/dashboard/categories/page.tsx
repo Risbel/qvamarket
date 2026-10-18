@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { listCategories } from "@/server/categories";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { CategoriesManager } from "./categories-manager";
 
 export default async function CategoriesPage({
@@ -9,7 +9,7 @@ export default async function CategoriesPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { category: ["update"] });
+  const merchant = await requirePanelSection(locale, "categories");
   const t = await getTranslations("Categories");
   const categories = await listCategories({ tenantId: merchant.tenantId, storeId: merchant.store.id });
 

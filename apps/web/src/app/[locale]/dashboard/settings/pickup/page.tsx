@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getStoreProfile } from "@/server/store-settings";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { PickupForm } from "./pickup-form";
 
@@ -10,7 +10,7 @@ export default async function PickupSettingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const t = await getTranslations("Settings.pickup");
   const profile = await getStoreProfile({ tenantId: merchant.tenantId, storeId: merchant.store.id });
 

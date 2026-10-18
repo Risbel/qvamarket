@@ -53,6 +53,47 @@ export const currency = pgTable(
 );
 
 // ---------------------------------------------------------------------------------------
+// Company roles
+// ---------------------------------------------------------------------------------------
+
+/**
+ * A role a company defines for its team: a set of resource + action permissions
+ * (`{ "product": ["read", "update"], ... }`, validated by the app on write and on read).
+ * `member.role` (Better Auth) holds the role's `key`, which never changes on rename: a
+ * preset's key (`manager`, `cashier`...) or `r-<random>` for a custom role. `owner` is
+ * built into the app (every permission) and never stored here. `preset_key` = the preset
+ * the row was seeded from (null = created from scratch).
+ */
+export const companyRole = pgTable(
+  "company_role",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    permissions: jsonb("permissions").default({}).notNull(),
+    presetKey: text("preset_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("company_role_tenant_key_unique").on(table.tenantId, table.key),
+    uniqueIndex("company_role_tenant_name_unique").on(table.tenantId, sql`lower(${table.name})`),
+    check("company_role_key_format", sql`${table.key} ~ '^[a-z][a-z0-9-]{0,39}$' and ${table.key} <> 'owner'`),
+    check("company_role_name_not_empty", sql`length(trim(${table.name})) > 0`),
+    check("company_role_permissions_object", sql`jsonb_typeof(${table.permissions}) = 'object'`),
+  ],
+);
+
+// ---------------------------------------------------------------------------------------
 // Stores
 // ---------------------------------------------------------------------------------------
 

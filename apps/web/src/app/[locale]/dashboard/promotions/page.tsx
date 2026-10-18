@@ -4,7 +4,7 @@ import { LocalDateTime } from "@/components/local-date-time";
 import { buttonVariants } from "@/components/ui/button";
 import { promotionState } from "@/lib/promotions";
 import { listPromotions } from "@/server/promotions";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { PromotionRowActions } from "./promotion-row-actions";
 
 const stateStyle = {
@@ -18,7 +18,7 @@ export default async function PromotionsPage({ params }: PageProps<"/[locale]/da
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { promotion: ["update"] });
+  const merchant = await requirePanelSection(locale, "promotions");
   const t = await getTranslations("Promotions");
   const promotions = await listPromotions({ tenantId: merchant.tenantId, storeId: merchant.store.id });
   const now = new Date();

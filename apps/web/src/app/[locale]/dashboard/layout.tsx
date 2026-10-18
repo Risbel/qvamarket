@@ -4,7 +4,9 @@ import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { PanelShell } from "@/components/panel-shell";
 import type { PanelNavGroup, PanelNavKey } from "@/components/panel-sidebar";
 import { StoreStatusBanner } from "@/components/store-status-banner";
-import { can } from "@/lib/permissions";
+import { PANEL_ACCESS, type PanelSection } from "@/lib/panel-access";
+import { hasPermissions } from "@/lib/permissions";
+import { PermissionsProvider } from "@/components/permissions/permissions-provider";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { getMerchantContext } from "@/server/tenant";
 import { requireUser } from "@/server/session";
@@ -33,24 +35,13 @@ export default async function DashboardLayout({
   }
 
   // Only show what the member's role allows (the pages enforce it again on the server)
-  const allowed = (key: PanelNavKey, visible: boolean) => (visible ? [key] : []);
-  const groups: PanelNavGroup[] = [
-    { items: ["home", ...allowed("orders", can(context.role, { order: ["read"] }))] },
-    {
-      label: "catalog",
-      items: [
-        ...allowed("products", can(context.role, { product: ["read"] })),
-        ...allowed("categories", can(context.role, { category: ["update"] })),
-        ...allowed("promotions", can(context.role, { promotion: ["update"] })),
-      ],
-    },
-    {
-      label: "store",
-      items: [
-        ...allowed("settings", can(context.role, { store: ["update"] })),
-      ],
-    },
-  ].filter((group): group is PanelNavGroup => group.items.length > 0);
+  const allowed = (...sections: (PanelSection & PanelNavKey)[]) =>
+    sections.filter((section) => hasPermissions(context.permissions, PANEL_ACCESS[section]));
+  const groups = ([
+    { items: ["home", ...allowed("orders")] },
+    { label: "catalog", items: allowed("products", "categories", "promotions") },
+    { label: "store", items: allowed("settings") },
+  ] satisfies PanelNavGroup[]).filter((group) => group.items.length > 0);
 
   return (
     <PanelShell
@@ -71,7 +62,7 @@ export default async function DashboardLayout({
         </>
       }
     >
-      {children}
+      <PermissionsProvider permissions={context.permissions}>{children}</PermissionsProvider>
     </PanelShell>
   );
 }

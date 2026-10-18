@@ -42,13 +42,6 @@ const mainImage = sql<string | null>`(
   order by pi.position asc limit 1
 )`;
 
-/** the image shown when the pointer is over a card (desktop) */
-const secondImage = sql<string | null>`(
-  select pi.storage_key from product_image pi
-  where pi.product_id = ${product.id} and pi.tenant_id = ${product.tenantId}
-  order by pi.position asc limit 1 offset 1
-)`;
-
 type VariantRow = { id: string; productId: string; stock: number | null; isDefault: boolean; title: string | null; position: number };
 
 async function variantsOf(productIds: string[]): Promise<Map<string, VariantRow[]>> {
@@ -75,7 +68,6 @@ export type PublicListItem = {
   slug: string;
   name: string;
   imageKey: string | null;
-  secondImageKey: string | null;
   categoryId: string | null;
   /**
    * The variant a card can add to the cart without opening the product: set only when exactly
@@ -98,7 +90,6 @@ type ListRow = {
   name: string;
   categoryId: string | null;
   imageKey: string | null;
-  secondImageKey: string | null;
 };
 
 /** Prices the rows in a currency (cheapest variant, 1 unit); rows not sold in it are dropped. */
@@ -137,7 +128,6 @@ export async function listPublicCatalog(
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
-      secondImageKey: secondImage,
     })
     .from(product)
     .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
@@ -171,7 +161,6 @@ export async function listPublicProductsByIds(storeId: string, currencyCode: str
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
-      secondImageKey: secondImage,
     })
     .from(product)
     .innerJoin(store, and(eq(store.id, product.storeId), eq(store.tenantId, product.tenantId)))
@@ -202,7 +191,6 @@ export async function searchPublicCatalog(
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
-      secondImageKey: secondImage,
       tags: product.tags,
       description: product.description,
       // A hidden category does not exist for the public, so its name finds nothing
@@ -220,7 +208,7 @@ export async function searchPublicCatalog(
     .sort((a, b) => b.score - a.score) // stable: equal scores stay newest first
     // Only the best ones get priced; some extra, since products not sold in this currency drop out
     .slice(0, limit * 2)
-    .map(({ row: { id, slug, name, categoryId, imageKey, secondImageKey } }) => ({ id, slug, name, categoryId, imageKey, secondImageKey }));
+    .map(({ row: { id, slug, name, categoryId, imageKey } }) => ({ id, slug, name, categoryId, imageKey }));
   return (await toListItems(storeId, currencyCode, matches)).slice(0, limit);
 }
 
@@ -245,7 +233,6 @@ export async function listRelatedProducts(
       name: product.name,
       categoryId: product.categoryId,
       imageKey: mainImage,
-      secondImageKey: secondImage,
       tags: product.tags,
     })
     .from(product)
@@ -266,7 +253,7 @@ export async function listRelatedProducts(
     .sort((a, b) => b.score - a.score) // stable: equal scores stay newest first
     // Some extra: products not sold in this currency drop out, sold-out ones go last
     .slice(0, limit * 3)
-    .map(({ row: { id, slug, name, categoryId, imageKey, secondImageKey } }) => ({ id, slug, name, categoryId, imageKey, secondImageKey }));
+    .map(({ row: { id, slug, name, categoryId, imageKey } }) => ({ id, slug, name, categoryId, imageKey }));
   const items = await toListItems(storeId, currencyCode, candidates);
   return items.sort((a, b) => Number(a.soldOut) - Number(b.soldOut)).slice(0, limit);
 }

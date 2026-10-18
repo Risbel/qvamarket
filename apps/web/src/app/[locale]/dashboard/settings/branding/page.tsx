@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DEFAULT_ACCENT, DEFAULT_PRIMARY } from "@/lib/color";
 import { publicUrl } from "@/server/storage";
-import { requireMerchantPermission } from "@/server/tenant";
+import { requirePanelSection } from "@/server/tenant";
 import { SectionHeader } from "../section-header";
 import { BrandingForm } from "./branding-form";
 import { BrandImageUploader } from "./brand-image-uploader";
@@ -12,7 +12,7 @@ export default async function BrandingPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { store: ["update"] });
+  const merchant = await requirePanelSection(locale, "settings");
   const t = await getTranslations("Branding");
   const { store } = merchant;
   const logoUrl = store.logoKey ? publicUrl(store.logoKey) : null;

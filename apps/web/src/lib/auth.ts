@@ -2,8 +2,32 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
 import { admin, organization } from "better-auth/plugins";
+import { createAccessControl } from "better-auth/plugins/access";
+import { defaultStatements, ownerAc } from "better-auth/plugins/organization/access";
 import { db } from "@qvashop/db";
-import { ac, companyRoles } from "./permissions";
+import { OWNER_PERMISSIONS, statement } from "./permissions";
+
+// The organization plugin only needs to know `owner` (the creator's role). Company roles
+// and their permissions live in the company_role table and are checked by the app
+// (permissions.ts, getMerchantContext), never through the plugin.
+const ac = createAccessControl({ ...defaultStatements, ...statement });
+const owner = ac.newRole({ ...ownerAc.statements, ...OWNER_PERMISSIONS });
+
+// The plugin's HTTP endpoints that create companies or change members, roles or
+// invitations. Our own server code does all of that (tenant checks, permissions, the
+// company_role table), so a browser must not reach them.
+const organizationWritePaths = [
+  "create",
+  "update",
+  "delete",
+  "invite-member",
+  "accept-invitation",
+  "reject-invitation",
+  "cancel-invitation",
+  "remove-member",
+  "update-member-role",
+  "leave",
+].map((path) => `/organization/${path}`);
 
 // Auth runs on the platform's own host and on every store subdomain (customers sign in on
 // <slug>.<root>, with host-only cookies). The base URL is resolved per request from the
@@ -23,7 +47,7 @@ export const auth = betterAuth({
   // Accounts are only created by our own server code (merchant signup, customer signup,
   // the superadmin), which applies rate limits and creates the matching records. The public
   // endpoint would let anyone create bare accounts around those checks.
-  disabledPaths: ["/sign-up/email"],
+  disabledPaths: ["/sign-up/email", ...organizationWritePaths],
   user: {
     additionalFields: {
       // Set by the superadmin when creating a merchant with a temporary password.
@@ -39,8 +63,7 @@ export const auth = betterAuth({
     // Impersonation sessions are short; every start/stop is logged (impersonation_log)
     admin({ impersonationSessionDuration: 60 * 30 }),
     // A company (tenant) is an organization; its stores reference organization.id.
-    // Company roles and their permissions are defined in permissions.ts
-    organization({ ac, roles: companyRoles }),
+    organization({ ac, roles: { owner } }),
     nextCookies(), // must be the last plugin
   ],
 });

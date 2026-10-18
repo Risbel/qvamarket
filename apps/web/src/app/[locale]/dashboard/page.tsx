@@ -11,7 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { countProductsByStatus } from "@/server/products";
-import { can } from "@/lib/permissions";
+import { PANEL_ACCESS } from "@/lib/panel-access";
+import { hasPermissions } from "@/lib/permissions";
 import { requireUser } from "@/server/session";
 import { getMerchantContext } from "@/server/tenant";
 import { SignOutButton } from "./sign-out-button";
@@ -44,7 +45,7 @@ export default async function DashboardPage({
     );
   }
 
-  const canSeeProducts = can(merchant.role, { product: ["read"] });
+  const canSeeProducts = hasPermissions(merchant.permissions, PANEL_ACCESS.products);
   const counts = canSeeProducts
     ? await countProductsByStatus({
         tenantId: merchant.tenantId,
