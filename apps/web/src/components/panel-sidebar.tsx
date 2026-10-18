@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Store,
   UserPlus,
+  Users,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ const ITEMS = {
   categories: { href: "/dashboard/categories", icon: FolderTree, exact: false },
   promotions: { href: "/dashboard/promotions", icon: BadgePercent, exact: false },
   settings: { href: "/dashboard/settings", icon: Settings, exact: false },
+  team: { href: "/dashboard/team", icon: Users, exact: false },
   roles: { href: "/dashboard/roles", icon: ShieldCheck, exact: false },
   stores: { href: "/admin", icon: Store, exact: true },
   newMerchant: { href: "/admin/merchants/new", icon: UserPlus, exact: false },

@@ -1,0 +1,189 @@
+import { and, asc, companyRole, db, eq, member, user } from "@qvashop/db";
+import { auth } from "@/lib/auth";
+import { generateTemporaryPassword } from "@/lib/passwords";
+import { OWNER_ROLE, hasPermissions, isOwner, normalizePermissions, type Permissions } from "@/lib/permissions";
+import type { TeamMemberValues } from "@/lib/validation/team";
+import { lockCompany, memberPermissions, type Tx } from "./company-roles";
+import { removeUser } from "./provisioning";
+
+// The company's team (Team page). Every function takes the tenantId from getMerchantOrNull();
+// `actor` is who is acting. Rules, all checked here (the page only hides buttons):
+// - nobody acts on themselves or on an owner (the owner role is never given or taken here);
+// - nobody acts on a member whose permissions exceed their own, nor gives a role that does;
+// - only roles of this company can be given.
+// Membership writes lock the company's organization row, like role writes (company-roles.ts),
+// so a role cannot be deleted while it is being given.
+
+export type TeamActor = { userId: string; permissions: Permissions };
+
+export type TeamMemberRow = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  /** member.role: role keys, comma-separated */
+  role: string;
+  joinedAt: Date;
+  mustChangePassword: boolean;
+};
+
+export async function listTeamMembers(tenantId: string): Promise<TeamMemberRow[]> {
+  return db
+    .select({
+      id: member.id,
+      userId: member.userId,
+      name: user.name,
+      email: user.email,
+      role: member.role,
+      joinedAt: member.createdAt,
+      mustChangePassword: user.mustChangePassword,
+    })
+    .from(member)
+    .innerJoin(user, eq(user.id, member.userId))
+    .where(eq(member.organizationId, tenantId))
+    .orderBy(asc(member.createdAt));
+}
+
+type RoleCheck = "roleNotFound" | "escalation" | null;
+
+/** Can `actor` give the company role `roleKey`? (it exists, is not owner, grants nothing more) */
+async function checkGrantable(executor: typeof db | Tx, tenantId: string, actor: TeamActor, roleKey: string): Promise<RoleCheck> {
+  if (roleKey === OWNER_ROLE) return "roleNotFound";
+  const [role] = await executor
+    .select({ permissions: companyRole.permissions })
+    .from(companyRole)
+    .where(and(eq(companyRole.tenantId, tenantId), eq(companyRole.key, roleKey)));
+  if (!role) return "roleNotFound";
+  return hasPermissions(actor.permissions, normalizePermissions(role.permissions)) ? null : "escalation";
+}
+
+type TargetError = "notFound" | "self" | "owner" | "escalation";
+
+/** The member `memberId` of the company, if `actor` may act on them. */
+type Target = { id: string; userId: string; role: string; email: string };
+
+async function findTarget(
+  executor: typeof db | Tx,
+  tenantId: string,
+  actor: TeamActor,
+  memberId: string,
+): Promise<{ error: TargetError } | { target: Target }> {
+  const [target] = await executor
+    .select({ id: member.id, userId: member.userId, role: member.role, email: user.email, platformRole: user.role })
+    .from(member)
+    .innerJoin(user, eq(user.id, member.userId))
+    .where(and(eq(member.organizationId, tenantId), eq(member.id, memberId)));
+  // A superadmin account is never managed from a company's team page
+  if (!target || target.platformRole === "admin") return { error: "notFound" };
+  if (target.userId === actor.userId) return { error: "self" };
+  if (isOwner(target.role)) return { error: "owner" };
+  const permissions = await memberPermissions(tenantId, target.role, executor);
+  if (!hasPermissions(actor.permissions, permissions)) return { error: "escalation" };
+  return { target };
+}
+
+export type AddMemberResult =
+  | { ok: true; email: string; temporaryPassword: string }
+  | { ok: false; error: "emailTaken" | "roleNotFound" | "escalation" };
+
+/**
+ * Creates the member's account (temporary password, must change it on first login) and adds
+ * it to the company with `roleKey`. No email provider: the credentials are returned once, to
+ * be handed over by the owner. An email that already has an account is refused: an existing
+ * account (maybe a customer's) is never attached to a company without its owner's consent.
+ * The account is created through Better Auth (no session is created, so the actor's own
+ * session is untouched) and removed again if adding the member fails.
+ */
+export async function addTeamMember(tenantId: string, actor: TeamActor, values: TeamMemberValues): Promise<AddMemberResult> {
+  const grantable = await checkGrantable(db, tenantId, actor, values.roleKey);
+  if (grantable) return { ok: false, error: grantable };
+  const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.email, values.email)).limit(1);
+  if (existing) return { ok: false, error: "emailTaken" };
+
+  const temporaryPassword = generateTemporaryPassword();
+  let userId: string | undefined;
+  try {
+    // Without headers this is a trusted server call (no admin session needed)
+    const created = await auth.api.createUser({
+      body: { email: values.email, password: temporaryPassword, name: values.name, role: "user" },
+    });
+    userId = created.user.id;
+    await db.update(user).set({ mustChangePassword: true }).where(eq(user.id, userId));
+    const newUserId = userId;
+    const refused = await db.transaction(async (tx) => {
+      await lockCompany(tx, tenantId);
+      // The role may have been deleted or changed since the first check
+      const check = await checkGrantable(tx, tenantId, actor, values.roleKey);
+      if (check) return check;
+      await tx.insert(member).values({ organizationId: tenantId, userId: newUserId, role: values.roleKey, createdAt: new Date() });
+      return null;
+    });
+    if (refused) {
+      await removeUser(userId);
+      return { ok: false, error: refused };
+    }
+    return { ok: true, email: values.email, temporaryPassword };
+  } catch (error) {
+    if (userId) await removeUser(userId);
+    // Another request created that account in the meantime
+    const [taken] = await db.select({ id: user.id }).from(user).where(eq(user.email, values.email)).limit(1);
+    if (taken) return { ok: false, error: "emailTaken" };
+    throw error;
+  }
+}
+
+export type MemberActionResult = { ok: true } | { ok: false; error: TargetError | "roleNotFound" };
+
+/** Gives a member another company role (replacing what they had). */
+export async function changeMemberRole(tenantId: string, actor: TeamActor, memberId: string, roleKey: string): Promise<MemberActionResult> {
+  return db.transaction(async (tx) => {
+    await lockCompany(tx, tenantId);
+    const found = await findTarget(tx, tenantId, actor, memberId);
+    if ("error" in found) return { ok: false, error: found.error } as const;
+    const check = await checkGrantable(tx, tenantId, actor, roleKey);
+    if (check) return { ok: false, error: check } as const;
+    await tx.update(member).set({ role: roleKey }).where(and(eq(member.organizationId, tenantId), eq(member.id, memberId)));
+    return { ok: true } as const;
+  });
+}
+
+export type ResetMemberPasswordResult =
+  | { ok: true; email: string; temporaryPassword: string }
+  | { ok: false; error: TargetError };
+
+/**
+ * Gives a member a new temporary password (MVP recovery: no email provider). Same order as
+ * the superadmin's reset: the forced-change flag first, so a failure later never leaves the
+ * member signed in with a password they do not know; their sessions are ended last.
+ */
+export async function resetMemberPassword(tenantId: string, actor: TeamActor, memberId: string): Promise<ResetMemberPasswordResult> {
+  const found = await findTarget(db, tenantId, actor, memberId);
+  if ("error" in found) return { ok: false, error: found.error };
+  const { target } = found;
+
+  const temporaryPassword = generateTemporaryPassword();
+  const context = await auth.$context;
+  await db.update(user).set({ mustChangePassword: true }).where(eq(user.id, target.userId));
+  await context.internalAdapter.updatePassword(target.userId, await context.password.hash(temporaryPassword));
+  await context.internalAdapter.deleteUserSessions(target.userId);
+  return { ok: true, email: target.email, temporaryPassword };
+}
+
+/**
+ * Removes a member from the company and ends their sessions. The account stays: order
+ * history and payment records keep pointing at it (who did what), and it may also be the
+ * person's shopping account. So the same email cannot be added again (`emailTaken`).
+ */
+export async function removeTeamMember(tenantId: string, actor: TeamActor, memberId: string): Promise<MemberActionResult> {
+  const removed = await db.transaction(async (tx): Promise<{ error: TargetError } | { userId: string }> => {
+    await lockCompany(tx, tenantId);
+    const found = await findTarget(tx, tenantId, actor, memberId);
+    if ("error" in found) return { error: found.error };
+    await tx.delete(member).where(and(eq(member.organizationId, tenantId), eq(member.id, memberId)));
+    return { userId: found.target.userId };
+  });
+  if ("error" in removed) return { ok: false, error: removed.error };
+  const context = await auth.$context;
+  await context.internalAdapter.deleteUserSessions(removed.userId);
+  return { ok: true };
+}

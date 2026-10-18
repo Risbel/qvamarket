@@ -516,7 +516,8 @@
       "promotions": "Promotions",
       "stores": "Merchants",
       "newMerchant": "New merchant",
-      "roles": "Roles"
+      "roles": "Roles",
+      "team": "Team"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -1726,6 +1727,71 @@
         "name": "Read only",
         "description": "Sees the whole shop without changing anything."
       }
+    }
+  },
+  "Team": {
+    "title": "Team",
+    "description": "The people who work in your store and the role of each.",
+    "add": "Add member",
+    "addTitle": "Add member",
+    "addDescription": "We create their account with a temporary password; they will have to change it the first time they sign in.",
+    "addSubmit": "Add",
+    "adding": "Adding…",
+    "addedTitle": "Member added",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "you": "You",
+    "owner": "Owner",
+    "unknownRole": "Deleted role",
+    "joined": "Joined",
+    "pendingPassword": "Has not changed the temporary password yet",
+    "rolesHint": "What each role can do is set in <link>Roles</link>.",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "E.g. Maria Perez",
+      "email": "Email",
+      "emailPlaceholder": "E.g. maria@example.com",
+      "emailHelp": "They will sign in to the panel with this email. It must not have a QvaShop account yet.",
+      "role": "Role",
+      "rolePlaceholder": "Choose a role"
+    },
+    "credentials": {
+      "warning": "Hand these details over now: the password will not be shown again. They will choose a new one when signing in.",
+      "email": "Email",
+      "password": "Temporary password",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "actions": {
+      "menu": "Actions for {name}",
+      "changeRole": "Change role",
+      "resetPassword": "Reset password",
+      "remove": "Remove from team"
+    },
+    "changeRoleTitle": "Change the role of {name}",
+    "changeRoleDescription": "The change applies on their next action in the panel.",
+    "resetTitle": "Reset password",
+    "resetConfirm": "{name} ({email}) will get a new temporary password and their open sessions will be ended.",
+    "resetSubmit": "Reset",
+    "resetting": "Resetting…",
+    "resetDoneTitle": "Password reset",
+    "removeTitle": "Remove from team",
+    "removeConfirm": "{name} will lose access to the panel and their sessions will be ended. Their account is not deleted: the orders and payments they handled keep showing their name.",
+    "toasts": {
+      "added": "{name} has been added to the team.",
+      "roleChanged": "{name}'s role changed.",
+      "removed": "{name} is no longer on the team."
+    },
+    "errors": {
+      "forbidden": "Your role does not allow this action.",
+      "notFound": "This person is no longer on the team.",
+      "self": "You cannot change your own access.",
+      "owner": "The owner's access cannot be changed.",
+      "escalation": "You cannot give or manage permissions you do not have.",
+      "roleNotFound": "That role no longer exists. Choose another one.",
+      "emailTaken": "That email already has an account. Use another one.",
+      "failed": "Could not complete it. Please try again."
     }
   }
 }

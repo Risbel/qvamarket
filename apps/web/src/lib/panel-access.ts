@@ -11,6 +11,7 @@ export const PANEL_ACCESS = {
   categories: { category: ["update"] },
   promotions: { promotion: ["update"] },
   settings: { store: ["update"] },
+  team: { team: ["read"] },
   roles: { role: ["read"] },
 } as const satisfies Record<string, PermissionRequest>;
 

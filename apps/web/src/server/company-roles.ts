@@ -21,7 +21,7 @@ import { routing } from "@/i18n/routing";
 // getMerchantOrNull(). Writes lock the company's organization row, so the roles limit, the
 // "in use" check and member role changes (team page) are serialized per company.
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Seeds the preset roles (ROLE_PRESETS, named in `locale`) into a company that has no roles
@@ -54,11 +54,15 @@ export async function ensureCompanyRoles(tenantId: string, locale: string = rout
  * The permissions are re-checked on read (normalizePermissions), the DB only knows the
  * column is an object.
  */
-export async function memberPermissions(tenantId: string, roleString: string): Promise<Permissions> {
+export async function memberPermissions(
+  tenantId: string,
+  roleString: string,
+  executor: typeof db | Tx = db,
+): Promise<Permissions> {
   if (isOwner(roleString)) return OWNER_PERMISSIONS;
   const keys = roleKeys(roleString);
   if (keys.length === 0) return {};
-  const rows = await db
+  const rows = await executor
     .select({ permissions: companyRole.permissions })
     .from(companyRole)
     .where(and(eq(companyRole.tenantId, tenantId), inArray(companyRole.key, keys)));
@@ -135,7 +139,8 @@ function nameTaken(error: unknown) {
   return inner?.code === "23505" && inner?.constraint === "company_role_tenant_name_unique";
 }
 
-async function lockCompany(tx: Tx, tenantId: string) {
+/** Serializes a company's role and membership writes (see the note at the top). */
+export async function lockCompany(tx: Tx, tenantId: string) {
   await tx.select({ id: organization.id }).from(organization).where(eq(organization.id, tenantId)).for("no key update");
 }
 

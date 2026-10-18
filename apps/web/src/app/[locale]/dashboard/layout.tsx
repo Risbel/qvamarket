@@ -41,7 +41,7 @@ export default async function DashboardLayout({
     { items: ["home", ...allowed("orders")] },
     { label: "catalog", items: allowed("products", "categories", "promotions") },
     { label: "store", items: allowed("settings") },
-    { label: "team", items: allowed("roles") },
+    { label: "team", items: allowed("team", "roles") },
   ] satisfies PanelNavGroup[]).filter((group) => group.items.length > 0);
 
   return (

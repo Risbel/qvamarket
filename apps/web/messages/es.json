@@ -516,7 +516,8 @@
       "promotions": "Promociones",
       "stores": "Comercios",
       "newMerchant": "Nuevo comercio",
-      "roles": "Roles"
+      "roles": "Roles",
+      "team": "Equipo"
     },
     "status": {
       "pending": "Tu tienda está pendiente de aprobación. Puedes preparar tus productos y tu marca; no será visible para el público hasta que la aprobemos.",
@@ -1726,6 +1727,71 @@
         "name": "Solo lectura",
         "description": "Ve toda la tienda sin poder cambiar nada."
       }
+    }
+  },
+  "Team": {
+    "title": "Equipo",
+    "description": "Las personas que trabajan en tu tienda y el rol de cada una.",
+    "add": "Añadir miembro",
+    "addTitle": "Añadir miembro",
+    "addDescription": "Creamos su cuenta con una contraseña temporal; tendrá que cambiarla la primera vez que entre.",
+    "addSubmit": "Añadir",
+    "adding": "Añadiendo…",
+    "addedTitle": "Miembro añadido",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "you": "Tú",
+    "owner": "Propietario",
+    "unknownRole": "Rol eliminado",
+    "joined": "Se unió el",
+    "pendingPassword": "Aún no ha cambiado la contraseña temporal",
+    "rolesHint": "Lo que puede hacer cada rol se define en <link>Roles</link>.",
+    "form": {
+      "name": "Nombre",
+      "namePlaceholder": "Ej.: María Pérez",
+      "email": "Correo",
+      "emailPlaceholder": "Ej.: maria@ejemplo.com",
+      "emailHelp": "Con este correo entrará en el panel. Debe ser uno que todavía no tenga cuenta en QvaShop.",
+      "role": "Rol",
+      "rolePlaceholder": "Elige un rol"
+    },
+    "credentials": {
+      "warning": "Entrégale estos datos ahora: la contraseña no se volverá a mostrar. Al entrar tendrá que elegir una nueva.",
+      "email": "Correo",
+      "password": "Contraseña temporal",
+      "copy": "Copiar",
+      "copied": "Copiado"
+    },
+    "actions": {
+      "menu": "Acciones de {name}",
+      "changeRole": "Cambiar rol",
+      "resetPassword": "Restablecer contraseña",
+      "remove": "Quitar del equipo"
+    },
+    "changeRoleTitle": "Cambiar el rol de {name}",
+    "changeRoleDescription": "El cambio se aplica en su próxima acción en el panel.",
+    "resetTitle": "Restablecer contraseña",
+    "resetConfirm": "{name} ({email}) recibirá una contraseña temporal nueva y se cerrarán sus sesiones abiertas.",
+    "resetSubmit": "Restablecer",
+    "resetting": "Restableciendo…",
+    "resetDoneTitle": "Contraseña restablecida",
+    "removeTitle": "Quitar del equipo",
+    "removeConfirm": "{name} dejará de tener acceso al panel y se cerrarán sus sesiones. Su cuenta no se elimina: los pedidos y pagos que gestionó siguen mostrando su nombre.",
+    "toasts": {
+      "added": "{name} se ha añadido al equipo.",
+      "roleChanged": "Rol de {name} cambiado.",
+      "removed": "{name} ya no forma parte del equipo."
+    },
+    "errors": {
+      "forbidden": "Tu rol no permite esta acción.",
+      "notFound": "Esta persona ya no forma parte del equipo.",
+      "self": "No puedes cambiar tu propio acceso.",
+      "owner": "El acceso del propietario no se puede cambiar.",
+      "escalation": "No puedes dar ni gestionar permisos que tú no tienes.",
+      "roleNotFound": "Ese rol ya no existe. Elige otro.",
+      "emailTaken": "Ese correo ya tiene una cuenta. Usa otro.",
+      "failed": "No se pudo completar. Inténtalo de nuevo."
     }
   }
 }
