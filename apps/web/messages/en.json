@@ -476,6 +476,31 @@
         "suspended": "Store \"{name}\" suspended.",
         "reactivated": "Store \"{name}\" reactivated: it is public again."
       }
+    },
+    "deleteStore": {
+      "button": "Delete",
+      "title": "Delete “{name}” for good",
+      "description": "It is removed from the database and cannot be undone. This deletes:",
+      "removes": {
+        "catalog": "Products, variants, prices, categories and promotions.",
+        "orders": "All its orders, with their items, payments and history.",
+        "settings": "Settings, currencies, home delivery, banners, footer and pages.",
+        "files": "Logo, banners and product images from storage."
+      },
+      "keeps": "The company, its team, roles and customers are kept.",
+      "confirmLabel": "Type {slug} to confirm",
+      "cancel": "Cancel",
+      "submit": "Delete store",
+      "deleting": "Deleting...",
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "notFound": "The store no longer exists.",
+        "confirmation": "The subdomain you typed does not match.",
+        "failed": "Could not delete the store. Please try again."
+      },
+      "toasts": {
+        "deleted": "Store \"{name}\" deleted."
+      }
     }
   },
   "ChangePassword": {
@@ -556,12 +581,35 @@
     "title": "Stores",
     "description": "The stores of {company}. Open one to manage its orders, catalog and settings.",
     "empty": "No stores yet",
-    "emptyDescription": "This company does not have any store yet.",
+    "emptyDescription": "Create this company's first store.",
+    "emptyDescriptionMember": "This company does not have any store yet. Its owner can create one.",
     "open": "Open",
     "status": {
       "pending": "Pending",
       "active": "Active",
       "suspended": "Suspended"
+    },
+    "create": {
+      "button": "Create store",
+      "title": "New store",
+      "description": "One more store of this company: it shares the team and roles, and has its own catalog, orders and settings.",
+      "name": "Store name",
+      "namePlaceholder": "E.g. Ana's Sweets Vedado",
+      "slug": "Subdomain",
+      "slugPlaceholder": "anas-sweets-vedado",
+      "slugHelp": "The store will be at {url}. Lowercase letters, numbers and hyphens only.",
+      "approvalNotice": "We review every store before publishing it. Meanwhile you can add products and customize its brand.",
+      "cancel": "Cancel",
+      "submit": "Create store",
+      "submitting": "Creating…",
+      "toasts": {
+        "created": "Store “{name}” created."
+      },
+      "errors": {
+        "limit": "This company already has the maximum number of stores.",
+        "forbidden": "Only the company's owner can create stores.",
+        "failed": "Could not create the store. Please try again."
+      }
     }
   },
   "Products": {

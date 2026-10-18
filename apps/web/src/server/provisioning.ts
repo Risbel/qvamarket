@@ -1,6 +1,6 @@
 import { db, eq, organization, store, storeCurrency, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
-import { ensureCompanyRoles } from "./company-roles";
+import { ensureCompanyRoles, type Tx } from "./company-roles";
 
 // Building blocks shared by the two ways a merchant comes to exist: created by the
 // superadmin (createMerchant) or registering themselves (registerMerchant).
@@ -57,27 +57,44 @@ export async function createCompanyAndStore(
 
   try {
     await ensureCompanyRoles(company.id);
-    const [created] = await db
-      .insert(store)
-      .values({
-        tenantId: company.id,
-        slug: input.storeSlug,
-        name: input.storeName,
-        status,
-      })
-      .returning({ id: store.id });
-    await db.insert(storeCurrency).values({
-      storeId: created.id,
-      tenantId: company.id,
-      currencyCode,
-      isDefault: true,
-      isBase: true,
-    });
-    return { tenantId: company.id, storeId: created.id };
+    const storeId = await insertStore(db, company.id, input, status, currencyCode);
+    return { tenantId: company.id, storeId };
   } catch (error) {
     await db.delete(organization).where(eq(organization.id, company.id));
     throw error;
   }
+}
+
+/**
+ * Inserts a store of `tenantId` with its first (default and base) currency. Throws the
+ * unique violation `store_slug_unique` when the subdomain is taken (see isSlugTaken).
+ */
+export async function insertStore(
+  executor: typeof db | Tx,
+  tenantId: string,
+  input: { storeName: string; storeSlug: string },
+  status: StoreStatus,
+  currencyCode = "USD",
+) {
+  const [created] = await executor
+    .insert(store)
+    .values({ tenantId, slug: input.storeSlug, name: input.storeName, status })
+    .returning({ id: store.id });
+  await executor.insert(storeCurrency).values({
+    storeId: created.id,
+    tenantId,
+    currencyCode,
+    isDefault: true,
+    isBase: true,
+  });
+  return created.id;
+}
+
+/** Is this error the store subdomain's unique constraint? */
+export function isSlugTaken(error: unknown) {
+  const e = error as { code?: string; constraint?: string; cause?: { code?: string; constraint?: string } };
+  const inner = e?.cause ?? e;
+  return inner?.code === "23505" && inner?.constraint === "store_slug_unique";
 }
 
 /** Removes a user created during a failed provisioning (sessions and accounts cascade). */

@@ -5,11 +5,12 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { storePath } from "@/lib/panel-paths";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { publicUrl } from "@/server/storage";
 import { requireCompany } from "@/server/tenant";
+import { CreateStoreDialog } from "./create-store-dialog";
 
 /** The company's home: its stores (open one to work on it), or an empty state. */
 export default async function CompanyStoresPage({ params }: PageProps<"/[locale]/dashboard/org/[orgId]">) {
@@ -18,12 +19,19 @@ export default async function CompanyStoresPage({ params }: PageProps<"/[locale]
   const company = await requireCompany(locale, orgId);
   const t = await getTranslations("Stores");
   const host = (await headers()).get("host");
+  // The public address around the subdomain, for the create form's hint
+  const [urlStart, urlEnd] = buildStoreUrl("__slug__", host).split("__slug__");
+  // Only owners create stores (decided 2026-10: not a permission, no other role can)
+  const create = company.isOwner && <CreateStoreDialog url={[urlStart, urlEnd]} />;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("description", { company: company.companyName })}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("description", { company: company.companyName })}</p>
+        </div>
+        {company.stores.length > 0 && create}
       </div>
 
       {company.stores.length === 0 ? (
@@ -33,8 +41,9 @@ export default async function CompanyStoresPage({ params }: PageProps<"/[locale]
               <Store aria-hidden />
             </EmptyMedia>
             <EmptyTitle>{t("empty")}</EmptyTitle>
-            <EmptyDescription>{t("emptyDescription")}</EmptyDescription>
+            <EmptyDescription>{t(company.isOwner ? "emptyDescription" : "emptyDescriptionMember")}</EmptyDescription>
           </EmptyHeader>
+          {create && <EmptyContent>{create}</EmptyContent>}
         </Empty>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

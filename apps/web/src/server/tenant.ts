@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
-import { hasPermissions, type PermissionRequest, type Permissions } from "@/lib/permissions";
+import { hasPermissions, isOwner, type PermissionRequest, type Permissions } from "@/lib/permissions";
 import { PANEL_ACCESS, type CompanySection, type StoreSection } from "@/lib/panel-access";
 import { memberPermissions } from "./company-roles";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
@@ -46,6 +46,8 @@ export type CompanyContext = {
   companyName: string;
   /** member.role: role keys, comma-separated ("owner", "manager", "r-...") */
   role: string;
+  /** the built-in owner role: only owners create stores (not a permission, cannot be granted) */
+  isOwner: boolean;
   /** what the member's role(s) grant; check it with `can`, never the role name */
   permissions: Permissions;
   /** the company's stores, oldest first (may be empty) */
@@ -101,6 +103,7 @@ export const getCompanyContext = cache(
       tenantId: membership.id,
       companyName: membership.name,
       role: membership.role,
+      isOwner: isOwner(membership.role),
       permissions,
       // The DB CHECK guarantees status is one of the three values
       stores: stores.map((s) => ({ ...s, status: s.status as CompanyStore["status"] })),

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { headers } from "next/headers";
 import { ImpersonateMenu, type ImpersonateTarget } from "./impersonate-button";
+import { DeleteStoreDialog } from "./delete-store-dialog";
 import { ResetPasswordDialog } from "./reset-password-dialog";
 import { StoreStatusControls } from "./store-status-controls";
 
@@ -147,6 +148,7 @@ export default async function AdminHomePage({
                     {row.ownerId && row.ownerEmail && (
                       <ResetPasswordDialog userId={row.ownerId} email={row.ownerEmail} />
                     )}
+                    <DeleteStoreDialog storeId={row.storeId} storeName={row.storeName} slug={row.slug} />
                   </div>
                 </TableCell>
               </TableRow>

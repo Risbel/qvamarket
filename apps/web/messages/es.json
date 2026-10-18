@@ -476,6 +476,31 @@
         "suspended": "Tienda \"{name}\" suspendida.",
         "reactivated": "Tienda \"{name}\" reactivada: vuelve a ser pública."
       }
+    },
+    "deleteStore": {
+      "button": "Eliminar",
+      "title": "Eliminar «{name}» definitivamente",
+      "description": "Se borra de la base de datos y no se puede deshacer. Se elimina:",
+      "removes": {
+        "catalog": "Productos, variantes, precios, categorías y promociones.",
+        "orders": "Todos sus pedidos, con sus artículos, pagos e historial.",
+        "settings": "Ajustes, monedas, envío a domicilio, banners, pie de página y páginas.",
+        "files": "Logo, banners e imágenes de productos del almacenamiento."
+      },
+      "keeps": "La empresa, su equipo, sus roles y sus clientes se mantienen.",
+      "confirmLabel": "Escribe {slug} para confirmar",
+      "cancel": "Cancelar",
+      "submit": "Eliminar tienda",
+      "deleting": "Eliminando...",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "La tienda ya no existe.",
+        "confirmation": "El subdominio escrito no coincide.",
+        "failed": "No se pudo eliminar la tienda. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "deleted": "Tienda \"{name}\" eliminada."
+      }
     }
   },
   "ChangePassword": {
@@ -556,12 +581,35 @@
     "title": "Tiendas",
     "description": "Las tiendas de {company}. Abre una para gestionar sus pedidos, su catálogo y sus ajustes.",
     "empty": "Todavía no hay tiendas",
-    "emptyDescription": "Esta empresa aún no tiene ninguna tienda.",
+    "emptyDescription": "Crea la primera tienda de esta empresa.",
+    "emptyDescriptionMember": "Esta empresa aún no tiene ninguna tienda. Su propietario puede crear una.",
     "open": "Abrir",
     "status": {
       "pending": "Pendiente",
       "active": "Activa",
       "suspended": "Suspendida"
+    },
+    "create": {
+      "button": "Crear tienda",
+      "title": "Nueva tienda",
+      "description": "Una tienda más de esta empresa: comparte su equipo y sus roles, y tiene su propio catálogo, pedidos y ajustes.",
+      "name": "Nombre de la tienda",
+      "namePlaceholder": "Ej.: Dulcería Ana Vedado",
+      "slug": "Subdominio",
+      "slugPlaceholder": "dulceria-ana-vedado",
+      "slugHelp": "La tienda estará en {url}. Solo minúsculas, números y guiones.",
+      "approvalNotice": "Revisamos cada tienda antes de publicarla. Mientras tanto puedes añadir productos y personalizar su marca.",
+      "cancel": "Cancelar",
+      "submit": "Crear tienda",
+      "submitting": "Creando…",
+      "toasts": {
+        "created": "Tienda «{name}» creada."
+      },
+      "errors": {
+        "limit": "Esta empresa ya tiene el máximo de tiendas permitido.",
+        "forbidden": "Solo el propietario de la empresa puede crear tiendas.",
+        "failed": "No se pudo crear la tienda. Inténtalo de nuevo."
+      }
     }
   },
   "Products": {

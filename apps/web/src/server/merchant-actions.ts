@@ -13,6 +13,7 @@ import {
   setStoreStatus,
   type SetStoreStatusResult,
 } from "./merchants";
+import { deleteStore, type DeleteStoreResult } from "./store-deletion";
 
 export type CreateMerchantActionResult =
   | {
@@ -79,4 +80,12 @@ export async function setStoreStatusAction(
   const next = z.enum(["pending", "active", "suspended"]).safeParse(status);
   if (!id.success || !next.success) return { ok: false, error: "notFound" };
   return setStoreStatus(id.data, next.data, await headers());
+}
+
+export async function deleteStoreAction(storeId: unknown, confirmation: unknown): Promise<DeleteStoreResult> {
+  const id = z.uuid().safeParse(storeId);
+  const typed = z.string().max(100).safeParse(confirmation);
+  if (!id.success) return { ok: false, error: "notFound" };
+  if (!typed.success) return { ok: false, error: "confirmation" };
+  return deleteStore(id.data, typed.data, await headers());
 }

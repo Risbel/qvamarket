@@ -3,6 +3,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -84,6 +85,26 @@ export async function deleteObject(key: string): Promise<void> {
   await getClient().send(
     new DeleteObjectCommand({ Bucket: env("S3_BUCKET"), Key: key }),
   );
+}
+
+/**
+ * Deletes every object whose key starts with `prefix` (e.g. a deleted store's folder) and
+ * returns how many. The prefix must be a tenant folder: never an empty or top-level prefix.
+ */
+export async function deleteObjectsWithPrefix(prefix: string): Promise<number> {
+  if (!/^tenants\/[0-9a-f-]{36}\/.+\/$/i.test(prefix)) throw new Error("Refusing to delete outside a tenant folder");
+  let deleted = 0;
+  let token: string | undefined;
+  do {
+    const page = await getClient().send(
+      new ListObjectsV2Command({ Bucket: env("S3_BUCKET"), Prefix: prefix, ContinuationToken: token }),
+    );
+    const keys = (page.Contents ?? []).flatMap((object) => (object.Key ? [object.Key] : []));
+    await Promise.all(keys.map((key) => deleteObject(key)));
+    deleted += keys.length;
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token);
+  return deleted;
 }
 
 /**
