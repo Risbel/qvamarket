@@ -41,7 +41,15 @@ export default async function CompanyStoresPage({ params }: PageProps<"/[locale]
               <Store aria-hidden />
             </EmptyMedia>
             <EmptyTitle>{t("empty")}</EmptyTitle>
-            <EmptyDescription>{t(company.isOwner ? "emptyDescription" : "emptyDescriptionMember")}</EmptyDescription>
+            <EmptyDescription>
+              {t(
+                company.isOwner
+                  ? "emptyDescription"
+                  : company.storeAccess.all
+                    ? "emptyDescriptionMember"
+                    : "emptyDescriptionRestricted",
+              )}
+            </EmptyDescription>
           </EmptyHeader>
           {create && <EmptyContent>{create}</EmptyContent>}
         </Empty>

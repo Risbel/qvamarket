@@ -26,16 +26,27 @@ import { Input } from "@/components/ui/input";
 import { CredentialsPanel } from "./credentials-panel";
 import { InviteLinkPanel } from "./invite-link-panel";
 import { RoleSelect, roleDescription, type RoleOption } from "./role-select";
+import { StoreAccessField, type StoreOption } from "./store-access-field";
 
-const INVITATION_ERRORS = ["forbidden", "alreadyMember", "limit", "roleNotFound", "escalation", "noAccount"];
+const INVITATION_ERRORS = ["forbidden", "alreadyMember", "limit", "roleNotFound", "escalation", "noAccount", "storeNotFound"];
 
 /**
- * Adds a team member: name, email and role. The server creates the account with a temporary
+ * Adds a team member: name, email, role and the stores they can open. The server creates the account with a temporary
  * password, shown here once (the member must change it on first sign-in). An email that
  * already has an account cannot get a new one: the dialog offers an invitation link instead,
  * which that person accepts with their own account.
  */
-export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
+export function AddMemberDialog({
+  roles,
+  stores,
+  allowAllStores,
+}: {
+  roles: RoleOption[];
+  /** the stores the editor can open: only those can be given */
+  stores: StoreOption[];
+  /** the editor can open every store, so may give "all stores" */
+  allowAllStores: boolean;
+}) {
   const orgId = useOrgId();
   const t = useTranslations("Team");
   const tv = useTranslations("Validation");
@@ -46,12 +57,18 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
   const [created, setCreated] = useState<{ email: string; temporaryPassword: string } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   // The email already has an account: offer to invite it instead
-  const [existing, setExisting] = useState<{ email: string; roleKey: string } | null>(null);
+  const [existing, setExisting] = useState<Pick<TeamMemberValues, "email" | "roleKey" | "access"> | null>(null);
   const [invited, setInvited] = useState<{ id: string; email: string } | null>(null);
   const [inviting, setInviting] = useState(false);
 
   const schema = useMemo(() => createTeamMemberSchema(tv), [tv]);
-  const defaultValues: TeamMemberValues = { name: "", email: "", roleKey: roles[0]?.key ?? "" };
+  const defaultValues: TeamMemberValues = {
+    name: "",
+    email: "",
+    roleKey: roles[0]?.key ?? "",
+    // An editor limited to one store gives that store; otherwise all stores by default
+    access: allowAllStores ? { all: true, storeIds: [] } : { all: false, storeIds: stores.length === 1 ? [stores[0].id] : [] },
+  };
   const form = useForm<TeamMemberValues>({ resolver: zodResolver(schema), defaultValues });
   const roleKey = useWatch({ control: form.control, name: "roleKey" });
 
@@ -100,11 +117,14 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
         }
         return;
       case "emailTaken":
-        setExisting({ email: values.email, roleKey: values.roleKey });
+        setExisting({ email: values.email, roleKey: values.roleKey, access: values.access });
         return;
       case "roleNotFound":
       case "escalation":
         form.setError("roleKey", { message: t(`errors.${result.error}`) });
+        return;
+      case "storeNotFound":
+        form.setError("access", { message: t("errors.storeNotFound") });
         return;
       case "forbidden":
         setFormError(t("errors.forbidden"));
@@ -202,6 +222,23 @@ export function AddMemberDialog({ roles }: { roles: RoleOption[] }) {
                       <FieldError errors={[fieldState.error]} />
                     </Field>
                   )}
+                />
+                <Controller
+                  name="access"
+                  control={form.control}
+                  render={({ field, fieldState }) => {
+                    const error = fieldState.error as { message?: string; storeIds?: { message?: string } } | undefined;
+                    return (
+                      <StoreAccessField
+                        id="member-access"
+                        value={field.value}
+                        onChange={field.onChange}
+                        stores={stores}
+                        allowAll={allowAllStores}
+                        error={error?.storeIds?.message ?? error?.message}
+                      />
+                    );
+                  }}
                 />
                 {existing && (
                   <div role="status" className="flex flex-col gap-2 rounded-md border bg-muted p-3 text-sm">

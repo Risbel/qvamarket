@@ -378,7 +378,8 @@
     "manualPriceRequired": "Escribe el precio o vuelve a seguir la tasa.",
     "rateInvalid": "Escribe un número mayor que 0, con hasta 8 decimales.",
     "roleNameTaken": "Ya hay un rol con ese nombre.",
-    "rolePermissionsRequired": "Marca al menos un permiso."
+    "rolePermissionsRequired": "Marca al menos un permiso.",
+    "storeAccessEmpty": "Elige al menos una tienda"
   },
   "Admin": {
     "title": "Panel de administración",
@@ -583,6 +584,7 @@
     "empty": "Todavía no hay tiendas",
     "emptyDescription": "Crea la primera tienda de esta empresa.",
     "emptyDescriptionMember": "Esta empresa aún no tiene ninguna tienda. Su propietario puede crear una.",
+    "emptyDescriptionRestricted": "No tienes acceso a ninguna tienda de esta empresa. Pídeselo a su propietario.",
     "open": "Abrir",
     "status": {
       "pending": "Pendiente",
@@ -1802,7 +1804,7 @@
   },
   "Team": {
     "title": "Equipo",
-    "description": "Las personas que trabajan en tu tienda y el rol de cada una.",
+    "description": "Las personas que trabajan en tu empresa, su rol y las tiendas que pueden abrir.",
     "add": "Añadir miembro",
     "addTitle": "Añadir miembro",
     "addDescription": "Creamos su cuenta con una contraseña temporal; tendrá que cambiarla la primera vez que entre.",
@@ -1839,10 +1841,13 @@
       "changeRole": "Cambiar rol",
       "resetPassword": "Restablecer contraseña",
       "remove": "Quitar del equipo",
-      "resetPasswordShared": "Solo esa persona puede cambiar su contraseña"
+      "resetPasswordShared": "Solo esa persona puede cambiar su contraseña",
+      "changeStores": "Cambiar tiendas"
     },
     "changeRoleTitle": "Cambiar el rol de {name}",
     "changeRoleDescription": "El cambio se aplica en su próxima acción en el panel.",
+    "changeStoresTitle": "Tiendas de {name}",
+    "changeStoresDescription": "Solo podrá ver y gestionar las tiendas elegidas; el resto no le aparecerá. El cambio se aplica en su próxima acción en el panel.",
     "resetTitle": "Restablecer contraseña",
     "resetConfirm": "{name} ({email}) recibirá una contraseña temporal nueva y se cerrarán sus sesiones abiertas.",
     "resetSubmit": "Restablecer",
@@ -1855,18 +1860,20 @@
       "roleChanged": "Rol de {name} cambiado.",
       "removed": "{name} ya no forma parte del equipo.",
       "linkCopied": "Enlace copiado.",
-      "invitationCanceled": "Invitación a {email} cancelada."
+      "invitationCanceled": "Invitación a {email} cancelada.",
+      "storesChanged": "Tiendas de {name} actualizadas."
     },
     "errors": {
       "forbidden": "Tu rol no permite esta acción.",
       "notFound": "Esta persona ya no forma parte del equipo.",
       "self": "No puedes cambiar tu propio acceso.",
       "owner": "El acceso del propietario no se puede cambiar.",
-      "escalation": "No puedes dar ni gestionar permisos que tú no tienes.",
+      "escalation": "No puedes dar ni gestionar permisos o tiendas que tú no tienes.",
       "roleNotFound": "Ese rol ya no existe. Elige otro.",
       "emailTaken": "Ese correo ya tiene una cuenta. Usa otro.",
       "failed": "No se pudo completar. Inténtalo de nuevo.",
-      "sharedAccount": "Esta cuenta también se usa fuera de tu empresa: solo esa persona puede cambiar su contraseña."
+      "sharedAccount": "Esta cuenta también se usa fuera de tu empresa: solo esa persona puede cambiar su contraseña.",
+      "storeNotFound": "Alguna de esas tiendas ya no existe. Revisa la selección."
     },
     "hasAccount": "{email} ya tiene una cuenta en QvaShop, así que no le creamos otra. Puedes invitarla: recibirá un enlace y entrará con su propia contraseña.",
     "inviteInstead": "Crear enlace de invitación",
@@ -1887,11 +1894,22 @@
       "alreadyMember": "Esa cuenta ya forma parte del equipo.",
       "limit": "Hay demasiadas invitaciones pendientes (máximo 20). Cancela alguna antes.",
       "roleNotFound": "Ese rol ya no existe. Elige otro.",
-      "escalation": "No puedes dar un rol con permisos que tú no tienes.",
+      "escalation": "No puedes dar un rol o tiendas que tú no tienes.",
       "noAccount": "Ese correo ya no tiene cuenta: añádelo con una contraseña temporal.",
-      "failed": "No se pudo crear la invitación. Inténtalo de nuevo."
+      "failed": "No se pudo crear la invitación. Inténtalo de nuevo.",
+      "storeNotFound": "Alguna de esas tiendas ya no existe. Revisa la selección."
     },
-    "otherCompanies": "También trabaja en otras empresas"
+    "otherCompanies": "También trabaja en otras empresas",
+    "storeAccess": {
+      "title": "Tiendas",
+      "label": "Tiendas a las que tiene acceso",
+      "all": "Todas las tiendas",
+      "allHelp": "También las que se creen más adelante.",
+      "some": "Solo estas tiendas",
+      "onlyYours": "Solo puedes dar acceso a las tiendas que tú puedes abrir.",
+      "none": "Ninguna tienda",
+      "others": "{count, plural, one {# tienda más} other {# tiendas más}}"
+    }
   },
   "Invite": {
     "title": "Únete a {company}",

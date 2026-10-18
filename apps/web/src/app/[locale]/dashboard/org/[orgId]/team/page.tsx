@@ -14,12 +14,14 @@ import {
 } from "@/lib/permissions";
 import { ensureCompanyRoles, listCompanyRoles } from "@/server/company-roles";
 import { listInvitations } from "@/server/invitations";
+import { accessWithin, storeAccessLabel } from "@/lib/store-access";
 import { listTeamMembers } from "@/server/team";
 import { requireCompanySection } from "@/server/tenant";
 import { AddMemberDialog } from "./add-member-dialog";
 import { InvitationsList } from "./invitations-list";
 import { MemberRowActions } from "./member-row-actions";
 import type { RoleOption } from "./role-select";
+import type { StoreOption } from "./store-access-field";
 
 export default async function TeamPage({ params }: PageProps<"/[locale]/dashboard/org/[orgId]/team">) {
   const { locale, orgId } = await params;
@@ -28,14 +30,20 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
   const merchant = await requireCompanySection(locale, orgId, "team");
   // Companies created before roles existed get the presets, so there is something to give
   await ensureCompanyRoles(merchant.tenantId, locale);
-  const [t, members, roles, invitations] = await Promise.all([
+  const [t, tAccess, members, roles, invitations] = await Promise.all([
     getTranslations("Team"),
+    getTranslations("Team.storeAccess"),
     listTeamMembers(merchant.tenantId),
     listCompanyRoles(merchant.tenantId),
     listInvitations(merchant.tenantId),
   ]);
 
   const rolesByKey = new Map(roles.map((role) => [role.key, role]));
+  // The stores the viewer can open: the only ones they can give, and the only names they see
+  const stores: StoreOption[] = merchant.stores.map((s) => ({ id: s.id, name: s.name }));
+  const allowAllStores = merchant.storeAccess.all;
+  const toValues = (access: (typeof members)[number]["storeAccess"]) =>
+    access.all ? { all: true, storeIds: [] } : { all: false, storeIds: access.storeIds };
   // Only roles the member could give (the server re-checks): never more than their own
   const grantable: RoleOption[] = roles
     .filter((role) => hasPermissions(merchant.permissions, role.permissions))
@@ -56,7 +64,9 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        {merchant.can({ team: ["create"] }) && <AddMemberDialog roles={grantable} />}
+        {merchant.can({ team: ["create"] }) && (
+          <AddMemberDialog roles={grantable} stores={stores} allowAllStores={allowAllStores} />
+        )}
       </div>
 
       <ul className="flex flex-col divide-y rounded-lg border">
@@ -81,6 +91,9 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
                   </div>
                   <span className="truncate text-sm text-muted-foreground">{m.email}</span>
                   <span className="text-xs text-muted-foreground">
+                    {t("storeAccess.title")}: {storeAccessLabel(toValues(m.storeAccess), stores, tAccess).join(", ")}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
                     {t("joined")} <LocalDateTime iso={m.joinedAt.toISOString()} locale={locale} />
                     {m.mustChangePassword && <> · {t("pendingPassword")}</>}
                   </span>
@@ -93,8 +106,14 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
                   email={m.email}
                   roleKey={roleKeys(m.role)[0] ?? ""}
                   roles={grantable}
-                  aboveYours={!hasPermissions(merchant.permissions, permissionsOf(m.role))}
+                  aboveYours={
+                    !hasPermissions(merchant.permissions, permissionsOf(m.role)) ||
+                    !accessWithin(merchant.storeAccess, m.storeAccess)
+                  }
                   sharedAccount={m.sharedAccount}
+                  storeAccess={toValues(m.storeAccess)}
+                  stores={stores}
+                  allowAllStores={allowAllStores}
                 />
               )}
             </li>
@@ -108,6 +127,7 @@ export default async function TeamPage({ params }: PageProps<"/[locale]/dashboar
           roleName: invitation.roleName,
           inviterName: invitation.inviterName,
           expiresAt: invitation.expiresAt.toISOString(),
+          stores: storeAccessLabel(toValues(invitation.storeAccess), stores, tAccess).join(", "),
         }))}
       />
       {merchant.can({ role: ["read"] }) && (

@@ -27,6 +27,7 @@ export type InvitationActionResult =
         | "limit"
         | "roleNotFound"
         | "escalation"
+        | "storeNotFound"
         | "closed"
         | "failed";
       fieldErrors?: Record<string, string[]>;
@@ -49,7 +50,7 @@ export async function createInvitationAction(orgId: unknown, values: unknown, lo
   if (!parsed.success) {
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
-  const actor = { userId: merchant.session.user.id, permissions: merchant.permissions };
+  const actor = { userId: merchant.session.user.id, permissions: merchant.permissions, storeAccess: merchant.storeAccess };
   return guard("createInvitation", () => createInvitation(merchant.tenantId, actor, parsed.data));
 }
 

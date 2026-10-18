@@ -6,7 +6,9 @@ import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { hasPermissions, isOwner, type PermissionRequest, type Permissions } from "@/lib/permissions";
 import { PANEL_ACCESS, type CompanySection, type StoreSection } from "@/lib/panel-access";
+import type { StoreAccess } from "@/lib/store-access";
 import { memberPermissions } from "./company-roles";
+import { memberStoreAccess } from "./store-access";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
 import { requireUser } from "./session";
 
@@ -50,7 +52,11 @@ export type CompanyContext = {
   isOwner: boolean;
   /** what the member's role(s) grant; check it with `can`, never the role name */
   permissions: Permissions;
-  /** the company's stores, oldest first (may be empty) */
+  /** which stores the member can open (owners: all); `stores` is already filtered by it */
+  storeAccess: StoreAccess;
+  /** member.id of the signed-in user in this company */
+  memberId: string;
+  /** the company's stores the member can open, oldest first (may be empty) */
   stores: CompanyStore[];
   /** every company the user is a member of, oldest membership first (the switcher) */
   companies: MerchantCompany[];
@@ -64,7 +70,7 @@ export type MerchantContext = CompanyContext & {
 /** Every company the user is a member of, oldest membership first. Cached per request. */
 export const getUserCompanies = cache(async (userId: string) => {
   return db
-    .select({ id: member.organizationId, name: organization.name, role: member.role })
+    .select({ id: member.organizationId, name: organization.name, role: member.role, memberId: member.id })
     .from(member)
     .innerJoin(organization, eq(organization.id, member.organizationId))
     .where(eq(member.userId, userId))
@@ -82,7 +88,7 @@ export const getCompanyContext = cache(
     const membership = memberships.find((m) => m.id === tenantId.toLowerCase());
     if (!membership) return null;
 
-    const [stores, permissions] = await Promise.all([
+    const [stores, permissions, storeAccess] = await Promise.all([
       db
         .select({
           id: store.id,
@@ -98,6 +104,7 @@ export const getCompanyContext = cache(
         .where(eq(store.tenantId, membership.id))
         .orderBy(asc(store.createdAt)),
       memberPermissions(membership.id, membership.role),
+      memberStoreAccess(db, membership.id, membership.memberId, membership.role),
     ]);
     return {
       tenantId: membership.id,
@@ -105,8 +112,13 @@ export const getCompanyContext = cache(
       role: membership.role,
       isOwner: isOwner(membership.role),
       permissions,
-      // The DB CHECK guarantees status is one of the three values
-      stores: stores.map((s) => ({ ...s, status: s.status as CompanyStore["status"] })),
+      memberId: membership.memberId,
+      storeAccess,
+      // A store outside the member's access does not exist for them (404, not listed).
+      // The DB CHECK guarantees status is one of the three values.
+      stores: stores
+        .filter((s) => storeAccess.all || storeAccess.storeIds.includes(s.id))
+        .map((s) => ({ ...s, status: s.status as CompanyStore["status"] })),
       companies: memberships.map(({ id, name }) => ({ id, name })),
     };
   },

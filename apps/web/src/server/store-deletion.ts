@@ -2,9 +2,11 @@ import {
   and,
   db,
   eq,
+  invitationAccess,
   product,
   productImage,
   productUpload,
+  sql,
   store,
   storeBannerImage,
   storeSecondaryBannerPair,
@@ -16,7 +18,8 @@ import { deleteObject, deleteObjectsWithPrefix } from "./storage";
 // typing the store's subdomain. The database cascades every row of the store (catalog,
 // prices, promotions, orders with their items / payments / history, settings, banners,
 // pages, favorites of its products); the company, its members, roles and customers stay
-// (they belong to the company, which may have other stores). Files are deleted after the
+// (they belong to the company, which may have other stores); members limited to this store
+// lose it (and keep a limited access, possibly to no store at all). Files are deleted after the
 // commit: a storage failure leaves orphan files, never rows pointing to nothing.
 
 export type DeleteStoreResult =
@@ -67,6 +70,11 @@ export async function deleteStore(
       ].filter((key): key is string => Boolean(key));
 
       await tx.delete(store).where(eq(store.id, storeId));
+      // member_store rows cascade; pending invitations hold the ids in an array
+      await tx
+        .update(invitationAccess)
+        .set({ storeIds: sql`array_remove(${invitationAccess.storeIds}, ${storeId}::uuid)` })
+        .where(and(eq(invitationAccess.tenantId, row.tenantId), sql`${storeId}::uuid = any(${invitationAccess.storeIds})`));
       return { tenantId: row.tenantId, name: row.name, slug: row.slug, keys };
     });
   } catch (error) {

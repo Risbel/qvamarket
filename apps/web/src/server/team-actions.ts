@@ -5,11 +5,11 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import type { PermissionRequest } from "@/lib/permissions";
-import { createMemberRoleSchema, createTeamMemberSchema } from "@/lib/validation/team";
-import { addTeamMember, changeMemberRole, removeTeamMember, resetMemberPassword } from "./team";
+import { createMemberRoleSchema, createMemberStoresSchema, createTeamMemberSchema, toStoreAccess } from "@/lib/validation/team";
+import { addTeamMember, changeMemberRole, changeMemberStores, removeTeamMember, resetMemberPassword } from "./team";
 import { getCompanyOrNull } from "./tenant";
 
-// The company's team (Team page): team:create adds, team:update changes roles and resets
+// The company's team (Team page): team:create adds, team:update changes roles and stores and resets
 // passwords, team:delete removes. The rules about who may act on whom live in team.ts.
 
 type Failure = {
@@ -22,6 +22,7 @@ type Failure = {
     | "owner"
     | "escalation"
     | "roleNotFound"
+    | "storeNotFound"
     | "emailTaken"
     | "sharedAccount"
     | "failed";
@@ -35,7 +36,7 @@ async function actorWith(orgId: unknown, request: PermissionRequest) {
   if (!merchant || !merchant.can(request)) return null;
   return {
     tenantId: merchant.tenantId,
-    actor: { userId: merchant.session.user.id, permissions: merchant.permissions },
+    actor: { userId: merchant.session.user.id, permissions: merchant.permissions, storeAccess: merchant.storeAccess },
   };
 }
 
@@ -71,6 +72,19 @@ export async function changeMemberRoleAction(orgId: unknown, memberId: unknown, 
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
   return guard("changeMemberRole", () => changeMemberRole(scope.tenantId, scope.actor, id.data.toLowerCase(), parsed.data.roleKey));
+}
+
+export async function changeMemberStoresAction(orgId: unknown, memberId: unknown, values: unknown, locale: string): Promise<TeamActionResult> {
+  const scope = await actorWith(orgId, { team: ["update"] });
+  if (!scope) return { ok: false, error: "forbidden" };
+  const id = z.uuid().safeParse(memberId);
+  if (!id.success) return { ok: false, error: "notFound" };
+  const parsed = createMemberStoresSchema(await validationTranslator(locale)).safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
+  }
+  const access = toStoreAccess(parsed.data.access);
+  return guard("changeMemberStores", () => changeMemberStores(scope.tenantId, scope.actor, id.data.toLowerCase(), access));
 }
 
 export async function resetMemberPasswordAction(orgId: unknown, memberId: unknown): Promise<TeamCredentialsResult> {

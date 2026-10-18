@@ -17,7 +17,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { organization, user } from "./auth-schema.ts";
+import { invitation, member, organization, user } from "./auth-schema.ts";
 
 // A company (tenant) is a Better Auth `organization`. `tenant_id` = organization.id.
 // Every tenant-owned table carries `tenant_id`, and every query must filter by it.
@@ -95,6 +95,72 @@ export const companyRole = pgTable(
 
 // ---------------------------------------------------------------------------------------
 // Stores
+// ---------------------------------------------------------------------------------------
+// Store access of team members (which of the company's stores a member can open)
+// ---------------------------------------------------------------------------------------
+
+export const MEMBER_STORE_SCOPES = ["all", "stores"] as const;
+
+/**
+ * A member's store access: `all` = every store of the company (also future ones), `stores`
+ * = only the stores listed in `member_store` (none left = no store at all). A member without
+ * a row has access to every store (members from before this table). Owners always see every
+ * store, whatever is stored here. Deleted with the membership.
+ */
+export const memberAccess = pgTable(
+  "member_access",
+  {
+    memberId: uuid("member_id")
+      .primaryKey()
+      .references(() => member.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    scope: text("scope").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [check("member_access_scope", sql`${table.scope} in ('all', 'stores')`)],
+);
+
+/** The stores of a member whose access is `stores`. Removed with the store or the membership. */
+export const memberStore = pgTable(
+  "member_store",
+  {
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => member.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id").notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "member_store_pk", columns: [table.memberId, table.storeId] }),
+    foreignKey({
+      name: "member_store_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    index("member_store_storeId_idx").on(table.storeId),
+  ],
+);
+
+/**
+ * The store access an invitation will give: `store_ids` null = every store, otherwise only
+ * those (an array: the invitation is short-lived and the ids are checked against the
+ * company's stores again when it is accepted). Deleted with the invitation.
+ */
+export const invitationAccess = pgTable("invitation_access", {
+  invitationId: uuid("invitation_id")
+    .primaryKey()
+    .references(() => invitation.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  storeIds: uuid("store_ids").array(),
+});
+
 // ---------------------------------------------------------------------------------------
 
 export const STORE_STATUSES = ["pending", "active", "suspended"] as const;

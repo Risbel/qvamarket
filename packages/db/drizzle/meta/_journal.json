@@ -218,6 +218,13 @@
       "when": 1792299098898,
       "tag": "0030_member_unique_per_company",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792347166123,
+      "tag": "0031_talented_stardust",
+      "breakpoints": true
     }
   ]
 }

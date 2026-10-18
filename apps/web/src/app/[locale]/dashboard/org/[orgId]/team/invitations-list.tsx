@@ -18,6 +18,8 @@ export type PendingInvitation = {
   roleName: string | null;
   inviterName: string;
   expiresAt: string;
+  /** "All stores" or the store names, ready to show */
+  stores: string;
 };
 
 /** Pending invitations of the company: copy the link again or cancel it (team:create). */
@@ -59,6 +61,9 @@ export function InvitationsList({ invitations }: { invitations: PendingInvitatio
                 <span className="truncate font-medium">{invitation.email}</span>
                 {invitation.roleName && <Badge variant="outline">{invitation.roleName}</Badge>}
               </div>
+              <span className="text-xs text-muted-foreground">
+                {t("storeAccess.title")}: {invitation.stores}
+              </span>
               <span className="text-xs text-muted-foreground">
                 {t("invitedBy", { name: invitation.inviterName })} · {t("expires")}{" "}
                 <LocalDateTime iso={invitation.expiresAt} locale={locale} />

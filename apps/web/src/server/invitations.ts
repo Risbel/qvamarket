@@ -1,14 +1,18 @@
-import { and, companyRole, count, db, desc, eq, gt, invitation, member, organization, user } from "@qvashop/db";
+import { and, companyRole, count, db, desc, eq, gt, inArray, invitation, invitationAccess, member, organization, store, user } from "@qvashop/db";
 import { INVITATION_DAYS, MAX_PENDING_INVITATIONS } from "@/lib/invitations";
 import { hasPermissions, normalizePermissions } from "@/lib/permissions";
+import { ALL_STORES, accessWithin, type StoreAccess } from "@/lib/store-access";
+import { toStoreAccess, type InvitationValues } from "@/lib/validation/team";
 import { lockCompany, memberPermissions } from "./company-roles";
+import { checkAccessGrantable, memberStoreAccess, setMemberStoreAccess } from "./store-access";
 import { checkGrantable, type TeamActor } from "./team";
 
 // Invitations let a company add a person who ALREADY has a QvaShop account, without touching
 // that account: the person opens the link, signs in with their own password and accepts.
 // Rows live in Better Auth's `invitation` table, written only from here (the plugin's
 // invitation endpoints are disabled). A link only works for the invited email, once, before
-// it expires, and only while the inviter could still give that role.
+// it expires, and only while the inviter could still give that role and those stores. The
+// store access it gives lives in invitation_access (null = all stores).
 
 const PENDING = "pending";
 
@@ -19,7 +23,24 @@ export type InvitationRow = {
   roleName: string | null;
   inviterName: string;
   expiresAt: Date;
+  storeAccess: StoreAccess;
 };
+
+/** The store access an invitation gives (no row: all stores, like invitations from before). */
+async function invitationStoreAccess(executor: Pick<typeof db, "select">, ids: string[]) {
+  const rows =
+    ids.length === 0
+      ? []
+      : await executor
+          .select({ id: invitationAccess.invitationId, storeIds: invitationAccess.storeIds })
+          .from(invitationAccess)
+          .where(inArray(invitationAccess.invitationId, ids));
+  const byId = new Map(rows.map((r) => [r.id, r.storeIds]));
+  return (id: string): StoreAccess => {
+    const storeIds = byId.get(id);
+    return storeIds ? { all: false, storeIds } : ALL_STORES;
+  };
+}
 
 /** The company's pending invitations that have not expired, newest first. */
 export async function listInvitations(tenantId: string): Promise<InvitationRow[]> {
@@ -37,27 +58,31 @@ export async function listInvitations(tenantId: string): Promise<InvitationRow[]
     .leftJoin(companyRole, and(eq(companyRole.tenantId, invitation.organizationId), eq(companyRole.key, invitation.role)))
     .where(and(eq(invitation.organizationId, tenantId), eq(invitation.status, PENDING), gt(invitation.expiresAt, new Date())))
     .orderBy(desc(invitation.createdAt));
-  return rows.map((row) => ({ ...row, roleKey: row.roleKey ?? "" }));
+  const accessOf = await invitationStoreAccess(db, rows.map((row) => row.id));
+  return rows.map((row) => ({ ...row, roleKey: row.roleKey ?? "", storeAccess: accessOf(row.id) }));
 }
 
 export type CreateInvitationResult =
   | { ok: true; id: string }
-  | { ok: false; error: "noAccount" | "alreadyMember" | "limit" | "roleNotFound" | "escalation" };
+  | { ok: false; error: "noAccount" | "alreadyMember" | "limit" | "roleNotFound" | "escalation" | "storeNotFound" };
 
 /**
- * Invites the account with `email` to the company with `roleKey`. Inviting the same email
- * again refreshes its pending invitation (same link, new role and expiry). An email without
+ * Invites the account with `email` to the company with `roleKey` and store access. Inviting
+ * the same email again refreshes its pending invitation (same link, new role, stores and expiry). An email without
  * an account is refused (`noAccount`): those are added with a temporary password instead.
  */
 export async function createInvitation(
   tenantId: string,
   actor: TeamActor,
-  values: { email: string; roleKey: string },
+  values: InvitationValues,
 ): Promise<CreateInvitationResult> {
   const email = values.email.toLowerCase();
+  const access = toStoreAccess(values.access);
   return db.transaction(async (tx) => {
     await lockCompany(tx, tenantId);
-    const grantable = await checkGrantable(tx, tenantId, actor, values.roleKey);
+    const grantable =
+      (await checkGrantable(tx, tenantId, actor, values.roleKey)) ??
+      (await checkAccessGrantable(tx, tenantId, actor.storeAccess, access));
     if (grantable) return { ok: false, error: grantable } as const;
 
     const [account] = await tx.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1);
@@ -76,6 +101,7 @@ export async function createInvitation(
         .update(invitation)
         .set({ role: values.roleKey, expiresAt, inviterId: actor.userId })
         .where(eq(invitation.id, existing.id));
+      await saveInvitationAccess(tx, tenantId, existing.id, access);
       return { ok: true, id: existing.id } as const;
     }
     const [{ total }] = await tx
@@ -87,8 +113,17 @@ export async function createInvitation(
       .insert(invitation)
       .values({ organizationId: tenantId, email, role: values.roleKey, status: PENDING, expiresAt, inviterId: actor.userId })
       .returning({ id: invitation.id });
+    await saveInvitationAccess(tx, tenantId, created.id, access);
     return { ok: true, id: created.id } as const;
   });
+}
+
+async function saveInvitationAccess(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], tenantId: string, invitationId: string, access: StoreAccess) {
+  const storeIds = access.all ? null : access.storeIds;
+  await tx
+    .insert(invitationAccess)
+    .values({ invitationId, tenantId, storeIds })
+    .onConflictDoUpdate({ target: invitationAccess.invitationId, set: { storeIds } });
 }
 
 /** Withdraws a pending invitation of the company (its link stops working). */
@@ -146,7 +181,9 @@ export type RespondResult = { ok: true; tenantId: string } | { ok: false; error:
  * Accepts (or declines) an invitation as the signed-in `viewer`. Accepting re-checks
  * everything under the company lock: still pending and in time, the viewer's own email,
  * not a member yet, the role still exists, and the inviter is still a member who could give
- * it (team:create and every permission of the role). Then the membership is created.
+ * it (team:create and every permission of the role) and the stores (within their own store
+ * access). Then the membership is created with that store access (stores deleted since the
+ * invitation are left out; the access stays limited even if none is left).
  */
 export async function respondToInvitation(
   id: string,
@@ -178,7 +215,7 @@ export async function respondToInvitation(
       .from(companyRole)
       .where(and(eq(companyRole.tenantId, tenantId), eq(companyRole.key, row.role ?? "")));
     const [inviter] = await tx
-      .select({ role: member.role })
+      .select({ id: member.id, role: member.role })
       .from(member)
       .where(and(eq(member.organizationId, tenantId), eq(member.userId, row.inviterId)));
     if (!role || !inviter) return { ok: false, error: "closed" } as const;
@@ -188,7 +225,26 @@ export async function respondToInvitation(
       hasPermissions(inviterPermissions, normalizePermissions(role.permissions));
     if (!grantable) return { ok: false, error: "closed" } as const;
 
-    await tx.insert(member).values({ organizationId: tenantId, userId: viewer.id, role: row.role!, createdAt: new Date() });
+    const invited = (await invitationStoreAccess(tx, [id]))(id);
+    const access: StoreAccess = invited.all
+      ? ALL_STORES
+      : {
+          all: false,
+          storeIds: invited.storeIds.length === 0 ? [] : (
+            await tx
+              .select({ id: store.id })
+              .from(store)
+              .where(and(eq(store.tenantId, tenantId), inArray(store.id, invited.storeIds)))
+          ).map((s) => s.id),
+        };
+    const inviterAccess = await memberStoreAccess(tx, tenantId, inviter.id, inviter.role);
+    if (!accessWithin(inviterAccess, access)) return { ok: false, error: "closed" } as const;
+
+    const [created] = await tx
+      .insert(member)
+      .values({ organizationId: tenantId, userId: viewer.id, role: row.role!, createdAt: new Date() })
+      .returning({ id: member.id });
+    await setMemberStoreAccess(tx, tenantId, created.id, access);
     await tx.update(invitation).set({ status: "accepted" }).where(eq(invitation.id, id));
     return { ok: true, tenantId } as const;
   });

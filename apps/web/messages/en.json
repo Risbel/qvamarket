@@ -378,7 +378,8 @@
     "manualPriceRequired": "Enter the price or go back to following the rate.",
     "rateInvalid": "Enter a number greater than 0, with up to 8 decimals.",
     "roleNameTaken": "There is already a role with that name.",
-    "rolePermissionsRequired": "Tick at least one permission."
+    "rolePermissionsRequired": "Tick at least one permission.",
+    "storeAccessEmpty": "Choose at least one store"
   },
   "Admin": {
     "title": "Admin panel",
@@ -583,6 +584,7 @@
     "empty": "No stores yet",
     "emptyDescription": "Create this company's first store.",
     "emptyDescriptionMember": "This company does not have any store yet. Its owner can create one.",
+    "emptyDescriptionRestricted": "You do not have access to any store of this company. Ask its owner.",
     "open": "Open",
     "status": {
       "pending": "Pending",
@@ -1802,7 +1804,7 @@
   },
   "Team": {
     "title": "Team",
-    "description": "The people who work in your store and the role of each.",
+    "description": "The people who work in your company, their role and the stores they can open.",
     "add": "Add member",
     "addTitle": "Add member",
     "addDescription": "We create their account with a temporary password; they will have to change it the first time they sign in.",
@@ -1839,10 +1841,13 @@
       "changeRole": "Change role",
       "resetPassword": "Reset password",
       "remove": "Remove from team",
-      "resetPasswordShared": "Only they can change their password"
+      "resetPasswordShared": "Only they can change their password",
+      "changeStores": "Change stores"
     },
     "changeRoleTitle": "Change the role of {name}",
     "changeRoleDescription": "The change applies on their next action in the panel.",
+    "changeStoresTitle": "Stores of {name}",
+    "changeStoresDescription": "They will only see and manage the chosen stores; the others will not appear for them. The change applies on their next action in the panel.",
     "resetTitle": "Reset password",
     "resetConfirm": "{name} ({email}) will get a new temporary password and their open sessions will be ended.",
     "resetSubmit": "Reset",
@@ -1855,18 +1860,20 @@
       "roleChanged": "{name}'s role changed.",
       "removed": "{name} is no longer on the team.",
       "linkCopied": "Link copied.",
-      "invitationCanceled": "Invitation to {email} canceled."
+      "invitationCanceled": "Invitation to {email} canceled.",
+      "storesChanged": "{name}'s stores updated."
     },
     "errors": {
       "forbidden": "Your role does not allow this action.",
       "notFound": "This person is no longer on the team.",
       "self": "You cannot change your own access.",
       "owner": "The owner's access cannot be changed.",
-      "escalation": "You cannot give or manage permissions you do not have.",
+      "escalation": "You cannot give or manage permissions or stores you do not have.",
       "roleNotFound": "That role no longer exists. Choose another one.",
       "emailTaken": "That email already has an account. Use another one.",
       "failed": "Could not complete it. Please try again.",
-      "sharedAccount": "This account is also used outside your company: only that person can change its password."
+      "sharedAccount": "This account is also used outside your company: only that person can change its password.",
+      "storeNotFound": "One of those stores no longer exists. Check the selection."
     },
     "hasAccount": "{email} already has a QvaShop account, so we do not create another one. You can invite it: they get a link and sign in with their own password.",
     "inviteInstead": "Create invitation link",
@@ -1887,11 +1894,22 @@
       "alreadyMember": "That account is already on the team.",
       "limit": "There are too many pending invitations (20 at most). Cancel some first.",
       "roleNotFound": "That role no longer exists. Choose another one.",
-      "escalation": "You cannot give a role with permissions you do not have.",
+      "escalation": "You cannot give a role or stores you do not have.",
       "noAccount": "That email no longer has an account: add it with a temporary password.",
-      "failed": "Could not create the invitation. Please try again."
+      "failed": "Could not create the invitation. Please try again.",
+      "storeNotFound": "One of those stores no longer exists. Check the selection."
     },
-    "otherCompanies": "Also works in other companies"
+    "otherCompanies": "Also works in other companies",
+    "storeAccess": {
+      "title": "Stores",
+      "label": "Stores they can open",
+      "all": "All stores",
+      "allHelp": "Also the ones created later.",
+      "some": "Only these stores",
+      "onlyYours": "You can only give access to the stores you can open.",
+      "none": "No store",
+      "others": "{count, plural, one {# more store} other {# more stores}}"
+    }
   },
   "Invite": {
     "title": "Join {company}",

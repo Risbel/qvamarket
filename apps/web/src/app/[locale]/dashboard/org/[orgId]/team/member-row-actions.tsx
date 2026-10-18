@@ -2,7 +2,7 @@
 
 import { useOrgId } from "@/components/panel-scope";
 import { useState } from "react";
-import { KeyRoundIcon, MoreHorizontalIcon, ShieldCheckIcon, UserMinusIcon } from "lucide-react";
+import { KeyRoundIcon, MoreHorizontalIcon, ShieldCheckIcon, StoreIcon, UserMinusIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
@@ -24,20 +24,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import type { StoreAccessValues } from "@/lib/validation/team";
 import {
   changeMemberRoleAction,
+  changeMemberStoresAction,
   removeTeamMemberAction,
   resetMemberPasswordAction,
 } from "@/server/team-actions";
 import { CredentialsPanel } from "./credentials-panel";
 import { RoleSelect, roleDescription, type RoleOption } from "./role-select";
+import { StoreAccessField, type StoreOption } from "./store-access-field";
 
-type Open = "role" | "reset" | "remove" | null;
+type Open = "role" | "stores" | "reset" | "remove" | null;
 
-const KNOWN_ERRORS = ["forbidden", "notFound", "self", "owner", "escalation", "roleNotFound", "sharedAccount"];
+const KNOWN_ERRORS = ["forbidden", "notFound", "self", "owner", "escalation", "roleNotFound", "storeNotFound", "sharedAccount"];
 
 /**
- * `...` menu of a team member: change role, reset password (team:update), remove from the
+ * `...` menu of a team member: change role, change stores, reset password (team:update), remove from the
  * team (team:delete). Not rendered for yourself or an owner, nor for a member whose
  * permissions exceed yours. The server re-checks all of it.
  */
@@ -49,6 +52,9 @@ export function MemberRowActions({
   roles,
   aboveYours,
   sharedAccount,
+  storeAccess,
+  stores,
+  allowAllStores,
 }: {
   memberId: string;
   name: string;
@@ -59,6 +65,11 @@ export function MemberRowActions({
   aboveYours: boolean;
   /** the account is also used elsewhere: only the person can change its password */
   sharedAccount: boolean;
+  /** the stores the member can open now */
+  storeAccess: StoreAccessValues;
+  /** the stores the editor can open (only those can be given) */
+  stores: StoreOption[];
+  allowAllStores: boolean;
 }) {
   const orgId = useOrgId();
   const t = useTranslations("Team");
@@ -69,6 +80,7 @@ export function MemberRowActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextRole, setNextRole] = useState(roleKey);
+  const [nextAccess, setNextAccess] = useState<StoreAccessValues>(storeAccess);
   const [credentials, setCredentials] = useState<{ email: string; temporaryPassword: string } | null>(null);
 
   const canUpdate = can({ team: ["update"] }) && !aboveYours;
@@ -79,6 +91,7 @@ export function MemberRowActions({
     setError(null);
     setCredentials(null);
     setNextRole(roleKey);
+    setNextAccess(storeAccess);
     setOpen(dialog);
   }
 
@@ -104,6 +117,13 @@ export function MemberRowActions({
   async function changeRole() {
     if (await run(() => changeMemberRoleAction(orgId, memberId, { roleKey: nextRole }, locale))) {
       toast.success(t("toasts.roleChanged", { name }));
+      setOpen(null);
+    }
+  }
+
+  async function changeStores() {
+    if (await run(() => changeMemberStoresAction(orgId, memberId, { access: nextAccess }, locale))) {
+      toast.success(t("toasts.storesChanged", { name }));
       setOpen(null);
     }
   }
@@ -138,6 +158,10 @@ export function MemberRowActions({
               <DropdownMenuItem onClick={() => show("role")}>
                 <ShieldCheckIcon />
                 {t("actions.changeRole")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => show("stores")}>
+                <StoreIcon />
+                {t("actions.changeStores")}
               </DropdownMenuItem>
               <DropdownMenuItem disabled={sharedAccount} onClick={() => show("reset")}>
                 <KeyRoundIcon />
@@ -174,6 +198,32 @@ export function MemberRowActions({
               {t("cancel")}
             </Button>
             <Button disabled={busy || !nextRole || nextRole === roleKey} onClick={changeRole}>
+              {t("save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={open === "stores"} onOpenChange={(next) => !next && close()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("changeStoresTitle", { name })}</DialogTitle>
+            <DialogDescription>{t("changeStoresDescription")}</DialogDescription>
+          </DialogHeader>
+          <StoreAccessField
+            id={`stores-${memberId}`}
+            value={nextAccess}
+            onChange={setNextAccess}
+            stores={stores}
+            allowAll={allowAllStores}
+            disabled={busy}
+          />
+          {errorLine}
+          <DialogFooter>
+            <Button variant="outline" disabled={busy} onClick={close}>
+              {t("cancel")}
+            </Button>
+            <Button disabled={busy || (!nextAccess.all && nextAccess.storeIds.length === 0)} onClick={changeStores}>
               {t("save")}
             </Button>
           </DialogFooter>
