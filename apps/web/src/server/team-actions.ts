@@ -7,7 +7,7 @@ import { routing } from "@/i18n/routing";
 import type { PermissionRequest } from "@/lib/permissions";
 import { createMemberRoleSchema, createTeamMemberSchema } from "@/lib/validation/team";
 import { addTeamMember, changeMemberRole, removeTeamMember, resetMemberPassword } from "./team";
-import { getMerchantOrNull } from "./tenant";
+import { getCompanyOrNull } from "./tenant";
 
 // The company's team (Team page): team:create adds, team:update changes roles and resets
 // passwords, team:delete removes. The rules about who may act on whom live in team.ts.
@@ -30,8 +30,8 @@ type Failure = {
 export type TeamActionResult = { ok: true } | Failure;
 export type TeamCredentialsResult = { ok: true; email: string; temporaryPassword: string } | Failure;
 
-async function actorWith(request: PermissionRequest) {
-  const merchant = await getMerchantOrNull();
+async function actorWith(orgId: unknown, request: PermissionRequest) {
+  const merchant = await getCompanyOrNull(orgId);
   if (!merchant || !merchant.can(request)) return null;
   return {
     tenantId: merchant.tenantId,
@@ -51,8 +51,8 @@ async function guard<T extends { ok: boolean }>(name: string, fn: () => Promise<
   }
 }
 
-export async function addTeamMemberAction(values: unknown, locale: string): Promise<TeamCredentialsResult> {
-  const scope = await actorWith({ team: ["create"] });
+export async function addTeamMemberAction(orgId: unknown, values: unknown, locale: string): Promise<TeamCredentialsResult> {
+  const scope = await actorWith(orgId, { team: ["create"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createTeamMemberSchema(await validationTranslator(locale)).safeParse(values);
   if (!parsed.success) {
@@ -61,8 +61,8 @@ export async function addTeamMemberAction(values: unknown, locale: string): Prom
   return guard("addTeamMember", () => addTeamMember(scope.tenantId, scope.actor, parsed.data));
 }
 
-export async function changeMemberRoleAction(memberId: unknown, values: unknown, locale: string): Promise<TeamActionResult> {
-  const scope = await actorWith({ team: ["update"] });
+export async function changeMemberRoleAction(orgId: unknown, memberId: unknown, values: unknown, locale: string): Promise<TeamActionResult> {
+  const scope = await actorWith(orgId, { team: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(memberId);
   if (!id.success) return { ok: false, error: "notFound" };
@@ -73,16 +73,16 @@ export async function changeMemberRoleAction(memberId: unknown, values: unknown,
   return guard("changeMemberRole", () => changeMemberRole(scope.tenantId, scope.actor, id.data.toLowerCase(), parsed.data.roleKey));
 }
 
-export async function resetMemberPasswordAction(memberId: unknown): Promise<TeamCredentialsResult> {
-  const scope = await actorWith({ team: ["update"] });
+export async function resetMemberPasswordAction(orgId: unknown, memberId: unknown): Promise<TeamCredentialsResult> {
+  const scope = await actorWith(orgId, { team: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(memberId);
   if (!id.success) return { ok: false, error: "notFound" };
   return guard("resetMemberPassword", () => resetMemberPassword(scope.tenantId, scope.actor, id.data.toLowerCase()));
 }
 
-export async function removeTeamMemberAction(memberId: unknown): Promise<TeamActionResult> {
-  const scope = await actorWith({ team: ["delete"] });
+export async function removeTeamMemberAction(orgId: unknown, memberId: unknown): Promise<TeamActionResult> {
+  const scope = await actorWith(orgId, { team: ["delete"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(memberId);
   if (!id.success) return { ok: false, error: "notFound" };

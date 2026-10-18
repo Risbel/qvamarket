@@ -11,8 +11,8 @@ export type StageImageResult =
   | { ok: false; error: ImageError | "forbidden" | "failed" };
 
 // Images are saved with the product form: whoever may create or edit products may stage them.
-async function authorize() {
-  const merchant = await getMerchantOrNull();
+async function authorize(storeId: unknown) {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !(merchant.can({ product: ["create"] }) || merchant.can({ product: ["update"] }))) {
     return null;
   }
@@ -23,8 +23,8 @@ async function authorize() {
 }
 
 /** Uploads one image picked in the product form; it is attached when the form is saved. */
-export async function stageProductImageAction(formData: FormData): Promise<StageImageResult> {
-  const merchant = await authorize();
+export async function stageProductImageAction(storeId: unknown, formData: FormData): Promise<StageImageResult> {
+  const merchant = await authorize(storeId);
   if (!merchant) return { ok: false, error: "forbidden" };
 
   const file = formData.get("file");
@@ -42,8 +42,8 @@ export async function stageProductImageAction(formData: FormData): Promise<Stage
 }
 
 /** Best effort: a staged upload taken out of the form (unsaved ones are swept anyway). */
-export async function discardProductUploadAction(uploadId: unknown): Promise<void> {
-  const merchant = await authorize();
+export async function discardProductUploadAction(storeId: unknown, uploadId: unknown): Promise<void> {
+  const merchant = await authorize(storeId);
   const id = z.uuid().safeParse(uploadId);
   if (!merchant || !id.success) return;
   try {

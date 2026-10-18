@@ -7,7 +7,7 @@ import { routing } from "@/i18n/routing";
 import type { PermissionRequest } from "@/lib/permissions";
 import { createRoleSchema } from "@/lib/validation/role";
 import { createCompanyRole, deleteCompanyRole, updateCompanyRole } from "./company-roles";
-import { getMerchantOrNull } from "./tenant";
+import { getCompanyOrNull } from "./tenant";
 
 // Company roles (Team > Roles): role:create / role:update / role:delete. The editor's own
 // permissions go to the server functions, which refuse granting more than that.
@@ -21,8 +21,8 @@ export type RoleActionResult =
       memberCount?: number;
     };
 
-async function merchantWith(request: PermissionRequest) {
-  const merchant = await getMerchantOrNull();
+async function merchantWith(orgId: unknown, request: PermissionRequest) {
+  const merchant = await getCompanyOrNull(orgId);
   return merchant && merchant.can(request) ? merchant : null;
 }
 
@@ -43,8 +43,8 @@ async function guard(fn: () => Promise<RoleActionResult>): Promise<RoleActionRes
   }
 }
 
-export async function createRoleAction(values: unknown, locale: string): Promise<RoleActionResult> {
-  const merchant = await merchantWith({ role: ["create"] });
+export async function createRoleAction(orgId: unknown, values: unknown, locale: string): Promise<RoleActionResult> {
+  const merchant = await merchantWith(orgId, { role: ["create"] });
   if (!merchant) return { ok: false, error: "forbidden" };
   const parsed = await parse(values, locale);
   if (!parsed.success) {
@@ -53,8 +53,8 @@ export async function createRoleAction(values: unknown, locale: string): Promise
   return guard(() => createCompanyRole(merchant.tenantId, merchant.permissions, parsed.data));
 }
 
-export async function updateRoleAction(id: unknown, values: unknown, locale: string): Promise<RoleActionResult> {
-  const merchant = await merchantWith({ role: ["update"] });
+export async function updateRoleAction(orgId: unknown, id: unknown, values: unknown, locale: string): Promise<RoleActionResult> {
+  const merchant = await merchantWith(orgId, { role: ["update"] });
   if (!merchant) return { ok: false, error: "forbidden" };
   const roleId = z.uuid().safeParse(id);
   if (!roleId.success) return { ok: false, error: "notFound" };
@@ -65,8 +65,8 @@ export async function updateRoleAction(id: unknown, values: unknown, locale: str
   return guard(() => updateCompanyRole(merchant.tenantId, merchant.permissions, roleId.data.toLowerCase(), parsed.data));
 }
 
-export async function deleteRoleAction(id: unknown): Promise<RoleActionResult> {
-  const merchant = await merchantWith({ role: ["delete"] });
+export async function deleteRoleAction(orgId: unknown, id: unknown): Promise<RoleActionResult> {
+  const merchant = await merchantWith(orgId, { role: ["delete"] });
   if (!merchant) return { ok: false, error: "forbidden" };
   const roleId = z.uuid().safeParse(id);
   if (!roleId.success) return { ok: false, error: "notFound" };

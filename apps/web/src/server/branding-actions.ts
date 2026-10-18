@@ -18,17 +18,18 @@ export type BrandingActionResult =
     };
 
 // Branding is store configuration: it needs `store:update` (owner and manager).
-async function authorize() {
-  const merchant = await getMerchantOrNull();
+async function authorize(storeId: unknown) {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return null;
   return { tenantId: merchant.tenantId, storeId: merchant.store.id };
 }
 
 export async function updateBrandingAction(
+  storeId: unknown,
   values: unknown,
   locale: string,
 ): Promise<BrandingActionResult> {
-  const scope = await authorize();
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
 
   const t = await getTranslations({
@@ -56,10 +57,11 @@ const kindSchema = z.enum(BRAND_IMAGE_KINDS);
 
 /** Uploads the logo or the logotype (`kind` is validated: it picks the column). */
 export async function uploadBrandImageAction(
+  storeId: unknown,
   kind: unknown,
   formData: FormData,
 ): Promise<BrandingActionResult> {
-  const scope = await authorize();
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedKind = kindSchema.safeParse(kind);
   if (!parsedKind.success) return { ok: false, error: "invalid" };
@@ -81,8 +83,8 @@ export async function uploadBrandImageAction(
   }
 }
 
-export async function removeBrandImageAction(kind: unknown): Promise<BrandingActionResult> {
-  const scope = await authorize();
+export async function removeBrandImageAction(storeId: unknown, kind: unknown): Promise<BrandingActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedKind = kindSchema.safeParse(kind);
   if (!parsedKind.success) return { ok: false, error: "invalid" };

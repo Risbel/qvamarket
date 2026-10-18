@@ -1,23 +1,27 @@
 import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { and, asc, db, eq, member, organization, sql, store } from "@qvashop/db";
+import { z } from "zod";
+import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { hasPermissions, type PermissionRequest, type Permissions } from "@/lib/permissions";
-import { PANEL_ACCESS, type PanelSection } from "@/lib/panel-access";
+import { PANEL_ACCESS, type CompanySection, type StoreSection } from "@/lib/panel-access";
 import { memberPermissions } from "./company-roles";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
 import { requireUser } from "./session";
 
-export type MerchantStore = {
+// The merchant panel's URLs carry the company (/dashboard/org/<tenantId>/...) and the store
+// (/dashboard/store/<storeId>/...). Those ids come from the browser, so they only SELECT what
+// to show: every page and Server Action resolves them here, which checks that the signed-in
+// user is a member of that company (and that the store belongs to it) and returns the
+// member's permissions. Unknown ids, other companies' ids and malformed ids are all null / 404.
+
+const isUuid = (value: unknown): value is string => z.uuid().safeParse(value).success;
+
+export type CompanyStore = {
   id: string;
   name: string;
   slug: string;
-  /** currencies the store sells in, default first */
-  currencies: StoreCurrency[];
-  defaultCurrency: StoreCurrency;
-  /** the currency prices are typed in; the others follow it through their rates */
-  baseCurrency: StoreCurrency;
   /** pending (awaiting approval) | active | suspended */
   status: "pending" | "active" | "suspended";
   logoKey: string | null;
@@ -26,7 +30,17 @@ export type MerchantStore = {
   accentColor: string | null;
 };
 
-export type MerchantContext = {
+export type MerchantStore = CompanyStore & {
+  /** currencies the store sells in, default first */
+  currencies: StoreCurrency[];
+  defaultCurrency: StoreCurrency;
+  /** the currency prices are typed in; the others follow it through their rates */
+  baseCurrency: StoreCurrency;
+};
+
+export type MerchantCompany = { id: string; name: string };
+
+export type CompanyContext = {
   /** organization.id: pass it to EVERY query on tenant data */
   tenantId: string;
   companyName: string;
@@ -34,128 +48,197 @@ export type MerchantContext = {
   role: string;
   /** what the member's role(s) grant; check it with `can`, never the role name */
   permissions: Permissions;
-  /** the store the panel is working on (MVP: the company's first store) */
-  store: MerchantStore;
-  stores: MerchantStore[];
-  /** every company (with a store) the user is a member of, oldest membership first */
-  companies: { id: string; name: string }[];
+  /** the company's stores, oldest first (may be empty) */
+  stores: CompanyStore[];
+  /** every company the user is a member of, oldest membership first (the switcher) */
+  companies: MerchantCompany[];
 };
 
+export type MerchantContext = CompanyContext & {
+  /** the store of the URL */
+  store: MerchantStore;
+};
+
+/** Every company the user is a member of, oldest membership first. Cached per request. */
+export const getUserCompanies = cache(async (userId: string) => {
+  return db
+    .select({ id: member.organizationId, name: organization.name, role: member.role })
+    .from(member)
+    .innerJoin(organization, eq(organization.id, member.organizationId))
+    .where(eq(member.userId, userId))
+    .orderBy(asc(member.createdAt));
+});
+
 /**
- * The company (tenant) and stores a user is working on, or null when the user is not a
- * member of any company that has a store (e.g. the superadmin). Cached per request.
- * A user can belong to several companies (one membership and role in each): the active one
- * is `activeTenantId` (the session's active_organization_id, set by the company switcher)
- * while they are still a member there, otherwise their oldest membership. When a company
- * has several stores the oldest one is active (no store switcher yet).
+ * The company `tenantId` as seen by `userId`, or null when the user is not a member of it.
+ * Cached per request.
  */
-export const getMerchantContext = cache(
-  async (userId: string, activeTenantId: string | null | undefined): Promise<MerchantContext | null> => {
-    const memberships = await db
-      .select({
-        tenantId: member.organizationId,
-        role: member.role,
-        companyName: organization.name,
-      })
-      .from(member)
-      .innerJoin(organization, eq(organization.id, member.organizationId))
-      // only companies that have a store (a company without one has no panel)
-      .where(
-        and(
-          eq(member.userId, userId),
-          sql`exists (select 1 from ${store} where ${store.tenantId} = ${member.organizationId})`,
-        ),
-      )
-      .orderBy(asc(member.createdAt));
-    const membership = memberships.find((m) => m.tenantId === activeTenantId) ?? memberships[0];
+export const getCompanyContext = cache(
+  async (userId: string, tenantId: string): Promise<CompanyContext | null> => {
+    if (!isUuid(tenantId)) return null;
+    const memberships = await getUserCompanies(userId);
+    const membership = memberships.find((m) => m.id === tenantId.toLowerCase());
     if (!membership) return null;
-    const companies = memberships.map((m) => ({ id: m.tenantId, name: m.companyName }));
 
-    const stores = await db
-      .select({
-        id: store.id,
-        name: store.name,
-        slug: store.slug,
-        status: store.status,
-        logoKey: store.logoKey,
-        logotypeKey: store.logotypeKey,
-        primaryColor: store.primaryColor,
-        accentColor: store.accentColor,
-      })
-      .from(store)
-      .where(eq(store.tenantId, membership.tenantId))
-      .orderBy(asc(store.createdAt));
-    if (stores.length === 0) return null;
-
-    const currencies = await getStoreCurrencies(stores.map((s) => s.id));
-    // The DB CHECK guarantees status is one of the three values. Every store has a default
-    // currency (created with the store); the fallback only guards against a broken row.
-    const typed = stores.map((s): MerchantStore => {
-      const list = currencies.get(s.id) ?? [];
-      const fallback = { code: "USD", digits: 2, isDefault: true, isBase: true, rate: null, roundingMinor: null };
-      return {
-        ...s,
-        status: s.status as MerchantStore["status"],
-        currencies: list.length > 0 ? list : [fallback],
-        defaultCurrency: list.find((c) => c.isDefault) ?? list[0] ?? fallback,
-        baseCurrency: list.find((c) => c.isBase) ?? list.find((c) => c.isDefault) ?? list[0] ?? fallback,
-      };
-    });
-    const permissions = await memberPermissions(membership.tenantId, membership.role);
-    return { ...membership, permissions, store: typed[0], stores: typed, companies };
+    const [stores, permissions] = await Promise.all([
+      db
+        .select({
+          id: store.id,
+          name: store.name,
+          slug: store.slug,
+          status: store.status,
+          logoKey: store.logoKey,
+          logotypeKey: store.logotypeKey,
+          primaryColor: store.primaryColor,
+          accentColor: store.accentColor,
+        })
+        .from(store)
+        .where(eq(store.tenantId, membership.id))
+        .orderBy(asc(store.createdAt)),
+      memberPermissions(membership.id, membership.role),
+    ]);
+    return {
+      tenantId: membership.id,
+      companyName: membership.name,
+      role: membership.role,
+      permissions,
+      // The DB CHECK guarantees status is one of the three values
+      stores: stores.map((s) => ({ ...s, status: s.status as CompanyStore["status"] })),
+      companies: memberships.map(({ id, name }) => ({ id, name })),
+    };
   },
 );
 
 /**
- * Entry point of every merchant page and Server Action: signed in (and past the forced
- * password change), member of a company with a store. 404 otherwise (the superadmin has
- * no company). Tenant data must only be read/written with the returned `tenantId`.
+ * The store `storeId` as seen by `userId` (with its company), or null when the store does not
+ * exist or the user is not a member of its company. Cached per request.
  */
-export async function requireMerchant(locale: string) {
-  const session = await requireUser(locale);
-  const context = await getMerchantContext(session.user.id, session.session.activeOrganizationId);
-  if (!context) notFound();
+export const getMerchantContext = cache(
+  async (userId: string, storeId: string): Promise<MerchantContext | null> => {
+    if (!isUuid(storeId)) return null;
+    const [row] = await db
+      .select({ tenantId: store.tenantId })
+      .from(store)
+      .where(eq(store.id, storeId.toLowerCase()))
+      .limit(1);
+    if (!row) return null;
+    const company = await getCompanyContext(userId, row.tenantId);
+    const found = company?.stores.find((s) => s.id === storeId.toLowerCase());
+    if (!company || !found) return null;
+
+    const list = (await getStoreCurrencies([found.id])).get(found.id) ?? [];
+    // Every store has a default currency (created with the store); the fallback only guards
+    // against a broken row.
+    const fallback = { code: "USD", digits: 2, isDefault: true, isBase: true, rate: null, roundingMinor: null };
+    return {
+      ...company,
+      store: {
+        ...found,
+        currencies: list.length > 0 ? list : [fallback],
+        defaultCurrency: list.find((c) => c.isDefault) ?? list[0] ?? fallback,
+        baseCurrency: list.find((c) => c.isBase) ?? list.find((c) => c.isDefault) ?? list[0] ?? fallback,
+      },
+    };
+  },
+);
+
+/**
+ * The company `/dashboard` opens: the session's active company (last one chosen with the
+ * switcher, or opened by an invitation / impersonation) while the user is still a member
+ * there, otherwise their oldest membership. null = no company (e.g. the superadmin).
+ */
+export async function defaultCompanyId(userId: string, activeTenantId: string | null | undefined) {
+  const companies = await getUserCompanies(userId);
+  return (companies.find((c) => c.id === activeTenantId) ?? companies[0])?.id ?? null;
+}
+
+/** Signed-in session for Server Actions, or null (signed out, temporary password). Never throws. */
+async function actionSession() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+  if (session.user.mustChangePassword && !session.session.impersonatedBy) return null;
+  return session;
+}
+
+function withCan<T extends CompanyContext>(context: T) {
   return {
-    session,
     ...context,
     /** Does the member's role grant ALL of these permissions? e.g. can({ product: ["update"] }) */
     can: (request: PermissionRequest) => hasPermissions(context.permissions, request),
   };
 }
 
+// ---------------------------------------------------------------------------------------
+// Store pages and actions (/dashboard/store/<storeId>/...)
+// ---------------------------------------------------------------------------------------
+
 /**
- * Same checks as requireMerchant but never redirects or throws: returns null when the
- * caller is not a merchant member (signed out, temporary password, no company).
- * For Server Actions, which answer "forbidden" instead of rendering a 404.
+ * Entry point of every store page: signed in (and past the forced password change), member
+ * of the company that owns `storeId`. 404 otherwise. Tenant data must only be read/written
+ * with the returned `tenantId` and `store.id`.
  */
-export async function getMerchantOrNull() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return null;
-  if (session.user.mustChangePassword && !session.session.impersonatedBy) return null;
-  const context = await getMerchantContext(session.user.id, session.session.activeOrganizationId);
-  if (!context) return null;
-  return {
-    session,
-    ...context,
-    can: (request: PermissionRequest) => hasPermissions(context.permissions, request),
-  };
+export async function requireMerchant(locale: string, storeId: string) {
+  const session = await requireUser(locale);
+  const context = await getMerchantContext(session.user.id, storeId);
+  if (!context) notFound();
+  return { session, ...withCan(context) };
 }
 
 /**
- * requireMerchant + a required permission. Pages call this; a missing permission is a 404
- * (the page is not revealed). Server Actions should use requireMerchant and return
- * "forbidden" when `can(...)` is false.
+ * Same checks as requireMerchant but never redirects or throws: null when the caller is not
+ * a member of the store's company. For Server Actions, which answer "forbidden" instead.
  */
-export async function requireMerchantPermission(
-  locale: string,
-  request: PermissionRequest,
-) {
-  const merchant = await requireMerchant(locale);
+export async function getMerchantOrNull(storeId: unknown) {
+  if (!isUuid(storeId)) return null;
+  const session = await actionSession();
+  if (!session) return null;
+  const context = await getMerchantContext(session.user.id, storeId);
+  if (!context) return null;
+  return { session, ...withCan(context) };
+}
+
+/** requireMerchant + a required permission; a missing permission is a 404. */
+export async function requireMerchantPermission(locale: string, storeId: string, request: PermissionRequest) {
+  const merchant = await requireMerchant(locale, storeId);
   if (!merchant.can(request)) notFound();
   return merchant;
 }
 
 /** requireMerchantPermission with the section's permission from PANEL_ACCESS. */
-export async function requirePanelSection(locale: string, section: PanelSection) {
-  return requireMerchantPermission(locale, PANEL_ACCESS[section]);
+export async function requirePanelSection(locale: string, storeId: string, section: StoreSection) {
+  return requireMerchantPermission(locale, storeId, PANEL_ACCESS[section]);
+}
+
+// ---------------------------------------------------------------------------------------
+// Company pages and actions (/dashboard/org/<tenantId>/...): stores, team, roles
+// ---------------------------------------------------------------------------------------
+
+/** Entry point of every company page: member of `tenantId`, 404 otherwise. */
+export async function requireCompany(locale: string, tenantId: string) {
+  const session = await requireUser(locale);
+  const context = await getCompanyContext(session.user.id, tenantId);
+  if (!context) notFound();
+  return { session, ...withCan(context) };
+}
+
+/** requireCompany for Server Actions: null instead of a 404. */
+export async function getCompanyOrNull(tenantId: unknown) {
+  if (!isUuid(tenantId)) return null;
+  const session = await actionSession();
+  if (!session) return null;
+  const context = await getCompanyContext(session.user.id, tenantId);
+  if (!context) return null;
+  return { session, ...withCan(context) };
+}
+
+/** requireCompany + a required permission; a missing permission is a 404. */
+export async function requireCompanyPermission(locale: string, tenantId: string, request: PermissionRequest) {
+  const company = await requireCompany(locale, tenantId);
+  if (!company.can(request)) notFound();
+  return company;
+}
+
+/** requireCompanyPermission with the section's permission from PANEL_ACCESS. */
+export async function requireCompanySection(locale: string, tenantId: string, section: CompanySection) {
+  return requireCompanyPermission(locale, tenantId, PANEL_ACCESS[section]);
 }

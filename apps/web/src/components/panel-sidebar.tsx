@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  ArrowLeft,
   BadgePercent,
+  Building2,
   ChevronsUpDown,
   ExternalLink,
   FolderTree,
@@ -47,17 +49,22 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+// Paths are relative to the panel's `basePath` (a store, a company or /admin)
 const ITEMS = {
-  home: { href: "/dashboard", icon: LayoutDashboard, exact: true },
-  orders: { href: "/dashboard/orders", icon: ShoppingBag, exact: false },
-  products: { href: "/dashboard/products", icon: Package, exact: false },
-  categories: { href: "/dashboard/categories", icon: FolderTree, exact: false },
-  promotions: { href: "/dashboard/promotions", icon: BadgePercent, exact: false },
-  settings: { href: "/dashboard/settings", icon: Settings, exact: false },
-  team: { href: "/dashboard/team", icon: Users, exact: false },
-  roles: { href: "/dashboard/roles", icon: ShieldCheck, exact: false },
-  stores: { href: "/admin", icon: Store, exact: true },
-  newMerchant: { href: "/admin/merchants/new", icon: UserPlus, exact: false },
+  // store panel
+  home: { path: "", icon: LayoutDashboard, exact: true },
+  orders: { path: "/orders", icon: ShoppingBag, exact: false },
+  products: { path: "/products", icon: Package, exact: false },
+  categories: { path: "/categories", icon: FolderTree, exact: false },
+  promotions: { path: "/promotions", icon: BadgePercent, exact: false },
+  settings: { path: "/settings", icon: Settings, exact: false },
+  // company panel
+  stores: { path: "", icon: Store, exact: true },
+  team: { path: "/team", icon: Users, exact: false },
+  roles: { path: "/roles", icon: ShieldCheck, exact: false },
+  // superadmin panel
+  merchants: { path: "", icon: Store, exact: true },
+  newMerchant: { path: "/merchants/new", icon: UserPlus, exact: false },
 } as const;
 
 export type PanelNavKey = keyof typeof ITEMS;
@@ -68,9 +75,12 @@ export type PanelNavGroup = {
 };
 
 export type PanelSidebarProps = {
+  /** Where the nav items live: storePath(id), orgPath(id) or "/admin". */
+  basePath: string;
   /** Only what the user is allowed to use (computed on the server from permissions). */
   groups: PanelNavGroup[];
-  brand: { title: string; subtitle: string; logoUrl: string | null; href: string };
+  /** `icon`: shown when there is no logo, a store (default) or a company */
+  brand: { title: string; subtitle: string; logoUrl: string | null; href: string; icon?: "store" | "company" };
   user: { name: string; email: string };
   /** Public storefront link, shown as "View store". */
   storeUrl?: string;
@@ -79,19 +89,23 @@ export type PanelSidebarProps = {
   /** Merchant panel: the user's companies; the switcher shows with 2 or more. */
   companies?: PanelCompany[];
   activeCompanyId?: string;
+  /** Store panel: link back to the company's store list. */
+  back?: { href: string; label: string };
 };
 
-function isActive(key: PanelNavKey, pathname: string) {
-  const item = ITEMS[key];
-  return item.exact
-    ? pathname === item.href
-    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+function hrefOf(basePath: string, key: PanelNavKey) {
+  return `${basePath}${ITEMS[key].path}`;
+}
+
+function isActive(basePath: string, key: PanelNavKey, pathname: string) {
+  const href = hrefOf(basePath, key);
+  return ITEMS[key].exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /** The item the current page belongs to (for the page header). */
-export function useActiveNavKey(groups: PanelNavGroup[]): PanelNavKey | null {
+export function useActiveNavKey(basePath: string, groups: PanelNavGroup[]): PanelNavKey | null {
   const pathname = usePathname();
-  return groups.flatMap((g) => g.items).find((key) => isActive(key, pathname)) ?? null;
+  return groups.flatMap((g) => g.items).find((key) => isActive(basePath, key, pathname)) ?? null;
 }
 
 function UserIdentity({ user }: { user: PanelSidebarProps["user"] }) {
@@ -109,6 +123,7 @@ function UserIdentity({ user }: { user: PanelSidebarProps["user"] }) {
 }
 
 export function PanelSidebar({
+  basePath,
   groups,
   brand,
   user,
@@ -116,6 +131,7 @@ export function PanelSidebar({
   impersonating,
   companies = [],
   activeCompanyId,
+  back,
 }: PanelSidebarProps) {
   const t = useTranslations("Panel");
   const pathname = usePathname();
@@ -147,6 +163,8 @@ export function PanelSidebar({
                 {brand.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- our own bucket, already compressed
                   <img src={brand.logoUrl} alt="" width={32} height={32} className="size-8 bg-white object-contain" />
+                ) : brand.icon === "company" ? (
+                  <Building2 className="size-4" />
                 ) : (
                   <Store className="size-4" />
                 )}
@@ -164,6 +182,23 @@ export function PanelSidebar({
       </SidebarHeader>
 
       <SidebarContent>
+        {back && (
+          <SidebarGroup className="pb-0">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={back.label}
+                    render={<Link href={back.href} onClick={closeOnMobile} />}
+                  >
+                    <ArrowLeft />
+                    <span>{back.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         <nav aria-label={t("nav.label")} className="flex flex-col">
           {groups.map((group, index) => (
             <SidebarGroup key={group.label ?? index}>
@@ -171,8 +206,9 @@ export function PanelSidebar({
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((key) => {
-                    const { href, icon: Icon } = ITEMS[key];
-                    const active = isActive(key, pathname);
+                    const { icon: Icon } = ITEMS[key];
+                    const href = hrefOf(basePath, key);
+                    const active = isActive(basePath, key, pathname);
                     return (
                       <SidebarMenuItem key={key}>
                         <SidebarMenuButton

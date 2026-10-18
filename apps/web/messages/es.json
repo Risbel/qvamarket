@@ -516,7 +516,8 @@
       "categories": "Categorías",
       "settings": "Ajustes",
       "promotions": "Promociones",
-      "stores": "Comercios",
+      "merchants": "Comercios",
+      "stores": "Tiendas",
       "newMerchant": "Nuevo comercio",
       "roles": "Roles",
       "team": "Equipo"
@@ -547,12 +548,20 @@
     "company": {
       "label": "Empresa",
       "switch": "Cambiar de empresa",
-      "current": "Empresa activa",
-      "switched": "Ahora trabajas en {name}.",
-      "error": "No se pudo cambiar de empresa. Inténtalo de nuevo.",
-      "staleTitle": "Cambiaste de empresa en otra pestaña",
-      "staleDescription": "Ahora trabajas en {name}. Esta pestaña muestra otra empresa: recárgala antes de seguir.",
-      "reload": "Recargar"
+      "current": "Empresa activa"
+    },
+    "allStores": "Todas las tiendas"
+  },
+  "Stores": {
+    "title": "Tiendas",
+    "description": "Las tiendas de {company}. Abre una para gestionar sus pedidos, su catálogo y sus ajustes.",
+    "empty": "Todavía no hay tiendas",
+    "emptyDescription": "Esta empresa aún no tiene ninguna tienda.",
+    "open": "Abrir",
+    "status": {
+      "pending": "Pendiente",
+      "active": "Activa",
+      "suspended": "Suspendida"
     }
   },
   "Products": {

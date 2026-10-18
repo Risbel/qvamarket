@@ -26,17 +26,18 @@ async function translator(locale: string) {
 }
 
 /** Both actions need product:update (same as editing the product itself). */
-async function merchantWithUpdate() {
-  const merchant = await getMerchantOrNull();
+async function merchantWithUpdate(storeId: unknown) {
+  const merchant = await getMerchantOrNull(storeId);
   return merchant && merchant.can({ product: ["update"] }) ? merchant : null;
 }
 
 export async function setProductOptionsAction(
+  storeId: unknown,
   productId: unknown,
   values: unknown,
   locale: string,
 ): Promise<VariantActionResult> {
-  const merchant = await merchantWithUpdate();
+  const merchant = await merchantWithUpdate(storeId);
   if (!merchant) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(productId);
   if (!id.success) return { ok: false, error: "notFound" };
@@ -53,11 +54,12 @@ export async function setProductOptionsAction(
 }
 
 export async function saveVariantsAction(
+  storeId: unknown,
   productId: unknown,
   values: unknown,
   locale: string,
 ): Promise<VariantActionResult> {
-  const merchant = await merchantWithUpdate();
+  const merchant = await merchantWithUpdate(storeId);
   if (!merchant) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(productId);
   if (!id.success) return { ok: false, error: "notFound" };

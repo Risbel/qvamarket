@@ -14,7 +14,8 @@ export default async function AdminLayout({
 
   return (
     <PanelShell
-      groups={[{ label: "platform", items: ["stores", "newMerchant"] }]}
+      basePath="/admin"
+      groups={[{ label: "platform", items: ["merchants", "newMerchant"] }]}
       brand={{ title: tMeta("title"), subtitle: t("title"), logoUrl: null, href: "/admin" }}
       user={{ name: session.user.name, email: session.user.email }}
       // An impersonated session never reaches /admin (it is a merchant session)

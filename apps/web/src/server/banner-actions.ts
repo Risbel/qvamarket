@@ -10,15 +10,15 @@ export type BannerActionResult =
   | { ok: false; error: BannerError | "forbidden" | "failed" | "empty" };
 
 // The banner is store configuration: it needs `store:update` (owner and manager).
-async function authorize() {
-  const merchant = await getMerchantOrNull();
+async function authorize(storeId: unknown) {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return null;
   return { tenantId: merchant.tenantId, storeId: merchant.store.id };
 }
 
 /** FormData: `device` (desktop | mobile) and `file`. */
-export async function uploadBannerImageAction(formData: FormData): Promise<BannerActionResult> {
-  const scope = await authorize();
+export async function uploadBannerImageAction(storeId: unknown, formData: FormData): Promise<BannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
 
   const device = z.enum(BANNER_DEVICES).safeParse(formData.get("device"));
@@ -37,8 +37,8 @@ export async function uploadBannerImageAction(formData: FormData): Promise<Banne
   }
 }
 
-export async function deleteBannerImageAction(id: unknown): Promise<BannerActionResult> {
-  const scope = await authorize();
+export async function deleteBannerImageAction(storeId: unknown, id: unknown): Promise<BannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return { ok: false, error: "notFound" };
@@ -50,8 +50,8 @@ export async function deleteBannerImageAction(id: unknown): Promise<BannerAction
   }
 }
 
-export async function moveBannerImageAction(id: unknown, direction: unknown): Promise<BannerActionResult> {
-  const scope = await authorize();
+export async function moveBannerImageAction(storeId: unknown, id: unknown, direction: unknown): Promise<BannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success || (direction !== "up" && direction !== "down")) return { ok: false, error: "notFound" };

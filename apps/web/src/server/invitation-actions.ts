@@ -9,7 +9,7 @@ import { routing } from "@/i18n/routing";
 import { auth } from "@/lib/auth";
 import { createInvitationSchema } from "@/lib/validation/team";
 import { cancelInvitation, createInvitation, respondToInvitation } from "./invitations";
-import { getMerchantOrNull } from "./tenant";
+import { getCompanyOrNull } from "./tenant";
 
 // Invitations for existing accounts. Creating and cancelling: team:create in the active
 // company. Answering: any signed-in account, but only for an invitation to its own email.
@@ -41,8 +41,8 @@ async function guard(name: string, fn: () => Promise<InvitationActionResult>): P
   }
 }
 
-export async function createInvitationAction(values: unknown, locale: string): Promise<InvitationActionResult> {
-  const merchant = await getMerchantOrNull();
+export async function createInvitationAction(orgId: unknown, values: unknown, locale: string): Promise<InvitationActionResult> {
+  const merchant = await getCompanyOrNull(orgId);
   if (!merchant || !merchant.can({ team: ["create"] })) return { ok: false, error: "forbidden" };
   const t = await getTranslations({ locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale, namespace: "Validation" });
   const parsed = createInvitationSchema(t).safeParse(values);
@@ -53,8 +53,8 @@ export async function createInvitationAction(values: unknown, locale: string): P
   return guard("createInvitation", () => createInvitation(merchant.tenantId, actor, parsed.data));
 }
 
-export async function cancelInvitationAction(id: unknown): Promise<InvitationActionResult> {
-  const merchant = await getMerchantOrNull();
+export async function cancelInvitationAction(orgId: unknown, id: unknown): Promise<InvitationActionResult> {
+  const merchant = await getCompanyOrNull(orgId);
   if (!merchant || !merchant.can({ team: ["create"] })) return { ok: false, error: "forbidden" };
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return { ok: false, error: "notFound" };

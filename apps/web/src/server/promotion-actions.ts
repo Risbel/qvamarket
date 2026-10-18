@@ -19,13 +19,13 @@ export type PromotionActionResult =
       rows?: { variantId: string; currencyCode: string }[];
     };
 
-async function merchantWith(request: PermissionRequest) {
-  const merchant = await getMerchantOrNull();
+async function merchantWith(storeId: unknown, request: PermissionRequest) {
+  const merchant = await getMerchantOrNull(storeId);
   return merchant && merchant.can(request) ? merchant : null;
 }
 
-async function save(id: string | null, values: unknown, locale: string): Promise<PromotionActionResult> {
-  const merchant = await merchantWith({ promotion: [id ? "update" : "create"] });
+async function save(storeId: unknown, id: string | null, values: unknown, locale: string): Promise<PromotionActionResult> {
+  const merchant = await merchantWith(storeId, { promotion: [id ? "update" : "create"] });
   if (!merchant) return { ok: false, error: "forbidden" };
   const t = await getTranslations({
     locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale,
@@ -45,18 +45,18 @@ async function save(id: string | null, values: unknown, locale: string): Promise
   }
 }
 
-export async function createPromotionAction(values: unknown, locale: string) {
-  return save(null, values, locale);
+export async function createPromotionAction(storeId: unknown, values: unknown, locale: string) {
+  return save(storeId, null, values, locale);
 }
 
-export async function updatePromotionAction(id: unknown, values: unknown, locale: string): Promise<PromotionActionResult> {
+export async function updatePromotionAction(storeId: unknown, id: unknown, values: unknown, locale: string): Promise<PromotionActionResult> {
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) return { ok: false, error: "notFound" };
-  return save(parsedId.data, values, locale);
+  return save(storeId, parsedId.data, values, locale);
 }
 
-export async function setPromotionStatusAction(id: unknown, status: unknown): Promise<PromotionActionResult> {
-  const merchant = await merchantWith({ promotion: ["update"] });
+export async function setPromotionStatusAction(storeId: unknown, id: unknown, status: unknown): Promise<PromotionActionResult> {
+  const merchant = await merchantWith(storeId, { promotion: ["update"] });
   if (!merchant) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success || (status !== "draft" && status !== "active")) return { ok: false, error: "notFound" };
@@ -69,8 +69,8 @@ export async function setPromotionStatusAction(id: unknown, status: unknown): Pr
   }
 }
 
-export async function deletePromotionAction(id: unknown): Promise<PromotionActionResult> {
-  const merchant = await merchantWith({ promotion: ["delete"] });
+export async function deletePromotionAction(storeId: unknown, id: unknown): Promise<PromotionActionResult> {
+  const merchant = await merchantWith(storeId, { promotion: ["delete"] });
   if (!merchant) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) return { ok: false, error: "notFound" };

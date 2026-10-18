@@ -17,8 +17,8 @@ export type SecondaryBannerActionResult =
   | { ok: false; error: SecondaryBannerError | "forbidden" | "failed" | "empty" };
 
 // The banner is store configuration: it needs `store:update` (owner and manager).
-async function authorize() {
-  const merchant = await getMerchantOrNull();
+async function authorize(storeId: unknown) {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return null;
   return { tenantId: merchant.tenantId, storeId: merchant.store.id };
 }
@@ -32,8 +32,8 @@ async function guard(name: string, run: () => Promise<SecondaryBannerActionResul
   }
 }
 
-export async function createSecondaryPairAction(device: unknown): Promise<SecondaryBannerActionResult> {
-  const scope = await authorize();
+export async function createSecondaryPairAction(storeId: unknown, device: unknown): Promise<SecondaryBannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = z.enum(BANNER_DEVICES).safeParse(device);
   if (!parsed.success) return { ok: false, error: "failed" };
@@ -44,8 +44,8 @@ export async function createSecondaryPairAction(device: unknown): Promise<Second
 }
 
 /** FormData: `pairId`, `side` (left | right) and `file`. */
-export async function uploadSecondaryPairImageAction(formData: FormData): Promise<SecondaryBannerActionResult> {
-  const scope = await authorize();
+export async function uploadSecondaryPairImageAction(storeId: unknown, formData: FormData): Promise<SecondaryBannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
 
   const pairId = z.uuid().safeParse(formData.get("pairId"));
@@ -62,24 +62,24 @@ export async function uploadSecondaryPairImageAction(formData: FormData): Promis
   );
 }
 
-export async function deleteSecondaryPairAction(id: unknown): Promise<SecondaryBannerActionResult> {
-  const scope = await authorize();
+export async function deleteSecondaryPairAction(storeId: unknown, id: unknown): Promise<SecondaryBannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return { ok: false, error: "notFound" };
   return guard("deleteSecondaryPairAction", () => deleteSecondaryPair(scope, parsed.data));
 }
 
-export async function moveSecondaryPairAction(id: unknown, direction: unknown): Promise<SecondaryBannerActionResult> {
-  const scope = await authorize();
+export async function moveSecondaryPairAction(storeId: unknown, id: unknown, direction: unknown): Promise<SecondaryBannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success || (direction !== "up" && direction !== "down")) return { ok: false, error: "notFound" };
   return guard("moveSecondaryPairAction", () => moveSecondaryPair(scope, parsed.data, direction));
 }
 
-export async function setSecondaryBannerVisibleAction(visible: unknown): Promise<SecondaryBannerActionResult> {
-  const scope = await authorize();
+export async function setSecondaryBannerVisibleAction(storeId: unknown, visible: unknown): Promise<SecondaryBannerActionResult> {
+  const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = z.boolean().safeParse(visible);
   if (!parsed.success) return { ok: false, error: "failed" };

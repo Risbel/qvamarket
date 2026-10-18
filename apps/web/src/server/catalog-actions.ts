@@ -44,8 +44,8 @@ export type CatalogActionResult =
       count?: number;
     };
 
-async function scopeIf(request: PermissionRequest) {
-  const merchant = await getMerchantOrNull();
+async function scopeIf(storeId: unknown, request: PermissionRequest) {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can(request)) return null;
   return { tenantId: merchant.tenantId, storeId: merchant.store.id };
 }
@@ -79,16 +79,16 @@ async function guard<T>(fn: () => Promise<T>): Promise<T | CatalogActionResult> 
 
 // ---- categories (category:create / update / delete)
 
-export async function createCategoryAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ category: ["create"] });
+export async function createCategoryAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { category: ["create"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createCategorySchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(() => createCategory(scope, parsed.data)) as Promise<CatalogActionResult>;
 }
 
-export async function updateCategoryAction(id: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ category: ["update"] });
+export async function updateCategoryAction(storeId: unknown, id: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { category: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) return { ok: false, error: "notFound" };
@@ -97,24 +97,24 @@ export async function updateCategoryAction(id: unknown, values: unknown, locale:
   return guard(() => renameCategory(scope, parsedId.data, parsed.data)) as Promise<CatalogActionResult>;
 }
 
-export async function setCategoryVisibilityAction(id: unknown, visible: unknown): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ category: ["update"] });
+export async function setCategoryVisibilityAction(storeId: unknown, id: unknown, visible: unknown): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { category: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success || typeof visible !== "boolean") return { ok: false, error: "notFound" };
   return guard(() => setCategoryVisibility(scope, parsedId.data, visible)) as Promise<CatalogActionResult>;
 }
 
-export async function moveCategoryAction(id: unknown, direction: unknown): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ category: ["update"] });
+export async function moveCategoryAction(storeId: unknown, id: unknown, direction: unknown): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { category: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success || (direction !== "up" && direction !== "down")) return { ok: false, error: "notFound" };
   return guard(() => moveCategory(scope, parsedId.data, direction)) as Promise<CatalogActionResult>;
 }
 
-export async function deleteCategoryAction(id: unknown): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ category: ["delete"] });
+export async function deleteCategoryAction(storeId: unknown, id: unknown): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { category: ["delete"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) return { ok: false, error: "notFound" };
@@ -123,56 +123,56 @@ export async function deleteCategoryAction(id: unknown): Promise<CatalogActionRe
 
 // ---- store settings (store:update)
 
-export async function updateStoreProfileAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function updateStoreProfileAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createStoreProfileSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(async () => ((await updateStoreProfile(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
-export async function updatePickupSettingsAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function updatePickupSettingsAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createPickupSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(async () => ((await updatePickupSettings(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
-export async function updateFooterTextAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function updateFooterTextAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createFooterTextSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(async () => ((await updateFooterText(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
-export async function updateFooterLinksAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function updateFooterLinksAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createFooterLinksSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalidByPath(parsed.error);
   return guard(async () => ((await updateFooterLinks(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
-export async function updateFooterSocialAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function updateFooterSocialAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createFooterSocialSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalidByPath(parsed.error);
   return guard(async () => ((await updateFooterSocial(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" })) as Promise<CatalogActionResult>;
 }
 
-export async function saveDeliveryAreaAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function saveDeliveryAreaAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createDeliveryAreaSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
   return guard(() => saveDeliveryArea(scope, parsed.data)) as Promise<CatalogActionResult>;
 }
 
-export async function saveDeliveryChargesAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const merchant = await getMerchantOrNull();
+export async function saveDeliveryChargesAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return { ok: false, error: "forbidden" };
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
   // The store's own currencies: amounts in any other currency are rejected
@@ -182,8 +182,8 @@ export async function saveDeliveryChargesAction(values: unknown, locale: string)
   return guard(() => saveDeliveryCharges(scope, toDeliveryChargesInput(parsed.data, currencies))) as Promise<CatalogActionResult>;
 }
 
-export async function setStoreCurrenciesAction(values: unknown, locale: string): Promise<CatalogActionResult> {
-  const scope = await scopeIf({ store: ["update"] });
+export async function setStoreCurrenciesAction(storeId: unknown, values: unknown, locale: string): Promise<CatalogActionResult> {
+  const scope = await scopeIf(storeId, { store: ["update"] });
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = createCurrenciesSchema(await translator(locale)).safeParse(values);
   if (!parsed.success) return invalidByPath(parsed.error);

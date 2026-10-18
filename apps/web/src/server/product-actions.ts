@@ -61,10 +61,11 @@ const scopeOf = (merchant: Merchant) => ({
 });
 
 export async function createProductAction(
+  storeId: unknown,
   values: unknown,
   locale: string,
 ): Promise<ProductActionResult> {
-  const merchant = await getMerchantOrNull();
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ product: ["create"] })) {
     return { ok: false, error: "forbidden" };
   }
@@ -80,12 +81,13 @@ export async function createProductAction(
 }
 
 export async function updateProductAction(
+  storeId: unknown,
   id: unknown,
   values: unknown,
   locale: string,
 ): Promise<ProductActionResult> {
   const parsedId = z.uuid().safeParse(id);
-  const merchant = await getMerchantOrNull();
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ product: ["update"] })) {
     return { ok: false, error: "forbidden" };
   }
@@ -105,9 +107,9 @@ export async function updateProductAction(
   }
 }
 
-export async function deleteProductAction(id: unknown): Promise<ProductActionResult> {
+export async function deleteProductAction(storeId: unknown, id: unknown): Promise<ProductActionResult> {
   const parsedId = z.uuid().safeParse(id);
-  const merchant = await getMerchantOrNull();
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ product: ["delete"] })) {
     return { ok: false, error: "forbidden" };
   }
@@ -134,10 +136,11 @@ const bulkSchema = z.object({
 });
 
 async function bulk(
+  storeId: unknown,
   values: unknown,
   run: (scope: ReturnType<typeof scopeOf>, input: z.infer<typeof bulkSchema>) => Promise<BulkPricesResult | null>,
 ): Promise<BulkPricesActionResult> {
-  const merchant = await getMerchantOrNull();
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ product: ["update"] })) return { ok: false, error: "forbidden" };
   const parsed = bulkSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "invalid" };
@@ -150,15 +153,15 @@ async function bulk(
 }
 
 /** The chosen products' prices in a currency follow the rate again (manual prices removed). */
-export async function setPricesAutoAction(values: unknown): Promise<BulkPricesActionResult> {
-  return bulk(values, (scope, input) => setPricesAuto(scope, input.productIds, input.currencyCode));
+export async function setPricesAutoAction(storeId: unknown, values: unknown): Promise<BulkPricesActionResult> {
+  return bulk(storeId, values, (scope, input) => setPricesAuto(scope, input.productIds, input.currencyCode));
 }
 
 /** Raises or lowers by a percentage the chosen products' manual prices in a currency. */
-export async function adjustPricesAction(values: unknown): Promise<BulkPricesActionResult> {
+export async function adjustPricesAction(storeId: unknown, values: unknown): Promise<BulkPricesActionResult> {
   const percent = z.object({ percent: z.string().max(10) }).safeParse(values);
   const basisPoints = percent.success ? parsePercent(percent.data.percent) : null;
-  return bulk(values, (scope, input) =>
+  return bulk(storeId, values, (scope, input) =>
     basisPoints === null ? Promise.resolve(null) : adjustPrices(scope, input.productIds, input.currencyCode, basisPoints),
   );
 }

@@ -516,7 +516,8 @@
       "categories": "Categories",
       "settings": "Settings",
       "promotions": "Promotions",
-      "stores": "Merchants",
+      "merchants": "Merchants",
+      "stores": "Stores",
       "newMerchant": "New merchant",
       "roles": "Roles",
       "team": "Team"
@@ -547,12 +548,20 @@
     "company": {
       "label": "Company",
       "switch": "Switch company",
-      "current": "Active company",
-      "switched": "You are now working in {name}.",
-      "error": "Could not switch company. Please try again.",
-      "staleTitle": "You switched company in another tab",
-      "staleDescription": "You are now working in {name}. This tab shows another company: reload it before going on.",
-      "reload": "Reload"
+      "current": "Active company"
+    },
+    "allStores": "All stores"
+  },
+  "Stores": {
+    "title": "Stores",
+    "description": "The stores of {company}. Open one to manage its orders, catalog and settings.",
+    "empty": "No stores yet",
+    "emptyDescription": "This company does not have any store yet.",
+    "open": "Open",
+    "status": {
+      "pending": "Pending",
+      "active": "Active",
+      "suspended": "Suspended"
     }
   },
   "Products": {

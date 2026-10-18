@@ -18,8 +18,8 @@ export type StorePageActionResult =
       fieldErrors?: Record<string, string[]>;
     };
 
-async function scopeOrNull() {
-  const merchant = await getMerchantOrNull();
+async function scopeOrNull(storeId: unknown) {
+  const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return null;
   return { tenantId: merchant.tenantId, storeId: merchant.store.id };
 }
@@ -41,8 +41,8 @@ async function guard(fn: () => Promise<StorePageActionResult>): Promise<StorePag
   }
 }
 
-export async function createStorePageAction(values: unknown, locale: string): Promise<StorePageActionResult> {
-  const scope = await scopeOrNull();
+export async function createStorePageAction(storeId: unknown, values: unknown, locale: string): Promise<StorePageActionResult> {
+  const scope = await scopeOrNull(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const parsed = await parse(values, locale);
   if (!parsed.success) {
@@ -51,8 +51,8 @@ export async function createStorePageAction(values: unknown, locale: string): Pr
   return guard(() => createStorePage(scope, parsed.data));
 }
 
-export async function updateStorePageAction(id: unknown, values: unknown, locale: string): Promise<StorePageActionResult> {
-  const scope = await scopeOrNull();
+export async function updateStorePageAction(storeId: unknown, id: unknown, values: unknown, locale: string): Promise<StorePageActionResult> {
+  const scope = await scopeOrNull(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const pageId = z.uuid().safeParse(id);
   if (!pageId.success) return { ok: false, error: "notFound" };
@@ -63,8 +63,8 @@ export async function updateStorePageAction(id: unknown, values: unknown, locale
   return guard(() => updateStorePage(scope, pageId.data, parsed.data));
 }
 
-export async function deleteStorePageAction(id: unknown): Promise<StorePageActionResult> {
-  const scope = await scopeOrNull();
+export async function deleteStorePageAction(storeId: unknown, id: unknown): Promise<StorePageActionResult> {
+  const scope = await scopeOrNull(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
   const pageId = z.uuid().safeParse(id);
   if (!pageId.success) return { ok: false, error: "notFound" };
