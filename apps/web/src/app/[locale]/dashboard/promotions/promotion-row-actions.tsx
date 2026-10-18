@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { deletePromotionAction, setPromotionStatusAction } from "@/server/promotion-actions";
+import { useCan } from "@/components/permissions/permissions-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,19 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-/** Switch a promotion on/off and delete it (with confirmation). */
-export function PromotionRowActions({
-  id,
-  name,
-  active,
-  canDelete,
-}: {
-  id: string;
-  name: string;
-  active: boolean;
-  canDelete: boolean;
-}) {
+/** Switch a promotion on/off (promotion:update) and delete it with confirmation (promotion:delete). */
+export function PromotionRowActions({ id, name, active }: { id: string; name: string; active: boolean }) {
   const t = useTranslations("Promotions");
+  const can = useCan();
+  const canUpdate = can({ promotion: ["update"] });
+  const canDelete = can({ promotion: ["delete"] });
   const router = useRouter();
   const hydrated = useHydrated();
   const [busy, setBusy] = useState(false);
@@ -46,22 +40,26 @@ export function PromotionRowActions({
     return result.ok;
   }
 
+  if (!canUpdate && !canDelete) return null;
+
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex gap-1">
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={!hydrated || busy}
-          onClick={() =>
-            run(
-              () => setPromotionStatusAction(id, active ? "draft" : "active"),
-              t(active ? "toasts.paused" : "toasts.activated", { name }),
-            )
-          }
-        >
-          {active ? t("pause") : t("activate")}
-        </Button>
+        {canUpdate && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!hydrated || busy}
+            onClick={() =>
+              run(
+                () => setPromotionStatusAction(id, active ? "draft" : "active"),
+                t(active ? "toasts.paused" : "toasts.activated", { name }),
+              )
+            }
+          >
+            {active ? t("pause") : t("activate")}
+          </Button>
+        )}
         {canDelete && (
           <Button size="sm" variant="outline" disabled={!hydrated || busy} onClick={() => setConfirming(true)}>
             {t("delete")}

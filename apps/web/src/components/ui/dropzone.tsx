@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useInheritedDisabled } from "@/components/inherited-disabled"
 import { cn } from "cn"
 
 /**
@@ -41,7 +42,7 @@ type DropzoneProps = Omit<React.ComponentProps<"label">, "onDrop" | "onChange"> 
 function Dropzone({
   accept = [],
   multiple = false,
-  disabled = false,
+  disabled: ownDisabled = false,
   onFiles,
   onReject,
   inputProps,
@@ -50,6 +51,8 @@ function Dropzone({
   ...props
 }: DropzoneProps) {
   const [dragging, setDragging] = React.useState(false)
+  const inheritedDisabled = useInheritedDisabled()
+  const disabled = ownDisabled || inheritedDisabled
 
   function handle(files: File[]) {
     const accepted = files.filter((file) => matchesAccept(file, accept))

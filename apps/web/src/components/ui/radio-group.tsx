@@ -3,10 +3,13 @@
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
 import { cn } from "cn"
+import { useInheritedDisabled } from "@/components/inherited-disabled"
 
-function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
+function RadioGroup({ className, disabled, ...props }: RadioGroupPrimitive.Props) {
+  const inheritedDisabled = useInheritedDisabled()
   return (
     <RadioGroupPrimitive
+      disabled={disabled || inheritedDisabled}
       data-slot="radio-group"
       className={cn("grid w-full gap-2", className)}
       {...props}

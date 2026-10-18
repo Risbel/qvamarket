@@ -63,8 +63,6 @@ export default async function ProductsPage({
         <ProductsTable
           rows={rows}
           currencies={merchant.store.currencies}
-          canUpdate={merchant.can({ product: ["update"] })}
-          canDelete={merchant.can({ product: ["delete"] })}
         />
       )}
     </div>

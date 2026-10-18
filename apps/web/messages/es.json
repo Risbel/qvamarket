@@ -566,7 +566,8 @@
       "menu": "Acciones de \"{name}\"",
       "edit": "Editar",
       "viewInStore": "Ver en la tienda",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "view": "Ver"
     },
     "new": "Nuevo producto",
     "edit": "Editar producto",
@@ -1305,7 +1306,8 @@
         "created": "Página «{title}» creada.",
         "saved": "Página «{title}» guardada.",
         "deleted": "Página «{title}» borrada."
-      }
+      },
+      "view": "Ver"
     }
   },
   "Promotions": {

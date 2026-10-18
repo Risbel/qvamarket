@@ -9,6 +9,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createVariantsSchema, type FormCurrency, type VariantsFormValues } from "@/lib/validation/product";
 import { saveVariantsAction } from "@/server/variant-actions";
+import { useInheritedDisabled } from "@/components/inherited-disabled";
 import { Button } from "@/components/ui/button";
 import { pricesToFormValues } from "../../form-values";
 import { TextField, VariantPrices } from "../../price-fields";
@@ -47,6 +48,8 @@ export function VariantsEditor({
   const router = useRouter();
   const hydrated = useHydrated();
   const [open, setOpen] = useState<Set<number>>(new Set());
+  // Read-only (the card toggles are disabled with the form): show every variant open
+  const readOnly = useInheritedDisabled();
   const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createVariantsSchema(tv, currencies), [tv, currencies]);
   const form = useForm<VariantsFormValues>({ resolver: zodResolver(schema), defaultValues: toValues(variants, currencies) });
@@ -105,7 +108,7 @@ export function VariantsEditor({
       <form onSubmit={form.handleSubmit(onSubmit, openErrors)} method="post" noValidate className="flex flex-col gap-3">
         <ul className="flex flex-col gap-2">
           {variants.map((variant, index) => {
-            const expanded = open.has(index);
+            const expanded = readOnly || open.has(index);
             const current = watched[index];
             const price = current?.prices[baseIndex]?.price;
             const stock = current?.stock;

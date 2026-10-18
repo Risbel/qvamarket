@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { phoneCountryOptions } from "@/lib/countries";
 import { getStoreProfile } from "@/server/store-settings";
 import { requirePanelSection } from "@/server/tenant";
+import { PermissionFieldset } from "@/components/permissions/permission-fieldset";
 import { SectionHeader } from "../section-header";
 import { StoreProfileForm } from "./store-profile-form";
 
@@ -18,19 +19,21 @@ export default async function GeneralSettingsPage({
   return (
     <>
       <SectionHeader title={t("title")} description={t("description")} />
-      <StoreProfileForm
-        countries={phoneCountryOptions(locale)}
-        initialValues={{
-          description: profile?.description ?? "",
-          phone: profile?.phone ?? "",
-          whatsapp: profile?.whatsapp ?? "",
-          contactEmail: profile?.contactEmail ?? "",
-          address: profile?.address ?? "",
-          phoneCountry: profile?.phoneCountry ?? "",
-          metaTitle: profile?.metaTitle ?? "",
-          metaDescription: profile?.metaDescription ?? "",
-        }}
-      />
+      <PermissionFieldset permission={{ store: ["update"] }}>
+        <StoreProfileForm
+          countries={phoneCountryOptions(locale)}
+          initialValues={{
+            description: profile?.description ?? "",
+            phone: profile?.phone ?? "",
+            whatsapp: profile?.whatsapp ?? "",
+            contactEmail: profile?.contactEmail ?? "",
+            address: profile?.address ?? "",
+            phoneCountry: profile?.phoneCountry ?? "",
+            metaTitle: profile?.metaTitle ?? "",
+            metaDescription: profile?.metaDescription ?? "",
+          }}
+        />
+      </PermissionFieldset>
     </>
   );
 }

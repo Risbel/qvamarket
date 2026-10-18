@@ -22,6 +22,8 @@ export default async function PagesSettingsPage({ params }: PageProps<"/[locale]
   ]);
   const storeUrl = buildStoreUrl(merchant.store.slug, requestHeaders.get("host"));
   const full = pages.length >= MAX_STORE_PAGES;
+  // store:read sees the pages; creating, editing and deleting need store:update
+  const canEdit = merchant.can({ store: ["update"] });
 
   return (
     <>
@@ -29,13 +31,14 @@ export default async function PagesSettingsPage({ params }: PageProps<"/[locale]
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{t("count", { count: pages.length, max: MAX_STORE_PAGES })}</p>
-        {full ? (
-          <p className="text-sm text-muted-foreground">{t("limitReached")}</p>
-        ) : (
-          <Link href="/dashboard/settings/pages/new" className={buttonVariants()}>
-            {t("new")}
-          </Link>
-        )}
+        {canEdit &&
+          (full ? (
+            <p className="text-sm text-muted-foreground">{t("limitReached")}</p>
+          ) : (
+            <Link href="/dashboard/settings/pages/new" className={buttonVariants()}>
+              {t("new")}
+            </Link>
+          ))}
       </div>
 
       {pages.length === 0 ? (
@@ -84,9 +87,9 @@ export default async function PagesSettingsPage({ params }: PageProps<"/[locale]
                     href={`/dashboard/settings/pages/${page.id}`}
                     className={buttonVariants({ size: "sm", variant: "outline" })}
                   >
-                    {t("edit")}
+                    {canEdit ? t("edit") : t("view")}
                   </Link>
-                  <DeletePageButton id={page.id} title={page.title} />
+                  {canEdit && <DeletePageButton id={page.id} title={page.title} />}
                 </div>
               </li>
             );

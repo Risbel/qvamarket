@@ -19,11 +19,7 @@ export default async function CategoriesPage({
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
-      <CategoriesManager
-        categories={categories}
-        canCreate={merchant.can({ category: ["create"] })}
-        canDelete={merchant.can({ category: ["delete"] })}
-      />
+      <CategoriesManager categories={categories} />
     </div>
   );
 }

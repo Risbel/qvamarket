@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { DEFAULT_MAP_CENTER, MAX_SERVICE_AREA_POINTS, type LatLng, type LngLat } from "@/lib/map";
 import { useHydrated } from "@/lib/use-hydrated";
+import { useInheritedDisabled } from "@/components/inherited-disabled";
 import { createDeliveryAreaSchema, type DeliveryAreaValues } from "@/lib/validation/delivery";
 import { saveDeliveryAreaAction } from "@/server/catalog-actions";
 import { BaseMap } from "@/components/map/base-map";
@@ -60,6 +61,8 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
   const [mode, setMode] = useState<Mode>(initialValues.location ? "area" : "location");
   const [formError, setFormError] = useState<string | null>(null);
   const [map, setMap] = useState<{ map: MapLibreMap; maplibre: typeof import("maplibre-gl") } | null>(null);
+  // Read-only (no store:update): the map shows the area but takes no clicks or drags
+  const readOnly = useInheritedDisabled();
   const marker = useRef<Marker | null>(null);
 
   const schema = useMemo(() => createDeliveryAreaSchema(tv), [tv]);
@@ -68,16 +71,17 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
   const area = useWatch({ control: form.control, name: "area" });
 
   // Latest values for the map's click handler (registered once)
-  const latest = useRef({ mode, area });
+  const latest = useRef({ mode, area, readOnly });
   useEffect(() => {
-    latest.current = { mode, area };
-  }, [mode, area]);
+    latest.current = { mode, area, readOnly };
+  }, [mode, area, readOnly]);
 
   // Map clicks: place the store, or add a corner to the area
   useEffect(() => {
     if (!map) return;
     const onClick = (event: { lngLat: { lng: number; lat: number } }) => {
       const { lng, lat } = event.lngLat;
+      if (latest.current.readOnly) return;
       if (latest.current.mode === "location") {
         form.setValue("location", { lat, lng }, { shouldDirty: true });
       } else if (latest.current.area.length < MAX_SERVICE_AREA_POINTS) {
@@ -104,15 +108,15 @@ export function DeliveryAreaForm({ initialValues }: { initialValues: DeliveryAre
       return;
     }
     if (!marker.current) {
-      marker.current = new map.maplibre.Marker({ draggable: true, color: "#dc2626" }).setLngLat([location.lng, location.lat]).addTo(map.map);
+      marker.current = new map.maplibre.Marker({ draggable: !readOnly, color: "#dc2626" }).setLngLat([location.lng, location.lat]).addTo(map.map);
       marker.current.on("dragend", () => {
         const point = marker.current!.getLngLat();
         form.setValue("location", { lat: point.lat, lng: point.lng }, { shouldDirty: true });
       });
     } else {
-      marker.current.setLngLat([location.lng, location.lat]);
+      marker.current.setLngLat([location.lng, location.lat]).setDraggable(!readOnly);
     }
-  }, [map, location, form]);
+  }, [map, location, form, readOnly]);
 
   function onReady(ready: MapLibreMap, maplibre: typeof import("maplibre-gl")) {
     ready.addSource("area", { type: "geojson", data: areaFeatures(initialValues.area) });

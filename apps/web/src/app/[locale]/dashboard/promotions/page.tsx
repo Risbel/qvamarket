@@ -75,7 +75,6 @@ export default async function PromotionsPage({ params }: PageProps<"/[locale]/da
                   id={promotion.id}
                   name={promotion.name}
                   active={promotion.status === "active"}
-                  canDelete={merchant.can({ promotion: ["delete"] })}
                 />
               </li>
             );

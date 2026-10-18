@@ -8,9 +8,9 @@ import type { PermissionRequest } from "./permissions";
 export const PANEL_ACCESS = {
   orders: { order: ["read"] },
   products: { product: ["read"] },
-  categories: { category: ["update"] },
-  promotions: { promotion: ["update"] },
-  settings: { store: ["update"] },
+  categories: { category: ["read"] },
+  promotions: { promotion: ["read"] },
+  settings: { store: ["read"] },
   team: { team: ["read"] },
   roles: { role: ["read"] },
 } as const satisfies Record<string, PermissionRequest>;

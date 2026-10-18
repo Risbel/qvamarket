@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getStoreProfile } from "@/server/store-settings";
 import { requirePanelSection } from "@/server/tenant";
+import { PermissionFieldset } from "@/components/permissions/permission-fieldset";
 import { SectionHeader } from "../section-header";
 import { PickupForm } from "./pickup-form";
 
@@ -17,7 +18,9 @@ export default async function PickupSettingsPage({
   return (
     <>
       <SectionHeader title={t("title")} description={t("description")} />
-      <PickupForm initialValues={{ pickupInstructions: profile?.pickupInstructions ?? "" }} />
+      <PermissionFieldset permission={{ store: ["update"] }}>
+        <PickupForm initialValues={{ pickupInstructions: profile?.pickupInstructions ?? "" }} />
+      </PermissionFieldset>
     </>
   );
 }

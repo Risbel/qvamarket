@@ -2,16 +2,20 @@
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
 import { cn } from "cn"
+import { useInheritedDisabled } from "@/components/inherited-disabled"
 
 function Switch({
   className,
   size = "default",
+  disabled,
   ...props
 }: SwitchPrimitive.Root.Props & {
   size?: "sm" | "default"
 }) {
+  const inheritedDisabled = useInheritedDisabled()
   return (
     <SwitchPrimitive.Root
+      disabled={disabled || inheritedDisabled}
       data-slot="switch"
       data-size={size}
       className={cn(

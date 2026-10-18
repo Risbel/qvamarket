@@ -3,14 +3,16 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
 import { minorToInput } from "@/lib/money";
 import { getPromotion, listPromotableProducts } from "@/server/promotions";
-import { requireMerchantPermission } from "@/server/tenant";
+import { PermissionFieldset } from "@/components/permissions/permission-fieldset";
+import { requirePanelSection } from "@/server/tenant";
 import { PromotionForm } from "../promotion-form";
 
 export default async function EditPromotionPage({ params }: PageProps<"/[locale]/dashboard/promotions/[id]">) {
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const merchant = await requireMerchantPermission(locale, { promotion: ["update"] });
+  // promotion:read opens it read-only; saving needs promotion:update (checked by the action)
+  const merchant = await requirePanelSection(locale, "promotions");
   if (!z.uuid().safeParse(id).success) notFound();
   // Scoped by tenant and store: another company's promotion is a 404
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
@@ -33,20 +35,22 @@ export default async function EditPromotionPage({ params }: PageProps<"/[locale]
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
-      <h1 className="text-2xl font-semibold">{t("edit")}</h1>
-      <PromotionForm
-        promotionId={promotion.id}
-        products={products}
-        currencies={currencies}
-        initialValues={{
-          name: promotion.name,
-          kind: promotion.kind as "sale" | "override",
-          status: promotion.status as "draft" | "active",
-          startsAt: promotion.startsAt?.toISOString() ?? "",
-          endsAt: promotion.endsAt?.toISOString() ?? "",
-          items,
-        }}
-      />
+      <h1 className="text-2xl font-semibold">{merchant.can({ promotion: ["update"] }) ? t("edit") : promotion.name}</h1>
+      <PermissionFieldset permission={{ promotion: ["update"] }}>
+        <PromotionForm
+          promotionId={promotion.id}
+          products={products}
+          currencies={currencies}
+          initialValues={{
+            name: promotion.name,
+            kind: promotion.kind as "sale" | "override",
+            status: promotion.status as "draft" | "active",
+            startsAt: promotion.startsAt?.toISOString() ?? "",
+            endsAt: promotion.endsAt?.toISOString() ?? "",
+            items,
+          }}
+        />
+      </PermissionFieldset>
     </div>
   );
 }

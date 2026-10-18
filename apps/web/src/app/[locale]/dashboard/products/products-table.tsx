@@ -12,13 +12,20 @@ import {
   type RowSelectionState,
   type SortFn,
 } from "@tanstack/react-table";
-import { ExternalLinkIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  ExternalLinkIcon,
+  EyeIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/money";
 import type { FormCurrency } from "@/lib/validation/product";
 import type { ProductPrice } from "@/server/products";
 import { SortButton } from "@/components/data-table/sort-button";
 import { Badge } from "@/components/ui/badge";
+import { useCan } from "@/components/permissions/permissions-provider";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,18 +92,11 @@ const COLUMN_CLASS: Partial<Record<string, string>> = {
  * Members who may edit products can select rows and change their prices in that currency at
  * once (follow the rate again / adjust by a percentage).
  */
-export function ProductsTable({
-  rows,
-  currencies,
-  canUpdate,
-  canDelete,
-}: {
-  rows: ProductRow[];
-  currencies: FormCurrency[];
-  canUpdate: boolean;
-  canDelete: boolean;
-}) {
+export function ProductsTable({ rows, currencies }: { rows: ProductRow[]; currencies: FormCurrency[] }) {
   const t = useTranslations("Products");
+  const can = useCan();
+  const canUpdate = can({ product: ["update"] });
+  const canDelete = can({ product: ["delete"] });
   const locale = useLocale();
   const baseCurrency = currencies.find((c) => c.isBase) ?? currencies[0];
   const [currencyCode, setCurrencyCode] = useState(baseCurrency.code);
@@ -160,17 +160,15 @@ export function ProductsTable({
           />
         ),
         sortFn: byText,
-        cell: ({ row }) =>
-          canUpdate ? (
-            <Link
-              href={`/dashboard/products/${row.original.id}/edit`}
-              className="font-medium underline-offset-4 hover:underline"
-            >
-              {row.original.name}
-            </Link>
-          ) : (
-            <span className="font-medium">{row.original.name}</span>
-          ),
+        // Opens the product: editable with product:update, read-only otherwise
+        cell: ({ row }) => (
+          <Link
+            href={`/dashboard/products/${row.original.id}/edit`}
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            {row.original.name}
+          </Link>
+        ),
       }),
       helper.accessor((p) => p.categoryName ?? undefined, {
         id: "category",
@@ -391,8 +389,6 @@ function RowActions({
   const t = useTranslations("Products");
   const [deleting, setDeleting] = useState(false);
 
-  if (!canUpdate && !canDelete && !product.publicUrl) return null;
-
   return (
     <>
       <DropdownMenu>
@@ -408,12 +404,10 @@ function RowActions({
           <MoreHorizontalIcon />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-auto min-w-44">
-          {canUpdate && (
-            <DropdownMenuItem render={<Link href={`/dashboard/products/${product.id}/edit`} />}>
-              <PencilIcon />
-              {t("actions.edit")}
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem render={<Link href={`/dashboard/products/${product.id}/edit`} />}>
+            {canUpdate ? <PencilIcon /> : <EyeIcon />}
+            {canUpdate ? t("actions.edit") : t("actions.view")}
+          </DropdownMenuItem>
           {product.publicUrl && (
             <DropdownMenuItem
               render={<a href={product.publicUrl} target="_blank" rel="noreferrer" />}
@@ -424,7 +418,7 @@ function RowActions({
           )}
           {canDelete && (
             <>
-              {(canUpdate || product.publicUrl) && <DropdownMenuSeparator />}
+              <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
                 <Trash2Icon />
                 {t("actions.delete")}

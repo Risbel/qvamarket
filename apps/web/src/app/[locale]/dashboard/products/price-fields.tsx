@@ -20,6 +20,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { convertMinor } from "@/lib/exchange";
 import { formatMoney, minorToInput, parsePriceToMinor } from "@/lib/money";
 import { MAX_TIERS, type FormCurrency } from "@/lib/validation/product";
+import { useInheritedDisabled } from "@/components/inherited-disabled";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -180,7 +181,9 @@ export function VariantPrices<T extends FieldValues>({
   // Open from the start when some currency has its own prices (the merchant should see them)
   const [open, setOpen] = useState(() => others.some(({ index }) => get(defaultValues, `${base}.${index}.manual`) === true));
   const hasErrors = others.some(({ index }) => get(errors, `${base}.${index}`) !== undefined);
-  const expanded = open || hasErrors;
+  // Read-only (the toggle is disabled with the form): show every currency
+  const readOnly = useInheritedDisabled();
+  const expanded = readOnly || open || hasErrors;
   const regionId = `${base}-other-currencies`.replaceAll(".", "-");
 
   return (

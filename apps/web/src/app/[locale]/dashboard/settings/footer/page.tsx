@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getFooterSettings } from "@/server/store-settings";
 import { requirePanelSection } from "@/server/tenant";
+import { PermissionFieldset } from "@/components/permissions/permission-fieldset";
 import { SectionHeader } from "../section-header";
 import { FooterLinksForm } from "./footer-links-form";
 import { FooterSocialForm } from "./footer-social-form";
@@ -27,9 +28,21 @@ export default async function FooterSettingsPage({
       <SectionHeader title={t("title")} description={t("description")} />
       <FooterTabs
         defaultTab={FOOTER_TABS.find((value) => value === tab) ?? "about"}
-        about={<FooterTextForm initialValues={{ footerText: footer.text }} />}
-        links={<FooterLinksForm initialValues={{ groups: footer.groups }} />}
-        social={<FooterSocialForm initialValues={{ links: footer.social }} />}
+        about={
+          <PermissionFieldset permission={{ store: ["update"] }}>
+            <FooterTextForm initialValues={{ footerText: footer.text }} />
+          </PermissionFieldset>
+        }
+        links={
+          <PermissionFieldset permission={{ store: ["update"] }}>
+            <FooterLinksForm initialValues={{ groups: footer.groups }} />
+          </PermissionFieldset>
+        }
+        social={
+          <PermissionFieldset permission={{ store: ["update"] }}>
+            <FooterSocialForm initialValues={{ links: footer.social }} />
+          </PermissionFieldset>
+        }
       />
     </>
   );

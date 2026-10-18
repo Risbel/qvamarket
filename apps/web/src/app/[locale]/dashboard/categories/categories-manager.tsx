@@ -17,6 +17,7 @@ import {
   updateCategoryAction,
   type CatalogActionResult,
 } from "@/server/catalog-actions";
+import { useCan } from "@/components/permissions/permissions-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,16 +38,16 @@ type Category = {
   productCount: number;
 };
 
-export function CategoriesManager({
-  categories,
-  canCreate,
-  canDelete,
-}: {
-  categories: Category[];
-  canCreate: boolean;
-  canDelete: boolean;
-}) {
+/**
+ * The category list. category:read sees it; create, update (reorder, show/hide, rename) and
+ * delete each show their controls only when allowed (the actions check again).
+ */
+export function CategoriesManager({ categories }: { categories: Category[] }) {
   const t = useTranslations("Categories");
+  const can = useCan();
+  const canCreate = can({ category: ["create"] });
+  const canUpdate = can({ category: ["update"] });
+  const canDelete = can({ category: ["delete"] });
   const router = useRouter();
   const hydrated = useHydrated();
   const [busy, setBusy] = useState(false);
@@ -112,40 +113,44 @@ export function CategoriesManager({
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      aria-label={t("moveUp", { name: category.name })}
-                      disabled={!hydrated || busy || index === 0}
-                      onClick={() => run(() => moveCategoryAction(category.id, "up"))}
-                    >
-                      ↑
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      aria-label={t("moveDown", { name: category.name })}
-                      disabled={!hydrated || busy || index === categories.length - 1}
-                      onClick={() => run(() => moveCategoryAction(category.id, "down"))}
-                    >
-                      ↓
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!hydrated || busy}
-                      onClick={() =>
-                        run(
-                          () => setCategoryVisibilityAction(category.id, !category.isVisible),
-                          t(category.isVisible ? "toasts.hidden" : "toasts.shown", { name: category.name }),
-                        )
-                      }
-                    >
-                      {category.isVisible ? t("hide") : t("show")}
-                    </Button>
-                    <Button size="sm" variant="outline" disabled={!hydrated || busy} onClick={() => setEditing(category.id)}>
-                      {t("rename")}
-                    </Button>
+                    {canUpdate && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label={t("moveUp", { name: category.name })}
+                          disabled={!hydrated || busy || index === 0}
+                          onClick={() => run(() => moveCategoryAction(category.id, "up"))}
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label={t("moveDown", { name: category.name })}
+                          disabled={!hydrated || busy || index === categories.length - 1}
+                          onClick={() => run(() => moveCategoryAction(category.id, "down"))}
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!hydrated || busy}
+                          onClick={() =>
+                            run(
+                              () => setCategoryVisibilityAction(category.id, !category.isVisible),
+                              t(category.isVisible ? "toasts.hidden" : "toasts.shown", { name: category.name }),
+                            )
+                          }
+                        >
+                          {category.isVisible ? t("hide") : t("show")}
+                        </Button>
+                        <Button size="sm" variant="outline" disabled={!hydrated || busy} onClick={() => setEditing(category.id)}>
+                          {t("rename")}
+                        </Button>
+                      </>
+                    )}
                     {canDelete && (
                       <Button size="sm" variant="outline" disabled={!hydrated || busy} onClick={() => setDeleting(category)}>
                         {t("delete")}
