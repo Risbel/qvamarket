@@ -376,7 +376,9 @@
     "pageSlugTaken": "Ya hay una página con esta dirección",
     "tooManyImages": "Máximo {max} imágenes",
     "manualPriceRequired": "Escribe el precio o vuelve a seguir la tasa.",
-    "rateInvalid": "Escribe un número mayor que 0, con hasta 8 decimales."
+    "rateInvalid": "Escribe un número mayor que 0, con hasta 8 decimales.",
+    "roleNameTaken": "Ya hay un rol con ese nombre.",
+    "rolePermissionsRequired": "Marca al menos un permiso."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -513,7 +515,8 @@
       "settings": "Ajustes",
       "promotions": "Promociones",
       "stores": "Comercios",
-      "newMerchant": "Nuevo comercio"
+      "newMerchant": "Nuevo comercio",
+      "roles": "Roles"
     },
     "status": {
       "pending": "Tu tienda está pendiente de aprobación. Puedes preparar tus productos y tu marca; no será visible para el público hasta que la aprobemos.",
@@ -522,7 +525,8 @@
     "groups": {
       "catalog": "Catálogo",
       "store": "Tienda",
-      "platform": "Plataforma"
+      "platform": "Plataforma",
+      "team": "Equipo"
     },
     "viewStore": "Ver tienda",
     "account": {
@@ -1600,6 +1604,107 @@
     }
   },
   "Roles": {
+    "title": "Roles",
+    "description": "Qué puede ver y hacer cada miembro del equipo. Asigna los roles en la página Equipo.",
+    "new": "Nuevo rol",
+    "empty": "Todavía no hay roles.",
+    "builtIn": "Integrado",
+    "preset": "Predefinido",
+    "members": "{count, plural, =0 {Sin miembros} one {# miembro} other {# miembros}}",
+    "grants": "Permisos en: {list}",
+    "cancel": "Cancelar",
+    "owner": {
+      "name": "Propietario",
+      "description": "Todos los permisos, incluida la gestión del equipo y de los roles. No se puede editar ni eliminar."
+    },
+    "actions": {
+      "menu": "Acciones de {name}",
+      "edit": "Editar",
+      "view": "Ver",
+      "duplicate": "Duplicar",
+      "delete": "Eliminar"
+    },
+    "deleteTitle": "Eliminar rol",
+    "deleteConfirm": "¿Eliminar el rol «{name}»? Esta acción no se puede deshacer.",
+    "deleteInUse": "{count, plural, one {# miembro tiene} other {# miembros tienen}} este rol. Cámbiales el rol en la página Equipo antes de eliminarlo.",
+    "form": {
+      "newTitle": "Nuevo rol",
+      "editTitle": "Editar rol",
+      "formDescription": "Elige qué puede ver y hacer quien tenga este rol. Los cambios se aplican a todos sus miembros al momento.",
+      "back": "Volver a los roles",
+      "template": "Empezar desde",
+      "templateNone": "Desde cero",
+      "templateHelp": "Copia los permisos de un rol predefinido (y su nombre, si está vacío). Puedes cambiarlos después.",
+      "name": "Nombre",
+      "namePlaceholder": "Ej.: Cajero de la tarde",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Ej.: Cobra en caja y entrega los pedidos de recogida.",
+      "permissions": "Permisos",
+      "permissionsHelp": "Marcar cualquier acción incluye «Ver». Solo puedes conceder permisos que tú tienes.",
+      "aboveYours": "Este rol tiene permisos que tú no tienes, así que no puedes editarlo.",
+      "copyName": "{name} (copia)",
+      "save": "Guardar",
+      "saving": "Guardando…"
+    },
+    "actionNames": {
+      "read": "Ver",
+      "create": "Crear",
+      "update": "Editar",
+      "delete": "Eliminar",
+      "cancel": "Cancelar"
+    },
+    "resources": {
+      "store": {
+        "name": "Tienda",
+        "description": "Ajustes: perfil, marca, banners, monedas, recogida, entrega, pie de página y páginas."
+      },
+      "product": {
+        "name": "Productos",
+        "description": "Productos, sus variantes, precios e imágenes."
+      },
+      "category": {
+        "name": "Categorías",
+        "description": "Las categorías del catálogo y su orden."
+      },
+      "promotion": {
+        "name": "Promociones",
+        "description": "Rebajas y precios especiales con fechas."
+      },
+      "order": {
+        "name": "Pedidos",
+        "description": "Ver los pedidos, avanzar su estado y cancelarlos (cancelar devuelve el stock).",
+        "actions": {
+          "update": "Cambiar estado"
+        }
+      },
+      "payment": {
+        "name": "Pagos",
+        "description": "Cobros y devoluciones registrados en los pedidos.",
+        "actions": {
+          "create": "Registrar"
+        }
+      },
+      "team": {
+        "name": "Equipo",
+        "description": "Los miembros de la empresa: añadirlos, cambiar su rol, restablecer su contraseña y quitarlos."
+      },
+      "role": {
+        "name": "Roles",
+        "description": "Crear, editar y eliminar roles como este."
+      }
+    },
+    "toasts": {
+      "created": "Rol «{name}» creado.",
+      "saved": "Rol «{name}» guardado.",
+      "deleted": "Rol «{name}» eliminado."
+    },
+    "errors": {
+      "forbidden": "Tu rol no permite esta acción.",
+      "notFound": "Este rol ya no existe.",
+      "limit": "Has llegado al máximo de {max} roles.",
+      "escalation": "No puedes conceder ni cambiar permisos que tú no tienes.",
+      "failed": "No se pudo guardar. Inténtalo de nuevo."
+    },
     "presets": {
       "manager": {
         "name": "Gerente",

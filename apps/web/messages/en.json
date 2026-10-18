@@ -376,7 +376,9 @@
     "pageSlugTaken": "There is already a page with this address",
     "tooManyImages": "At most {max} images",
     "manualPriceRequired": "Enter the price or go back to following the rate.",
-    "rateInvalid": "Enter a number greater than 0, with up to 8 decimals."
+    "rateInvalid": "Enter a number greater than 0, with up to 8 decimals.",
+    "roleNameTaken": "There is already a role with that name.",
+    "rolePermissionsRequired": "Tick at least one permission."
   },
   "Admin": {
     "title": "Admin panel",
@@ -513,7 +515,8 @@
       "settings": "Settings",
       "promotions": "Promotions",
       "stores": "Merchants",
-      "newMerchant": "New merchant"
+      "newMerchant": "New merchant",
+      "roles": "Roles"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -522,7 +525,8 @@
     "groups": {
       "catalog": "Catalog",
       "store": "Store",
-      "platform": "Platform"
+      "platform": "Platform",
+      "team": "Team"
     },
     "viewStore": "View store",
     "account": {
@@ -1600,6 +1604,107 @@
     }
   },
   "Roles": {
+    "title": "Roles",
+    "description": "What each team member can see and do. Assign the roles on the Team page.",
+    "new": "New role",
+    "empty": "There are no roles yet.",
+    "builtIn": "Built in",
+    "preset": "Preset",
+    "members": "{count, plural, =0 {No members} one {# member} other {# members}}",
+    "grants": "Permissions on: {list}",
+    "cancel": "Cancel",
+    "owner": {
+      "name": "Owner",
+      "description": "Every permission, including team and role management. It cannot be edited or deleted."
+    },
+    "actions": {
+      "menu": "Actions for {name}",
+      "edit": "Edit",
+      "view": "View",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "deleteTitle": "Delete role",
+    "deleteConfirm": "Delete the role “{name}”? This cannot be undone.",
+    "deleteInUse": "{count, plural, one {# member has} other {# members have}} this role. Change their role on the Team page before deleting it.",
+    "form": {
+      "newTitle": "New role",
+      "editTitle": "Edit role",
+      "formDescription": "Choose what anyone with this role can see and do. Changes apply to all its members right away.",
+      "back": "Back to roles",
+      "template": "Start from",
+      "templateNone": "From scratch",
+      "templateHelp": "Copies the permissions of a preset role (and its name, if empty). You can change them afterwards.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Afternoon cashier",
+      "description": "Description",
+      "descriptionPlaceholder": "E.g. Takes payments at the till and hands over pickup orders.",
+      "permissions": "Permissions",
+      "permissionsHelp": "Ticking any action includes “View”. You can only grant permissions you have.",
+      "aboveYours": "This role has permissions you do not have, so you cannot edit it.",
+      "copyName": "{name} (copy)",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "actionNames": {
+      "read": "View",
+      "create": "Create",
+      "update": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel"
+    },
+    "resources": {
+      "store": {
+        "name": "Store",
+        "description": "Settings: profile, branding, banners, currencies, pickup, delivery, footer and pages."
+      },
+      "product": {
+        "name": "Products",
+        "description": "Products, their variants, prices and images."
+      },
+      "category": {
+        "name": "Categories",
+        "description": "The catalog's categories and their order."
+      },
+      "promotion": {
+        "name": "Promotions",
+        "description": "Dated sales and special prices."
+      },
+      "order": {
+        "name": "Orders",
+        "description": "See orders, move their status forward and cancel them (cancelling gives stock back).",
+        "actions": {
+          "update": "Change status"
+        }
+      },
+      "payment": {
+        "name": "Payments",
+        "description": "Payments and refunds recorded on orders.",
+        "actions": {
+          "create": "Record"
+        }
+      },
+      "team": {
+        "name": "Team",
+        "description": "The company's members: add them, change their role, reset their password and remove them."
+      },
+      "role": {
+        "name": "Roles",
+        "description": "Create, edit and delete roles like this one."
+      }
+    },
+    "toasts": {
+      "created": "Role “{name}” created.",
+      "saved": "Role “{name}” saved.",
+      "deleted": "Role “{name}” deleted."
+    },
+    "errors": {
+      "forbidden": "Your role does not allow this action.",
+      "notFound": "This role no longer exists.",
+      "limit": "You have reached the maximum of {max} roles.",
+      "escalation": "You cannot grant or change permissions you do not have.",
+      "failed": "Could not save. Please try again."
+    },
     "presets": {
       "manager": {
         "name": "Manager",

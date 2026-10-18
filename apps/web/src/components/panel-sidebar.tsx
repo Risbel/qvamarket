@@ -10,6 +10,7 @@ import {
   LogOut,
   Package,
   Settings,
+  ShieldCheck,
   ShoppingBag,
   Store,
   UserPlus,
@@ -51,6 +52,7 @@ const ITEMS = {
   categories: { href: "/dashboard/categories", icon: FolderTree, exact: false },
   promotions: { href: "/dashboard/promotions", icon: BadgePercent, exact: false },
   settings: { href: "/dashboard/settings", icon: Settings, exact: false },
+  roles: { href: "/dashboard/roles", icon: ShieldCheck, exact: false },
   stores: { href: "/admin", icon: Store, exact: true },
   newMerchant: { href: "/admin/merchants/new", icon: UserPlus, exact: false },
 } as const;
@@ -58,7 +60,7 @@ const ITEMS = {
 export type PanelNavKey = keyof typeof ITEMS;
 export type PanelNavGroup = {
   /** Key in `Panel.groups`; no label for the first, unnamed group. */
-  label?: "catalog" | "store" | "platform";
+  label?: "catalog" | "store" | "team" | "platform";
   items: PanelNavKey[];
 };
 

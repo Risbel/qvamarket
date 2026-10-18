@@ -11,6 +11,7 @@ export const PANEL_ACCESS = {
   categories: { category: ["update"] },
   promotions: { promotion: ["update"] },
   settings: { store: ["update"] },
+  roles: { role: ["read"] },
 } as const satisfies Record<string, PermissionRequest>;
 
 export type PanelSection = keyof typeof PANEL_ACCESS;
