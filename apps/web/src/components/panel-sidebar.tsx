@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/initials";
+import { CompanySwitcher, type PanelCompany } from "@/components/company-switcher";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -75,6 +76,9 @@ export type PanelSidebarProps = {
   storeUrl?: string;
   /** While impersonating, account actions are hidden (the banner has "stop"). */
   impersonating: boolean;
+  /** Merchant panel: the user's companies; the switcher shows with 2 or more. */
+  companies?: PanelCompany[];
+  activeCompanyId?: string;
 };
 
 function isActive(key: PanelNavKey, pathname: string) {
@@ -104,7 +108,15 @@ function UserIdentity({ user }: { user: PanelSidebarProps["user"] }) {
   );
 }
 
-export function PanelSidebar({ groups, brand, user, storeUrl, impersonating }: PanelSidebarProps) {
+export function PanelSidebar({
+  groups,
+  brand,
+  user,
+  storeUrl,
+  impersonating,
+  companies = [],
+  activeCompanyId,
+}: PanelSidebarProps) {
   const t = useTranslations("Panel");
   const pathname = usePathname();
   const router = useRouter();
@@ -145,6 +157,9 @@ export function PanelSidebar({ groups, brand, user, storeUrl, impersonating }: P
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {companies.length > 1 && activeCompanyId && (
+            <CompanySwitcher companies={companies} activeId={activeCompanyId} />
+          )}
         </SidebarMenu>
       </SidebarHeader>
 

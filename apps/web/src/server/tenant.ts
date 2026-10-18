@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { asc, db, eq, member, organization, store } from "@qvashop/db";
+import { and, asc, db, eq, member, organization, sql, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { hasPermissions, type PermissionRequest, type Permissions } from "@/lib/permissions";
 import { PANEL_ACCESS, type PanelSection } from "@/lib/panel-access";
@@ -37,17 +37,21 @@ export type MerchantContext = {
   /** the store the panel is working on (MVP: the company's first store) */
   store: MerchantStore;
   stores: MerchantStore[];
+  /** every company (with a store) the user is a member of, oldest membership first */
+  companies: { id: string; name: string }[];
 };
 
 /**
- * The company (tenant) and stores of a user, or null when the user is not a member of
- * a company that has a store (e.g. the superadmin). Cached per request.
- * MVP: a user belongs to one company; when a company has several stores the oldest
- * one is active (a store switcher comes with the feature that creates more stores).
+ * The company (tenant) and stores a user is working on, or null when the user is not a
+ * member of any company that has a store (e.g. the superadmin). Cached per request.
+ * A user can belong to several companies (one membership and role in each): the active one
+ * is `activeTenantId` (the session's active_organization_id, set by the company switcher)
+ * while they are still a member there, otherwise their oldest membership. When a company
+ * has several stores the oldest one is active (no store switcher yet).
  */
 export const getMerchantContext = cache(
-  async (userId: string): Promise<MerchantContext | null> => {
-    const [membership] = await db
+  async (userId: string, activeTenantId: string | null | undefined): Promise<MerchantContext | null> => {
+    const memberships = await db
       .select({
         tenantId: member.organizationId,
         role: member.role,
@@ -55,10 +59,17 @@ export const getMerchantContext = cache(
       })
       .from(member)
       .innerJoin(organization, eq(organization.id, member.organizationId))
-      .where(eq(member.userId, userId))
-      .orderBy(asc(member.createdAt))
-      .limit(1);
+      // only companies that have a store (a company without one has no panel)
+      .where(
+        and(
+          eq(member.userId, userId),
+          sql`exists (select 1 from ${store} where ${store.tenantId} = ${member.organizationId})`,
+        ),
+      )
+      .orderBy(asc(member.createdAt));
+    const membership = memberships.find((m) => m.tenantId === activeTenantId) ?? memberships[0];
     if (!membership) return null;
+    const companies = memberships.map((m) => ({ id: m.tenantId, name: m.companyName }));
 
     const stores = await db
       .select({
@@ -91,7 +102,7 @@ export const getMerchantContext = cache(
       };
     });
     const permissions = await memberPermissions(membership.tenantId, membership.role);
-    return { ...membership, permissions, store: typed[0], stores: typed };
+    return { ...membership, permissions, store: typed[0], stores: typed, companies };
   },
 );
 
@@ -102,7 +113,7 @@ export const getMerchantContext = cache(
  */
 export async function requireMerchant(locale: string) {
   const session = await requireUser(locale);
-  const context = await getMerchantContext(session.user.id);
+  const context = await getMerchantContext(session.user.id, session.session.activeOrganizationId);
   if (!context) notFound();
   return {
     session,
@@ -121,7 +132,7 @@ export async function getMerchantOrNull() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
   if (session.user.mustChangePassword && !session.session.impersonatedBy) return null;
-  const context = await getMerchantContext(session.user.id);
+  const context = await getMerchantContext(session.user.id, session.session.activeOrganizationId);
   if (!context) return null;
   return {
     session,

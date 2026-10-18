@@ -541,6 +541,16 @@
     "permissions": {
       "denied": "Your role does not allow this action.",
       "readOnly": "Read only: your role does not allow editing this section."
+    },
+    "company": {
+      "label": "Company",
+      "switch": "Switch company",
+      "current": "Active company",
+      "switched": "You are now working in {name}.",
+      "error": "Could not switch company. Please try again.",
+      "staleTitle": "You switched company in another tab",
+      "staleDescription": "You are now working in {name}. This tab shows another company: reload it before going on.",
+      "reload": "Reload"
     }
   },
   "Products": {

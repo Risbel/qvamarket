@@ -7,6 +7,7 @@ import { StoreStatusBanner } from "@/components/store-status-banner";
 import { PANEL_ACCESS, type PanelSection } from "@/lib/panel-access";
 import { hasPermissions } from "@/lib/permissions";
 import { PermissionsProvider } from "@/components/permissions/permissions-provider";
+import { CompanySwitchGuard } from "@/components/company-switcher";
 import { buildStoreUrl } from "@/lib/tenancy";
 import { getMerchantContext } from "@/server/tenant";
 import { requireUser } from "@/server/session";
@@ -20,7 +21,7 @@ export default async function DashboardLayout({
   setRequestLocale(locale);
 
   const session = await requireUser(locale);
-  const context = await getMerchantContext(session.user.id);
+  const context = await getMerchantContext(session.user.id, session.session.activeOrganizationId);
   const impersonating = Boolean(session.session.impersonatedBy);
   const banner = impersonating && <ImpersonationBanner targetEmail={session.user.email} />;
 
@@ -56,6 +57,8 @@ export default async function DashboardLayout({
       user={{ name: session.user.name, email: session.user.email }}
       storeUrl={buildStoreUrl(context.store.slug, (await headers()).get("host"))}
       impersonating={impersonating}
+      companies={context.companies}
+      activeCompanyId={context.tenantId}
       banners={
         <>
           {banner}
@@ -64,6 +67,7 @@ export default async function DashboardLayout({
       }
     >
       <PermissionsProvider permissions={context.permissions}>{children}</PermissionsProvider>
+      {context.companies.length > 1 && <CompanySwitchGuard activeId={context.tenantId} />}
     </PanelShell>
   );
 }

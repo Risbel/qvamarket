@@ -24,7 +24,7 @@ export default async function DashboardPage({
   setRequestLocale(locale);
 
   const session = await requireUser(locale);
-  const merchant = await getMerchantContext(session.user.id);
+  const merchant = await getMerchantContext(session.user.id, session.session.activeOrganizationId);
   const t = await getTranslations("Dashboard");
 
   // Users without a company (the superadmin): plain welcome + link to the admin panel

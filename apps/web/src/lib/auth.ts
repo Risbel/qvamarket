@@ -27,6 +27,8 @@ const organizationWritePaths = [
   "remove-member",
   "update-member-role",
   "leave",
+  // the company switcher is our own setActiveCompanyAction
+  "set-active",
 ].map((path) => `/organization/${path}`);
 
 // Auth runs on the platform's own host and on every store subdomain (customers sign in on
