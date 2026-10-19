@@ -225,6 +225,13 @@
       "when": 1792347166123,
       "tag": "0031_talented_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792370456182,
+      "tag": "0032_shiny_wolf_cub",
+      "breakpoints": true
     }
   ]
 }

@@ -63,9 +63,12 @@ function moneyFormatter(currency: string, locale: string) {
   return (minor: number) => formatMoney(minor, currency, locale);
 }
 
-/** The amount a new record starts with: all that is still owed (payment) or all that was collected (refund). */
-function suggestedAmount(kind: PaymentKind, dueMinor: number, netMinor: number, digits: number) {
-  return minorToInput(kind === "payment" ? dueMinor : netMinor, digits);
+/**
+ * The amount a new record starts with: all that is still owed (payment), or for a refund
+ * what was collected above the total (after an edit lowered it), else all that was collected.
+ */
+function suggestedAmount(kind: PaymentKind, dueMinor: number, netMinor: number, overpaidMinor: number, digits: number) {
+  return minorToInput(kind === "payment" ? dueMinor : overpaidMinor || netMinor, digits);
 }
 
 /**
@@ -96,7 +99,9 @@ export function PaymentsSection({
   const [error, setError] = useState<ErrorKey | null>(null);
 
   const money = (minor: number) => formatMoney(minor, currency, locale);
-  const { refunded, net, due } = paymentTotals(totalMinor, payments);
+  const { refunded, net, due, overpaid } = paymentTotals(totalMinor, payments);
+  // a cancelled order owes everything collected back, which "Collected" already shows
+  const toRefund = cancelled ? 0 : overpaid;
   const can = useCan();
   const canRecord = can({ payment: ["create"] });
   const canRemove = can({ payment: ["delete"] });
@@ -139,9 +144,19 @@ export function PaymentsSection({
               <dd className="text-right tabular-nums">{money(refunded)}</dd>
             </>
           )}
-          <dt className="font-medium">{t("due")}</dt>
-          <dd className="text-right font-medium tabular-nums">{money(cancelled ? 0 : due)}</dd>
+          {toRefund > 0 ? (
+            <>
+              <dt className="font-medium text-destructive">{t("toRefund")}</dt>
+              <dd className="text-right font-medium text-destructive tabular-nums">{money(toRefund)}</dd>
+            </>
+          ) : (
+            <>
+              <dt className="font-medium">{t("due")}</dt>
+              <dd className="text-right font-medium tabular-nums">{money(cancelled ? 0 : due)}</dd>
+            </>
+          )}
         </dl>
+        {toRefund > 0 && <p className="text-xs text-muted-foreground">{t("toRefundHelp")}</p>}
 
         <Separator />
 
@@ -199,6 +214,7 @@ export function PaymentsSection({
               currency={currency}
               dueMinor={canPay ? due : 0}
               netMinor={net}
+              overpaidMinor={toRefund}
               onDone={() => {
                 setRecording(false);
                 setError(null);
@@ -237,6 +253,7 @@ function PaymentForm({
   currency,
   dueMinor,
   netMinor,
+  overpaidMinor,
   onDone,
   onCancel,
 }: {
@@ -245,6 +262,8 @@ function PaymentForm({
   /** 0 when no payment can be recorded (nothing owed, or the order is cancelled) */
   dueMinor: number;
   netMinor: number;
+  /** collected above the total (an edit lowered it): what a refund starts with */
+  overpaidMinor: number;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -265,7 +284,7 @@ function PaymentForm({
   const schema = createPaymentSchema(tv, digits, { dueMinor, netMinor, format: moneyFormatter(currency, locale) });
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { kind: kinds[0], method: "cash", amount: suggestedAmount(kinds[0], dueMinor, netMinor, digits), paidAt: "", note: "" },
+    defaultValues: { kind: kinds[0], method: "cash", amount: suggestedAmount(kinds[0], dueMinor, netMinor, overpaidMinor, digits), paidAt: "", note: "" },
   });
   const kind = useWatch({ control: form.control, name: "kind" });
   const refund = kind === "refund";
@@ -273,7 +292,7 @@ function PaymentForm({
   /** Switching between payment and refund suggests the matching amount (what is due / was collected). */
   function chooseKind(next: PaymentKind) {
     form.setValue("kind", next);
-    form.setValue("amount", suggestedAmount(next, dueMinor, netMinor, digits), { shouldValidate: form.formState.isSubmitted });
+    form.setValue("amount", suggestedAmount(next, dueMinor, netMinor, overpaidMinor, digits), { shouldValidate: form.formState.isSubmitted });
   }
 
   async function onSubmit(values: PaymentFormValues) {
@@ -317,7 +336,7 @@ function PaymentForm({
                     id="payment-amount"
                     inputMode="decimal"
                     autoComplete="off"
-                    placeholder={t("amountPlaceholder", { example: suggestedAmount(kind, dueMinor, netMinor, digits) })}
+                    placeholder={t("amountPlaceholder", { example: suggestedAmount(kind, dueMinor, netMinor, overpaidMinor, digits) })}
                     aria-invalid={fieldState.invalid}
                   />
                   <InputGroupAddon align="inline-end">

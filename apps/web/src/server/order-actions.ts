@@ -5,8 +5,10 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { currencyDigits, formatMoney } from "@/lib/money";
+import { createOrderEditSchema } from "@/lib/validation/order-edit";
 import { createOrderStatusSchema } from "@/lib/validation/order-status";
 import { createPaymentSchema, paymentLimitMessage, toPaymentInput } from "@/lib/validation/payment";
+import { editOrderItems } from "./order-edits";
 import { deletePayment, orderCurrency, recordPayment } from "./order-payments";
 import { changeOrderStatus } from "./orders";
 import { getMerchantOrNull } from "./tenant";
@@ -51,6 +53,42 @@ export async function changeOrderStatusAction(
     );
   } catch (error) {
     console.error("changeOrderStatus failed", error);
+    return { ok: false, error: "failed" };
+  }
+}
+
+export type OrderEditActionResult =
+  | { ok: true; restockedUnits: number; overpaidMinor: number }
+  | {
+      ok: false;
+      error: "forbidden" | "notFound" | "invalid" | "stale" | "notAllowed" | "empty" | "failed";
+      fieldErrors?: Record<string, string[]>;
+    };
+
+/** Lowers or removes items of an order (see editOrderItems); needs `order:edit`. */
+export async function editOrderItemsAction(
+  storeId: unknown,
+  orderId: unknown,
+  values: unknown,
+  locale: string,
+): Promise<OrderEditActionResult> {
+  const merchant = await getMerchantOrNull(storeId);
+  if (!merchant || !merchant.can({ order: ["read", "edit"] })) return { ok: false, error: "forbidden" };
+  const parsedId = z.uuid().safeParse(orderId);
+  if (!parsedId.success) return { ok: false, error: "notFound" };
+  const t = await validationTranslator(locale);
+  const parsed = createOrderEditSchema(t).safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
+  }
+  try {
+    return await editOrderItems(
+      { tenantId: merchant.tenantId, storeId: merchant.store.id },
+      parsedId.data.toLowerCase(),
+      { ...parsed.data, lines: parsed.data.lines.map((line) => ({ ...line, itemId: line.itemId.toLowerCase() })), userId: merchant.session.user.id },
+    );
+  } catch (error) {
+    console.error("editOrderItems failed", error);
     return { ok: false, error: "failed" };
   }
 }

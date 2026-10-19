@@ -49,6 +49,22 @@ export function canChangeStatus(from: string, to: string, fulfillmentType: strin
   return (nextStatuses(from, fulfillmentType) as string[]).includes(to);
 }
 
+/**
+ * Items can be lowered or removed until the order is handed over (`completed`) or
+ * cancelled; after that, money goes back with a refund.
+ */
+export function canEditItems(status: string): boolean {
+  return isOrderStatus(status) && !isFinalStatus(status);
+}
+
+/** The subtotal once each line has its new quantity (`quantities` by item id; lines not listed keep theirs). */
+export function editedSubtotal(
+  lines: { id: string; quantity: number; unitPriceMinor: number }[],
+  quantities: ReadonlyMap<string, number>,
+): number {
+  return lines.reduce((sum, line) => sum + line.unitPriceMinor * (quantities.get(line.id) ?? line.quantity), 0);
+}
+
 export const PAYMENT_KINDS = ["payment", "refund"] as const satisfies typeof DB_PAYMENT_KINDS;
 export type PaymentKind = (typeof PAYMENT_KINDS)[number];
 export const PAYMENT_METHODS = ["cash", "transfer", "other"] as const satisfies typeof DB_PAYMENT_METHODS;
@@ -56,7 +72,8 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 /**
  * Money of an order from its payment records: `net` = payments - refunds (what the store
- * keeps), `due` = what is still owed (never negative).
+ * keeps), `due` = what is still owed, `overpaid` = what must go back to the customer (more
+ * was collected than the total, after an edit lowered it). Neither is ever negative.
  */
 export function paymentTotals(totalMinor: number, payments: { kind: string; amountMinor: number }[]) {
   let paid = 0;
@@ -66,7 +83,7 @@ export function paymentTotals(totalMinor: number, payments: { kind: string; amou
     else paid += p.amountMinor;
   }
   const net = paid - refunded;
-  return { paid, refunded, net, due: Math.max(totalMinor - net, 0) };
+  return { paid, refunded, net, due: Math.max(totalMinor - net, 0), overpaid: Math.max(net - totalMinor, 0) };
 }
 
 /** The cached `order.payment_status`, always derived from the payment records. */

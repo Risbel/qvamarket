@@ -97,22 +97,39 @@ export function MerchantForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate>
       <FieldGroup>
-        <TextField control={form.control} name="companyName" label={t("form.companyName")} />
-        <TextField control={form.control} name="storeName" label={t("form.storeName")} />
+        <TextField
+          control={form.control}
+          name="companyName"
+          label={t("form.companyName")}
+          placeholder={t("form.companyNamePlaceholder")}
+        />
+        <TextField
+          control={form.control}
+          name="storeName"
+          label={t("form.storeName")}
+          placeholder={t("form.storeNamePlaceholder")}
+        />
         <TextField
           control={form.control}
           name="storeSlug"
           label={t("form.storeSlug")}
+          placeholder={t("form.storeSlugPlaceholder")}
           description={t("form.storeSlugHelp", {
             url: `${storeSlug || "mitienda"}.qvashop.com`,
           })}
           autoCapitalize="none"
         />
-        <TextField control={form.control} name="userName" label={t("form.userName")} />
+        <TextField
+          control={form.control}
+          name="userName"
+          label={t("form.userName")}
+          placeholder={t("form.userNamePlaceholder")}
+        />
         <TextField
           control={form.control}
           name="userEmail"
           label={t("form.userEmail")}
+          placeholder={t("form.userEmailPlaceholder")}
           type="email"
           autoComplete="off"
         />
@@ -129,6 +146,7 @@ export function MerchantForm() {
                 <Input
                   {...field}
                   id="temporaryPassword"
+                  placeholder={t("form.temporaryPasswordPlaceholder")}
                   autoComplete="off"
                   aria-invalid={fieldState.invalid}
                   className="font-mono"

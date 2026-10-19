@@ -9,6 +9,7 @@ import {
   or,
   order,
   orderDelivery,
+  orderEdit,
   orderItem,
   orderPayment,
   orderStatusHistory,
@@ -148,12 +149,12 @@ export async function countOrderFacets(scope: Scope, params: OrderListParams) {
   return { status: byValue(statuses), payment: byValue(payments) };
 }
 
-/** One order with its items, status history and payments; null when not this store's. */
+/** One order with its items, status history, item edits and payments; null when not this store's. */
 export async function getOrder(scope: Scope, id: string) {
   const [row] = await db.select().from(order).where(and(inScope(scope), eq(order.id, id))).limit(1);
   if (!row) return null;
 
-  const [items, history, payments, [delivery]] = await Promise.all([
+  const [items, history, edits, payments, [delivery]] = await Promise.all([
     db
       .select({
         id: orderItem.id,
@@ -162,9 +163,11 @@ export async function getOrder(scope: Scope, id: string) {
         variantTitle: orderItem.variantTitle,
         sku: orderItem.sku,
         quantity: orderItem.quantity,
+        originalQuantity: orderItem.originalQuantity,
         unitPriceMinor: orderItem.unitPriceMinor,
         compareAtMinor: orderItem.compareAtMinor,
         lineTotalMinor: orderItem.lineTotalMinor,
+        stockDeducted: orderItem.stockDeducted,
       })
       .from(orderItem)
       .where(and(eq(orderItem.orderId, row.id), eq(orderItem.tenantId, scope.tenantId)))
@@ -183,6 +186,20 @@ export async function getOrder(scope: Scope, id: string) {
       .leftJoin(user, eq(user.id, orderStatusHistory.actorUserId))
       .where(and(eq(orderStatusHistory.orderId, row.id), eq(orderStatusHistory.tenantId, scope.tenantId)))
       .orderBy(asc(orderStatusHistory.createdAt)),
+    db
+      .select({
+        id: orderEdit.id,
+        changes: orderEdit.changes,
+        subtotalBeforeMinor: orderEdit.subtotalBeforeMinor,
+        subtotalAfterMinor: orderEdit.subtotalAfterMinor,
+        actorName: user.name,
+        note: orderEdit.note,
+        createdAt: orderEdit.createdAt,
+      })
+      .from(orderEdit)
+      .leftJoin(user, eq(user.id, orderEdit.actorUserId))
+      .where(and(eq(orderEdit.orderId, row.id), eq(orderEdit.tenantId, scope.tenantId)))
+      .orderBy(asc(orderEdit.createdAt)),
     db
       .select({
         id: orderPayment.id,
@@ -212,7 +229,7 @@ export async function getOrder(scope: Scope, id: string) {
       : Promise.resolve([]),
   ]);
 
-  return { ...row, items, history, payments, delivery: delivery ?? null };
+  return { ...row, items, history, edits, payments, delivery: delivery ?? null };
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

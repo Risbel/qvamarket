@@ -83,7 +83,9 @@ export async function recordPayment(
 
 /**
  * Removes a record entered by mistake. Refused (`unbalanced`) when the balance would leave
- * 0..total, e.g. removing a payment that a later refund gave back.
+ * 0..total, e.g. removing a payment that a later refund gave back. After an edit lowered the
+ * total the balance can already be above it: removing a payment (towards the total) is
+ * still fine, removing a refund (further above) is not.
  */
 export async function deletePayment(scope: Scope, orderId: string, paymentId: string): Promise<DeletePaymentResult> {
   return db.transaction(async (tx) => {
@@ -91,7 +93,8 @@ export async function deletePayment(scope: Scope, orderId: string, paymentId: st
     if (!locked || !locked.payments.some((p) => p.id === paymentId)) return { ok: false, error: "notFound" };
     const remaining = locked.payments.filter((p) => p.id !== paymentId);
     const { net } = paymentTotals(locked.totalMinor, remaining);
-    if (net < 0 || net > locked.totalMinor) return { ok: false, error: "unbalanced" };
+    const before = paymentTotals(locked.totalMinor, locked.payments).net;
+    if (net < 0 || (net > locked.totalMinor && net > before)) return { ok: false, error: "unbalanced" };
 
     await tx
       .delete(orderPayment)

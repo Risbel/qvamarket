@@ -5,15 +5,24 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/money";
-import { orderReference, orderStatusVariant, paymentStatusVariant, type OrderStatus, type PaymentStatus } from "@/lib/orders";
+import {
+  canEditItems,
+  orderReference,
+  orderStatusVariant,
+  paymentStatusVariant,
+  paymentTotals,
+  type OrderStatus,
+  type PaymentStatus,
+} from "@/lib/orders";
 import { LocalDateTime } from "@/components/local-date-time";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getOrder } from "@/server/orders";
 import { requireMerchantPermission } from "@/server/tenant";
+import { EditItemsDialog } from "./edit-items-dialog";
 import { OrderLocationMap } from "./order-location-map";
 import { PaymentsSection } from "./payments-section";
 import { StatusActions } from "./status-actions";
@@ -30,6 +39,7 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   const t = await getTranslations("Orders");
   const canChangeStatus = merchant.can({ order: ["update"] }) || merchant.can({ order: ["cancel"] });
   const canSeePayments = merchant.can({ payment: ["read"] });
+  const canEdit = merchant.can({ order: ["edit"] }) && canEditItems(placed.status);
   const money = (minor: number) => formatMoney(minor, placed.currencyCode, locale);
   const status = (value: string) => t(`status.${value as OrderStatus}`);
   // wa.me wants the number with its country code and no "+"; only offered for a full number
@@ -39,6 +49,11 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   const coordinates = delivery ? `${delivery.lat.toFixed(6)},${delivery.lng.toFixed(6)}` : null;
   const units = placed.items.reduce((sum, item) => sum + item.quantity, 0);
   const deliveryFee = placed.deliveryFeeMinor === 0 ? t("detail.delivery.free") : money(placed.deliveryFeeMinor);
+  // Status changes and item edits in one timeline, oldest first
+  const timeline = [
+    ...placed.history.map((entry) => ({ kind: "status" as const, ...entry })),
+    ...placed.edits.map((entry) => ({ kind: "edit" as const, ...entry })),
+  ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
@@ -80,6 +95,18 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
                 <h2 id="items-title">{t("detail.items")}</h2>
               </CardTitle>
               <CardDescription>{t("detail.itemCount", { count: units })}</CardDescription>
+              {canEdit && (
+                <CardAction>
+                  <EditItemsDialog
+                    orderId={placed.id}
+                    reference={orderReference(placed.number)}
+                    currency={placed.currencyCode}
+                    deliveryFeeMinor={placed.deliveryFeeMinor}
+                    collectedMinor={canSeePayments ? paymentTotals(placed.totalMinor, placed.payments).net : null}
+                    items={placed.items.filter((item) => item.quantity > 0)}
+                  />
+                </CardAction>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
@@ -93,16 +120,29 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
                 </TableHeader>
                 <TableBody>
                   {placed.items.map((item) => (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className={item.quantity === 0 ? "text-muted-foreground" : undefined}>
                       <TableCell className="whitespace-normal">
-                        <div className="font-medium">{item.productName}</div>
+                        <div className={item.quantity === 0 ? "font-medium line-through" : "font-medium"}>{item.productName}</div>
                         {item.variantTitle && <div className="text-sm text-muted-foreground">{item.variantTitle}</div>}
                         {item.sku && <div className="text-xs text-muted-foreground">{t("detail.sku", { sku: item.sku })}</div>}
                         {item.productId === null && (
                           <div className="text-xs text-muted-foreground italic">{t("detail.productDeleted")}</div>
                         )}
+                        {item.originalQuantity !== null && (
+                          <Badge variant="outline" className="mt-1">
+                            {item.quantity === 0 ? t("detail.removed") : t("detail.lowered")}
+                          </Badge>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{item.quantity}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {item.originalQuantity !== null && (
+                          <s className="mr-1.5 text-muted-foreground">
+                            <span className="sr-only">{t("detail.originalQuantity")}</span>
+                            {item.originalQuantity}
+                          </s>
+                        )}
+                        {item.quantity}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {money(item.unitPriceMinor)}
                         {item.compareAtMinor !== null && (
@@ -251,15 +291,15 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
             </CardHeader>
             <CardContent>
               <ol className="flex flex-col">
-                {placed.history.map((h, index) => (
+                {timeline.map((h, index) => (
                   <li key={h.id} className="relative flex gap-3 pb-4 last:pb-0">
                     {/* the line joining this step to the next one */}
-                    {index < placed.history.length - 1 && (
+                    {index < timeline.length - 1 && (
                       <Separator orientation="vertical" className="absolute top-4 bottom-0 left-[3.5px]" />
                     )}
                     <span
                       className={
-                        index === placed.history.length - 1
+                        index === timeline.length - 1
                           ? "mt-1.5 size-2 shrink-0 rounded-full bg-primary"
                           : "mt-1.5 size-2 shrink-0 rounded-full bg-muted-foreground/40"
                       }
@@ -267,14 +307,33 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
                     />
                     <div className="flex min-w-0 flex-col gap-0.5">
                       <span className="font-medium">
-                        {h.fromStatus
-                          ? t("detail.changed", { from: status(h.fromStatus), to: status(h.toStatus) })
-                          : t("detail.placed")}
+                        {h.kind === "edit"
+                          ? t("detail.edited")
+                          : h.fromStatus
+                            ? t("detail.changed", { from: status(h.fromStatus), to: status(h.toStatus) })
+                            : t("detail.placed")}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         <LocalDateTime iso={h.createdAt.toISOString()} locale={locale} /> ·{" "}
-                        {h.actorName ?? t(`detail.actor.${h.actor as "customer" | "merchant" | "system"}`)}
+                        {h.actorName ??
+                          t(`detail.actor.${h.kind === "edit" ? "merchant" : (h.actor as "customer" | "merchant" | "system")}`)}
                       </span>
+                      {h.kind === "edit" && (
+                        <ul className="flex flex-col text-sm">
+                          {h.changes.map((change) => (
+                            <li key={change.itemId}>
+                              {change.variantTitle ? `${change.productName} (${change.variantTitle})` : change.productName}:{" "}
+                              <span className="tabular-nums">{t("detail.editChange", { from: change.from, to: change.to })}</span>
+                              {change.restocked > 0 && (
+                                <span className="text-muted-foreground"> · {t("detail.editRestocked", { count: change.restocked })}</span>
+                              )}
+                            </li>
+                          ))}
+                          <li className="text-muted-foreground tabular-nums">
+                            {t("detail.editSubtotal", { from: money(h.subtotalBeforeMinor), to: money(h.subtotalAfterMinor) })}
+                          </li>
+                        </ul>
+                      )}
                       {h.note && <span className="text-sm whitespace-pre-line">{h.note}</span>}
                     </div>
                   </li>

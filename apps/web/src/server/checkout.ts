@@ -1,4 +1,4 @@
-import { and, asc, customer, db, eq, inArray, order, orderDelivery, orderItem, orderStatusHistory, productVariant, sql, store } from "@qvashop/db";
+import { and, asc, customer, db, eq, gt, inArray, order, orderDelivery, orderItem, orderStatusHistory, productVariant, sql, store } from "@qvashop/db";
 import type { CartItem } from "@/lib/cart";
 import { deliveryFee, distanceMeters, insideArea } from "@/lib/delivery";
 import type { LatLng } from "@/lib/map";
@@ -346,7 +346,8 @@ export async function getPublicOrder(storeId: string, orderId: string) {
       lineTotalMinor: orderItem.lineTotalMinor,
     })
     .from(orderItem)
-    .where(and(eq(orderItem.orderId, row.id), eq(orderItem.storeId, storeId)))
+    // a line the store removed after checkout (quantity 0) is no longer part of the order
+    .where(and(eq(orderItem.orderId, row.id), eq(orderItem.storeId, storeId), gt(orderItem.quantity, 0)))
     .orderBy(asc(orderItem.position));
 
   const [delivery] =

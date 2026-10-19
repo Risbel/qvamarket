@@ -15,8 +15,9 @@ export const statement = {
   category: ["read", "create", "update", "delete"],
   // price lists: dated sales and special prices
   promotion: ["read", "create", "update", "delete"],
-  // update = move the status forward; cancel is separate (it gives stock back)
-  order: ["read", "update", "cancel"],
+  // update = move the status forward; cancel is separate (it gives stock back); edit = lower
+  // or remove items after checkout
+  order: ["read", "update", "cancel", "edit"],
   // manual payments and refunds recorded on an order
   payment: ["read", "create", "delete"],
   // the company's members (add, change role, reset password, remove)
@@ -35,7 +36,7 @@ export type PermissionRequest = Permissions;
 
 export const RESOURCES = Object.keys(statement) as Resource[];
 /** Every action of any resource, in display order (the role editor's columns). */
-export const ACTIONS = ["read", "create", "update", "delete", "cancel"] as const satisfies readonly Action[];
+export const ACTIONS = ["read", "create", "update", "delete", "cancel", "edit"] as const satisfies readonly Action[];
 
 /** The built-in role with every permission; never stored as a company_role. */
 export const OWNER_ROLE = "owner";
@@ -113,17 +114,17 @@ export const ROLE_PRESETS = {
     product: ["read", "create", "update", "delete"],
     category: ["read", "create", "update", "delete"],
     promotion: ["read", "create", "update", "delete"],
-    order: ["read", "update", "cancel"],
+    order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create", "delete"],
     team: ["read"],
   },
-  /** Serves customers: processes orders and takes payments; looks at the catalog. */
+  /** Serves customers: processes and edits orders, takes payments; looks at the catalog. */
   cashier: {
     store: ["read"],
     product: ["read"],
     category: ["read"],
     promotion: ["read"],
-    order: ["read", "update", "cancel"],
+    order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create"],
   },
   /** Keeps the catalog up to date: products, categories and promotions. No orders. */

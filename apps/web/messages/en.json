@@ -379,7 +379,10 @@
     "rateInvalid": "Enter a number greater than 0, with up to 8 decimals.",
     "roleNameTaken": "There is already a role with that name.",
     "rolePermissionsRequired": "Tick at least one permission.",
-    "storeAccessEmpty": "Choose at least one store"
+    "storeAccessEmpty": "Choose at least one store",
+    "orderEditMore": "At most {max}: an edit can only lower the quantity.",
+    "orderEditNoChange": "You did not change any item.",
+    "orderEditEmpty": "You cannot remove every item. If the customer wants nothing, cancel the order."
   },
   "Admin": {
     "title": "Admin panel",
@@ -395,12 +398,18 @@
     },
     "form": {
       "companyName": "Company name",
+      "companyNamePlaceholder": "E.g. Ana's Sweets LLC",
       "storeName": "Store name",
+      "storeNamePlaceholder": "E.g. Ana's Sweets",
       "storeSlug": "Subdomain",
+      "storeSlugPlaceholder": "anas-sweets",
       "storeSlugHelp": "The store will live at {url}. Lowercase letters, numbers and hyphens only.",
       "userName": "Owner name",
+      "userNamePlaceholder": "E.g. Ana Pérez",
       "userEmail": "Owner email",
+      "userEmailPlaceholder": "E.g. ana@example.com",
       "temporaryPassword": "Temporary password",
+      "temporaryPasswordPlaceholder": "E.g. Kp7mXq2RtW9z",
       "temporaryPasswordHelp": "The owner must change it on first sign-in.",
       "generate": "Generate",
       "create": "Create merchant",
@@ -1550,7 +1559,14 @@
         "tilesUnavailable": "The base map is not available right now; the delivery point is.",
         "openIn": "Open in:",
         "coordinates": "Coordinates:"
-      }
+      },
+      "removed": "Removed",
+      "lowered": "Quantity changed",
+      "originalQuantity": "Original quantity:",
+      "edited": "Items changed",
+      "editChange": "{from} → {to}",
+      "editRestocked": "{count, plural, one {# restocked} other {# restocked}}",
+      "editSubtotal": "Subtotal: {from} → {to}"
     },
     "actions": {
       "to": {
@@ -1581,6 +1597,42 @@
       },
       "toasts": {
         "changed": "Order {reference} marked as {status}."
+      }
+    },
+    "edit": {
+      "open": "Edit items",
+      "title": "Edit items of order {reference}",
+      "description": "Lower the quantity or remove items the customer no longer wants or you do not have. The delivery fee stays the same.",
+      "unitPrice": "{price} each",
+      "quantity": "Quantity of {product}",
+      "decrease": "Remove one unit",
+      "increase": "Add one unit",
+      "remove": "Remove from the order",
+      "undo": "Undo",
+      "removed": "{count, plural, one {# unit removed} other {All # units removed}}",
+      "lowered": "From {from} to {to}",
+      "restock": "{count, plural, one {Restock # unit} other {Restock # units}}",
+      "newSubtotal": "New subtotal",
+      "deliveryFee": "Delivery",
+      "newTotal": "New total",
+      "refundHint": "You already collected more than the new total: record a refund of {amount} in Payments afterwards.",
+      "note": "Reason (optional)",
+      "notePlaceholder": "E.g. The customer did not want the coffee at pickup.",
+      "noteHelp": "Kept in the order history. Only your team sees it.",
+      "back": "Back",
+      "save": "Save changes",
+      "errors": {
+        "forbidden": "You are not allowed to edit orders.",
+        "notFound": "This order no longer exists.",
+        "stale": "The order changed while you were editing it. Check its items and try again.",
+        "notAllowed": "This order is finished: its items cannot change. Use a refund in Payments.",
+        "empty": "You cannot remove every item. If the customer wants nothing, cancel the order.",
+        "failed": "The changes could not be saved. Please try again."
+      },
+      "toasts": {
+        "saved": "Order {reference} updated.",
+        "restocked": "{count, plural, one {# unit} other {# units}} restocked.",
+        "refundDue": "Record a refund of {amount}."
       }
     },
     "payments": {
@@ -1640,7 +1692,9 @@
         "refundRecorded": "Refund recorded.",
         "paymentRemoved": "Payment removed.",
         "refundRemoved": "Refund removed."
-      }
+      },
+      "toRefund": "To refund",
+      "toRefundHelp": "You collected more than the order total. Record a refund when you give the money back to the customer."
     },
     "dates": {
       "label": "Date",
@@ -1725,7 +1779,8 @@
       "create": "Create",
       "update": "Edit",
       "delete": "Delete",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "edit": "Modify"
     },
     "resources": {
       "store": {
@@ -1746,9 +1801,10 @@
       },
       "order": {
         "name": "Orders",
-        "description": "See orders, move their status forward and cancel them (cancelling gives stock back).",
+        "description": "See orders, move their status forward, cancel them (cancelling gives stock back) and remove items before handing them over.",
         "actions": {
-          "update": "Change status"
+          "update": "Change status",
+          "edit": "Edit items"
         }
       },
       "payment": {

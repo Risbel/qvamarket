@@ -1133,6 +1133,10 @@ export const orderItem = pgTable(
     variantTitle: text("variant_title"),
     sku: text("sku"),
     quantity: integer("quantity").notNull(),
+    // What checkout took, kept once the store lowered the line afterwards (the customer
+    // changed their mind, or the product was not really there); null = never edited.
+    // A removed line stays with quantity 0, so the order still shows what was asked for.
+    originalQuantity: integer("original_quantity"),
     unitPriceMinor: bigint("unit_price_minor", { mode: "number" }).notNull(),
     // The struck-through "was" price shown at checkout, if any
     compareAtMinor: bigint("compare_at_minor", { mode: "number" }),
@@ -1162,7 +1166,11 @@ export const orderItem = pgTable(
     index("order_item_variantId_idx").on(table.variantId),
     index("order_item_productId_idx").on(table.productId),
     check("order_item_product_name_not_empty", sql`length(trim(${table.productName})) > 0`),
-    check("order_item_quantity", sql`${table.quantity} > 0`),
+    // Only an edited line can reach 0, and an edit only ever lowers the quantity
+    check(
+      "order_item_quantity",
+      sql`(${table.quantity} > 0 or (${table.quantity} = 0 and ${table.originalQuantity} is not null)) and (${table.originalQuantity} is null or ${table.quantity} < ${table.originalQuantity})`,
+    ),
     check("order_item_unit_price", sql`${table.unitPriceMinor} >= 0`),
     check(
       "order_item_compare_at",
@@ -1248,6 +1256,52 @@ export const orderStatusHistory = pgTable(
       sql.raw(`from_status is null or from_status in (${ORDER_STATUSES.map((s) => `'${s}'`).join(", ")})`),
     ),
     check("order_status_history_actor", sql`${table.actor} in ('customer', 'merchant', 'system')`),
+  ],
+);
+
+/** One line changed by an order edit (snapshot: the item may be renamed or removed later). */
+export type OrderEditChange = {
+  itemId: string;
+  productName: string;
+  variantTitle: string | null;
+  from: number;
+  to: number;
+  /** units given back to the variant's stock (0 when the staff chose not to, or it is not tracked) */
+  restocked: number;
+};
+
+/**
+ * Audit trail of the items of an order changed by the store after checkout ("edit order"):
+ * who, when, why, which lines and how the subtotal moved. Written in the same transaction
+ * as the edit.
+ */
+export const orderEdit = pgTable(
+  "order_edit",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    orderId: uuid("order_id").notNull(),
+    actorUserId: uuid("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    changes: jsonb("changes").$type<OrderEditChange[]>().notNull(),
+    subtotalBeforeMinor: bigint("subtotal_before_minor", { mode: "number" }).notNull(),
+    subtotalAfterMinor: bigint("subtotal_after_minor", { mode: "number" }).notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "order_edit_order_tenant_fk",
+      columns: [table.orderId, table.tenantId],
+      foreignColumns: [order.id, order.tenantId],
+    }).onDelete("cascade"),
+    index("order_edit_orderId_idx").on(table.orderId, table.createdAt),
+    check("order_edit_changes_array", sql`jsonb_typeof(${table.changes}) = 'array'`),
+    check(
+      "order_edit_subtotals",
+      sql`${table.subtotalAfterMinor} >= 0 and ${table.subtotalAfterMinor} <= ${table.subtotalBeforeMinor}`,
+    ),
   ],
 );
 

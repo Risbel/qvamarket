@@ -379,7 +379,10 @@
     "rateInvalid": "Escribe un número mayor que 0, con hasta 8 decimales.",
     "roleNameTaken": "Ya hay un rol con ese nombre.",
     "rolePermissionsRequired": "Marca al menos un permiso.",
-    "storeAccessEmpty": "Elige al menos una tienda"
+    "storeAccessEmpty": "Elige al menos una tienda",
+    "orderEditMore": "Como máximo {max}: al editar solo puedes bajar la cantidad.",
+    "orderEditNoChange": "No cambiaste ningún producto.",
+    "orderEditEmpty": "No puedes quitar todos los productos. Si el cliente ya no quiere nada, cancela el pedido."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -395,12 +398,18 @@
     },
     "form": {
       "companyName": "Nombre de la empresa",
+      "companyNamePlaceholder": "Ej.: Mipyme Dulces Ana",
       "storeName": "Nombre de la tienda",
+      "storeNamePlaceholder": "Ej.: Dulcería Ana",
       "storeSlug": "Subdominio",
+      "storeSlugPlaceholder": "dulceria-ana",
       "storeSlugHelp": "La tienda estará en {url}. Solo minúsculas, números y guiones.",
       "userName": "Nombre del propietario",
+      "userNamePlaceholder": "Ej.: Ana Pérez",
       "userEmail": "Correo del propietario",
+      "userEmailPlaceholder": "Ej.: ana@ejemplo.com",
       "temporaryPassword": "Contraseña temporal",
+      "temporaryPasswordPlaceholder": "Ej.: Kp7mXq2RtW9z",
       "temporaryPasswordHelp": "El propietario deberá cambiarla en su primer inicio de sesión.",
       "generate": "Generar",
       "create": "Crear comercio",
@@ -1550,7 +1559,14 @@
         "tilesUnavailable": "El mapa base no está disponible ahora mismo; el punto de entrega sí.",
         "openIn": "Abrir en:",
         "coordinates": "Coordenadas:"
-      }
+      },
+      "removed": "Quitado",
+      "lowered": "Cantidad cambiada",
+      "originalQuantity": "Cantidad original:",
+      "edited": "Productos modificados",
+      "editChange": "{from} → {to}",
+      "editRestocked": "{count, plural, one {# devuelta al inventario} other {# devueltas al inventario}}",
+      "editSubtotal": "Subtotal: {from} → {to}"
     },
     "actions": {
       "to": {
@@ -1581,6 +1597,42 @@
       },
       "toasts": {
         "changed": "Pedido {reference} marcado como {status}."
+      }
+    },
+    "edit": {
+      "open": "Editar productos",
+      "title": "Editar productos del pedido {reference}",
+      "description": "Baja la cantidad o quita productos que el cliente ya no quiere o que no tienes. El envío no cambia.",
+      "unitPrice": "{price} c/u",
+      "quantity": "Cantidad de {product}",
+      "decrease": "Quitar una unidad",
+      "increase": "Añadir una unidad",
+      "remove": "Quitar del pedido",
+      "undo": "Deshacer",
+      "removed": "{count, plural, one {Se quita # unidad} other {Se quitan las # unidades}}",
+      "lowered": "De {from} a {to}",
+      "restock": "{count, plural, one {Devolver # unidad al inventario} other {Devolver # unidades al inventario}}",
+      "newSubtotal": "Nuevo subtotal",
+      "deliveryFee": "Envío",
+      "newTotal": "Nuevo total",
+      "refundHint": "Ya cobraste más que el nuevo total: después registra un reembolso de {amount} en Pagos.",
+      "note": "Motivo (opcional)",
+      "notePlaceholder": "Ej.: El cliente no quiso el café al recoger el pedido.",
+      "noteHelp": "Queda en el historial del pedido. Solo la ve tu equipo.",
+      "back": "Volver",
+      "save": "Guardar cambios",
+      "errors": {
+        "forbidden": "No tienes permiso para editar pedidos.",
+        "notFound": "Este pedido ya no existe.",
+        "stale": "El pedido cambió mientras lo editabas. Revisa los productos y vuelve a intentarlo.",
+        "notAllowed": "Este pedido ya terminó: sus productos no se pueden cambiar. Usa un reembolso en Pagos.",
+        "empty": "No puedes quitar todos los productos. Si el cliente ya no quiere nada, cancela el pedido.",
+        "failed": "No se pudieron guardar los cambios. Inténtalo de nuevo."
+      },
+      "toasts": {
+        "saved": "Pedido {reference} actualizado.",
+        "restocked": "{count, plural, one {Se devolvió # unidad} other {Se devolvieron # unidades}} al inventario.",
+        "refundDue": "Registra un reembolso de {amount}."
       }
     },
     "payments": {
@@ -1640,7 +1692,9 @@
         "refundRecorded": "Reembolso registrado.",
         "paymentRemoved": "Pago quitado.",
         "refundRemoved": "Reembolso quitado."
-      }
+      },
+      "toRefund": "A devolver",
+      "toRefundHelp": "Cobraste más que el total del pedido. Registra un reembolso cuando le devuelvas el dinero al cliente."
     },
     "dates": {
       "label": "Fecha",
@@ -1725,7 +1779,8 @@
       "create": "Crear",
       "update": "Editar",
       "delete": "Eliminar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "edit": "Modificar"
     },
     "resources": {
       "store": {
@@ -1746,9 +1801,10 @@
       },
       "order": {
         "name": "Pedidos",
-        "description": "Ver los pedidos, avanzar su estado y cancelarlos (cancelar devuelve el stock).",
+        "description": "Ver los pedidos, avanzar su estado, cancelarlos (cancelar devuelve el stock) y quitar productos antes de entregarlos.",
         "actions": {
-          "update": "Cambiar estado"
+          "update": "Cambiar estado",
+          "edit": "Editar productos"
         }
       },
       "payment": {
