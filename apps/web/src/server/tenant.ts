@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { hasPermissions, isOwner, type PermissionRequest, type Permissions } from "@/lib/permissions";
 import { PANEL_ACCESS, type CompanySection, type StoreSection } from "@/lib/panel-access";
 import type { StoreAccess } from "@/lib/store-access";
+import { storeTimeZone } from "@/lib/date-range";
 import { memberPermissions } from "./company-roles";
 import { memberStoreAccess } from "./store-access";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
@@ -38,6 +39,8 @@ export type MerchantStore = CompanyStore & {
   defaultCurrency: StoreCurrency;
   /** the currency prices are typed in; the others follow it through their rates */
   baseCurrency: StoreCurrency;
+  /** IANA zone of the business: reports count the store's days in it */
+  timeZone: string;
 };
 
 export type MerchantCompany = { id: string; name: string };
@@ -132,7 +135,7 @@ export const getMerchantContext = cache(
   async (userId: string, storeId: string): Promise<MerchantContext | null> => {
     if (!isUuid(storeId)) return null;
     const [row] = await db
-      .select({ tenantId: store.tenantId })
+      .select({ tenantId: store.tenantId, timeZone: store.timeZone })
       .from(store)
       .where(eq(store.id, storeId.toLowerCase()))
       .limit(1);
@@ -152,6 +155,7 @@ export const getMerchantContext = cache(
         currencies: list.length > 0 ? list : [fallback],
         defaultCurrency: list.find((c) => c.isDefault) ?? list[0] ?? fallback,
         baseCurrency: list.find((c) => c.isBase) ?? list.find((c) => c.isDefault) ?? list[0] ?? fallback,
+        timeZone: storeTimeZone(row.timeZone),
       },
     };
   },

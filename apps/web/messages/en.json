@@ -28,6 +28,24 @@
       "active": "Active products",
       "draft": "Drafts",
       "manageProducts": "Manage products"
+    },
+    "income": {
+      "title": "Sales and collections",
+      "timeZone": "Days counted in the store's time zone ({zone}).",
+      "currency": "Currency",
+      "today": "Today",
+      "month": "This month",
+      "year": "This year",
+      "collected": "Collected (payments − refunds)",
+      "sales": "Sales ({count, plural, =0 {no orders} one {# order} other {# orders}})",
+      "refunds": "Refunds",
+      "methods": {
+        "cash": "Cash",
+        "transfer": "Transfer",
+        "other": "Other"
+      },
+      "chartTitle": "Collected in the last 30 days",
+      "chartDescription": "By payment method, in {currency}. A day with refunds can go below 0."
     }
   },
   "Store": {
@@ -333,6 +351,7 @@
     "compareAtHigher": "The previous price must be higher than the current price",
     "currencyRequired": "Choose at least one currency and mark it as the main one",
     "phoneInvalid": "Only digits, spaces and + ( ) -",
+    "timeZoneInvalid": "Choose a time zone from the list",
     "priceNeededFirst": "Enter the regular price in this currency first",
     "tagTooLong": "Each tag can have at most {max} characters",
     "tierCheaper": "The volume price must be lower than the regular price",
@@ -1150,6 +1169,11 @@
       "phoneCountry": "Country for phone numbers",
       "phoneCountryNone": "None (only numbers with +)",
       "phoneCountryHelp": "Preselected at checkout: when a customer types their number without +, this country's code is added (e.g. 5 435 3930 → +53 5435 3930).",
+      "timeZone": "Business time zone",
+      "timeZonePlaceholder": "E.g. America/Havana",
+      "timeZoneEmpty": "No time zone matches.",
+      "timeZoneBrowser": "Use this device's",
+      "timeZoneHelp": "Sets when the store's day starts and ends: today's, this month's and this year's sales and collections are counted in this zone, whoever looks.",
       "descriptionPlaceholder": "E.g. Handmade clothing from Havana since 2015. Sizes S to XXL.",
       "phonePlaceholder": "E.g. 7 832 1234",
       "whatsappPlaceholder": "E.g. 5 435 3930",
@@ -1813,6 +1837,10 @@
         "actions": {
           "create": "Record"
         }
+      },
+      "report": {
+        "name": "Reports",
+        "description": "Sales and money collected today, this month and this year, on the store home."
       },
       "team": {
         "name": "Team",

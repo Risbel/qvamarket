@@ -62,3 +62,16 @@ export function addDays(date: string, days: number): string {
 export function startOfMonth(date: string): string {
   return `${date.slice(0, 8)}01`;
 }
+
+/** First day of the year of a YYYY-MM-DD date. */
+export function startOfYear(date: string): string {
+  return `${date.slice(0, 4)}-01-01`;
+}
+
+/** The zone of stores that never chose one (the column's default; most merchants are in Cuba). */
+export const DEFAULT_TIME_ZONE = "America/Havana";
+
+/** A store's timezone as stored, or the default when the runtime does not know that name. */
+export function storeTimeZone(value: unknown): string {
+  return canonicalTimeZone(value) ?? DEFAULT_TIME_ZONE;
+}

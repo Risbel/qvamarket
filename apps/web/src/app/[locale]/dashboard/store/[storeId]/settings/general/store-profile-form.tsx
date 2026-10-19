@@ -11,6 +11,9 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { createStoreProfileSchema, type StoreProfileValues } from "@/lib/validation/catalog-settings";
 import { updateStoreProfileAction } from "@/server/catalog-actions";
 import { CountrySelect, type CountryOption } from "@/components/country-select";
+import { TimeZoneSelect } from "@/components/time-zone-select";
+import { canonicalTimeZone } from "@/lib/date-range";
+import type { TimeZoneOption } from "@/lib/time-zones";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -19,9 +22,11 @@ import { Textarea } from "@/components/ui/textarea";
 export function StoreProfileForm({
   initialValues,
   countries,
+  timeZones,
 }: {
   initialValues: StoreProfileValues;
   countries: CountryOption[];
+  timeZones: TimeZoneOption[];
 }) {
   const storeId = useStoreId();
   const t = useTranslations("Settings.profile");
@@ -85,6 +90,41 @@ export function StoreProfileForm({
                 invalid={fieldState.invalid}
               />
               <FieldDescription>{t("phoneCountryHelp")}</FieldDescription>
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Controller
+          name="timeZone"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="timeZone">{t("timeZone")}</FieldLabel>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="min-w-0 flex-1">
+                  <TimeZoneSelect
+                    id="timeZone"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    options={timeZones}
+                    placeholder={t("timeZonePlaceholder")}
+                    emptyText={t("timeZoneEmpty")}
+                    invalid={fieldState.invalid}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!hydrated}
+                  onClick={() => {
+                    const zone = canonicalTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+                    if (zone) form.setValue("timeZone", zone, { shouldDirty: true, shouldValidate: true });
+                  }}
+                >
+                  {t("timeZoneBrowser")}
+                </Button>
+              </div>
+              <FieldDescription>{t("timeZoneHelp")}</FieldDescription>
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}

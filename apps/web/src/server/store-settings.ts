@@ -1,4 +1,5 @@
 import { and, db, eq, store } from "@qvashop/db";
+import { storeTimeZone } from "@/lib/date-range";
 import { parseFooterLinks, type FooterLinkGroup } from "@/lib/footer";
 import { parseFooterSocial, type SocialLink } from "@/lib/social";
 import type { PickupValues, StoreProfileValues } from "@/lib/validation/catalog-settings";
@@ -16,6 +17,7 @@ export async function getStoreProfile(scope: Scope) {
       contactEmail: store.contactEmail,
       address: store.address,
       phoneCountry: store.phoneCountry,
+      timeZone: store.timeZone,
       pickupInstructions: store.pickupInstructions,
       metaTitle: store.metaTitle,
       metaDescription: store.metaDescription,
@@ -39,6 +41,8 @@ export async function updateStoreProfile(scope: Scope, values: StoreProfileValue
       contactEmail: orNull(values.contactEmail),
       address: orNull(values.address),
       phoneCountry: orNull(values.phoneCountry),
+      // the schema accepted it, so canonicalTimeZone() has an answer
+      timeZone: storeTimeZone(values.timeZone),
       metaTitle: orNull(values.metaTitle),
       metaDescription: orNull(values.metaDescription),
     })

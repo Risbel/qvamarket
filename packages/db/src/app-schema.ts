@@ -202,6 +202,9 @@ export const store = pgTable(
     // "+", whose calling code is then added. null = customers must type the international form.
     // The supported list lives in the app (src/lib/countries.ts).
     phoneCountry: text("phone_country"),
+    // IANA timezone of the business (e.g. "America/Havana"): reports and the day close count
+    // the store's days in it, whoever looks. Validated in the app (canonicalTimeZone).
+    timeZone: text("time_zone").default("America/Havana").notNull(),
     pickupInstructions: text("pickup_instructions"),
     // e.g. { "mon": [["09:00","18:00"]], "sun": [] } (shape validated in the app)
     openingHours: jsonb("opening_hours"),
@@ -1335,6 +1338,8 @@ export const orderPayment = pgTable(
       foreignColumns: [order.id, order.tenantId],
     }).onDelete("cascade"),
     index("order_payment_orderId_idx").on(table.orderId),
+    // income summaries filter by the payment date
+    index("order_payment_tenantId_paidAt_idx").on(table.tenantId, table.paidAt),
     check("order_payment_kind", sql`${table.kind} in ('payment', 'refund')`),
     check("order_payment_method", sql`${table.method} in ('cash', 'transfer', 'other')`),
     check("order_payment_amount", sql`${table.amountMinor} > 0`),

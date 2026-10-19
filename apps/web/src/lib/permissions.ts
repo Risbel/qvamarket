@@ -20,6 +20,8 @@ export const statement = {
   order: ["read", "update", "cancel", "edit"],
   // manual payments and refunds recorded on an order
   payment: ["read", "create", "delete"],
+  // business totals: sales and money collected (income summary on the store home)
+  report: ["read"],
   // the company's members (add, change role, reset password, remove)
   team: ["read", "create", "update", "delete"],
   // the company's roles
@@ -116,6 +118,7 @@ export const ROLE_PRESETS = {
     promotion: ["read", "create", "update", "delete"],
     order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create", "delete"],
+    report: ["read"],
     team: ["read"],
   },
   /** Serves customers: processes and edits orders, takes payments; looks at the catalog. */
@@ -147,6 +150,7 @@ export const ROLE_PRESETS = {
     promotion: ["read"],
     order: ["read"],
     payment: ["read"],
+    report: ["read"],
   },
 } as const satisfies Record<string, Permissions>;
 

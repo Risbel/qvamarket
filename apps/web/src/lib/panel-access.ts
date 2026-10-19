@@ -13,6 +13,8 @@ export const PANEL_ACCESS = {
   categories: { category: ["read"] },
   promotions: { promotion: ["read"] },
   settings: { store: ["read"] },
+  // the income summary on the store home (not a sidebar section)
+  income: { report: ["read"] },
   // company sections (/dashboard/org/<tenantId>/...)
   team: { team: ["read"] },
   roles: { role: ["read"] },

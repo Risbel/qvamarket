@@ -28,6 +28,24 @@
       "active": "Productos activos",
       "draft": "Borradores",
       "manageProducts": "Gestionar productos"
+    },
+    "income": {
+      "title": "Ventas y cobros",
+      "timeZone": "Días contados en la zona horaria de la tienda ({zone}).",
+      "currency": "Moneda",
+      "today": "Hoy",
+      "month": "Este mes",
+      "year": "Este año",
+      "collected": "Cobrado (cobros − devoluciones)",
+      "sales": "Ventas ({count, plural, =0 {sin pedidos} one {# pedido} other {# pedidos}})",
+      "refunds": "Devoluciones",
+      "methods": {
+        "cash": "Efectivo",
+        "transfer": "Transferencia",
+        "other": "Otro"
+      },
+      "chartTitle": "Cobrado en los últimos 30 días",
+      "chartDescription": "Por forma de pago, en {currency}. Un día con devoluciones puede quedar por debajo de 0."
     }
   },
   "Store": {
@@ -333,6 +351,7 @@
     "compareAtHigher": "El precio anterior debe ser mayor que el precio actual",
     "currencyRequired": "Elige al menos una moneda y márcala como principal",
     "phoneInvalid": "Solo números, espacios y los signos + ( ) -",
+    "timeZoneInvalid": "Elige una zona horaria de la lista",
     "priceNeededFirst": "Indica primero el precio normal en esta moneda",
     "tagTooLong": "Cada etiqueta puede tener como máximo {max} caracteres",
     "tierCheaper": "El precio por volumen debe ser menor que el precio normal",
@@ -1150,6 +1169,11 @@
       "phoneCountry": "País de los teléfonos",
       "phoneCountryNone": "Ninguno (solo números con +)",
       "phoneCountryHelp": "Se preselecciona al hacer un pedido: si el cliente escribe su número sin +, se le añade el código de este país (ej. 5 435 3930 → +53 5435 3930).",
+      "timeZone": "Zona horaria del negocio",
+      "timeZonePlaceholder": "Ej.: America/Havana",
+      "timeZoneEmpty": "Ninguna zona coincide.",
+      "timeZoneBrowser": "Usar la de este dispositivo",
+      "timeZoneHelp": "Marca cuándo empieza y termina el día de la tienda: los cobros y ventas de hoy, del mes y del año se cuentan en esta zona, la vea quien la vea.",
       "descriptionPlaceholder": "Ej.: Ropa hecha a mano en La Habana desde 2015. Tallas de la S a la XXL.",
       "phonePlaceholder": "Ej.: 7 832 1234",
       "whatsappPlaceholder": "Ej.: 5 435 3930",
@@ -1813,6 +1837,10 @@
         "actions": {
           "create": "Registrar"
         }
+      },
+      "report": {
+        "name": "Informes",
+        "description": "Ventas y dinero cobrado del día, el mes y el año, en el inicio de la tienda."
       },
       "team": {
         "name": "Equipo",

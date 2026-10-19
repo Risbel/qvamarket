@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { countProductsByStatus } from "@/server/products";
+import { getIncomeSummary } from "@/server/income";
+import { IncomeSummary } from "./income-summary";
 import { PANEL_ACCESS } from "@/lib/panel-access";
 import { storePath } from "@/lib/panel-paths";
 import { requireMerchant } from "@/server/tenant";
@@ -31,6 +33,13 @@ export default async function StoreHomePage({
         storeId: merchant.store.id,
       })
     : {};
+  const income = merchant.can(PANEL_ACCESS.income)
+    ? await getIncomeSummary(
+        { tenantId: merchant.tenantId, storeId: merchant.store.id },
+        merchant.store.timeZone,
+        merchant.store.currencies.map((c) => c.code),
+      )
+    : null;
   const storeUrl = buildStoreUrl(merchant.store.slug, (await headers()).get("host"));
 
   return (
@@ -38,6 +47,7 @@ export default async function StoreHomePage({
       <h1 className="text-2xl font-semibold">
         {t("welcome", { name: merchant.session.user.name })}
       </h1>
+      {income && <IncomeSummary summary={income} />}
       <Card>
         <CardHeader>
           <CardTitle>{merchant.store.name}</CardTitle>

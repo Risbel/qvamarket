@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { canonicalTimeZone } from "@/lib/date-range";
 import { normalizeRate } from "@/lib/exchange";
 import { phoneCountrySchema } from "./checkout";
 import type { Translator } from "./types";
@@ -23,6 +24,7 @@ export function createStoreProfileSchema(t: Translator) {
     contactEmail: z.union([z.literal(""), z.email(t("emailInvalid"))]),
     address: optionalText(t, 300),
     phoneCountry: phoneCountrySchema,
+    timeZone: z.string().refine((value): boolean => canonicalTimeZone(value) !== null, t("timeZoneInvalid")),
     metaTitle: optionalText(t, 70),
     metaDescription: optionalText(t, 160),
   });

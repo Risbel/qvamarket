@@ -17,7 +17,7 @@ import {
   sql,
   user,
 } from "@qvashop/db";
-import type { DateRange } from "@/lib/date-range";
+import { onLocalDays } from "./date-sql";
 import type { OrderListParams, OrderSort } from "@/lib/order-list";
 import { canChangeStatus, type OrderStatus } from "@/lib/orders";
 
@@ -41,29 +41,14 @@ function searchCondition(query: string) {
   );
 }
 
-/**
- * Orders placed on the calendar days `from`..`to` in the range's timezone. The exact test is
- * the order's LOCAL date (instant -> local time always has one answer); converting a local
- * midnight to an instant does not, because some zones change clocks at midnight (Cuba's
- * Nov 1 starts with 00:00 twice). The wider instant bounds only let the index prune rows.
- */
-function inDateRange(range: DateRange | null) {
-  if (!range) return undefined;
-  const { from, to, timeZone } = range;
-  return and(
-    sql`${order.createdAt} >= (${from}::date)::timestamp at time zone ${timeZone} - interval '1 day'`,
-    sql`${order.createdAt} < (${to}::date + 1)::timestamp at time zone ${timeZone} + interval '1 day'`,
-    sql`(${order.createdAt} at time zone ${timeZone})::date between ${from}::date and ${to}::date`,
-  );
-}
-
 /** The list's filters (each optional); `except` leaves one out, for that filter's own counts. */
 function listCondition(scope: Scope, params: OrderListParams, except?: "status" | "payment") {
   return and(
     inScope(scope),
     except !== "status" && params.statuses.length ? inArray(order.status, params.statuses) : undefined,
     except !== "payment" && params.payments.length ? inArray(order.paymentStatus, params.payments) : undefined,
-    inDateRange(params.range),
+    // orders placed on those days in the range's timezone
+    onLocalDays(order.createdAt, params.range),
     searchCondition(params.query),
   );
 }

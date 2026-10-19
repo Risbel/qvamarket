@@ -1,5 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { phoneCountryOptions } from "@/lib/countries";
+import { storeTimeZone } from "@/lib/date-range";
+import { timeZoneOptions } from "@/lib/time-zones";
 import { getStoreProfile } from "@/server/store-settings";
 import { requirePanelSection } from "@/server/tenant";
 import { PermissionFieldset } from "@/components/permissions/permission-fieldset";
@@ -22,6 +24,7 @@ export default async function GeneralSettingsPage({
       <PermissionFieldset permission={{ store: ["update"] }}>
         <StoreProfileForm
           countries={phoneCountryOptions(locale)}
+          timeZones={timeZoneOptions()}
           initialValues={{
             description: profile?.description ?? "",
             phone: profile?.phone ?? "",
@@ -29,6 +32,7 @@ export default async function GeneralSettingsPage({
             contactEmail: profile?.contactEmail ?? "",
             address: profile?.address ?? "",
             phoneCountry: profile?.phoneCountry ?? "",
+            timeZone: storeTimeZone(profile?.timeZone),
             metaTitle: profile?.metaTitle ?? "",
             metaDescription: profile?.metaDescription ?? "",
           }}
