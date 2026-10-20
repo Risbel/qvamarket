@@ -38,6 +38,7 @@ import {
   orderStatusVariant,
   paymentStatusVariant,
   type OrderStatus,
+  type PaymentMethod,
   type PaymentStatus,
 } from "@/lib/orders";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,8 @@ export type OrderRow = {
   customerPhone: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  /** how it was paid (see paymentMethodsOf); empty without `payment:read` */
+  paymentMethods: PaymentMethod[];
   fulfillmentType: string;
   currencyCode: string;
   totalMinor: number;
@@ -98,8 +101,11 @@ export function OrdersTable({
   total,
   facets,
   params,
+  showMethods,
 }: {
   rows: OrderRow[];
+  /** the viewer has `payment:read`: show how each order was paid */
+  showMethods: boolean;
   /** orders matching the filters, on every page */
   total: number;
   /** per value: orders the filter would show (see countOrderFacets) */
@@ -220,13 +226,34 @@ export function OrdersTable({
             </Badge>
           ),
         }),
+        ...(showMethods
+          ? [
+              helper.accessor("paymentMethods", {
+                id: "method",
+                header: () => t("columns.method"),
+                enableSorting: false,
+                cell: ({ row }) =>
+                  row.original.paymentMethods.length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {row.original.paymentMethods.map((method) => (
+                        <Badge key={method} variant="outline">
+                          {t(`payments.method.${method}`)}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  ),
+              }),
+            ]
+          : []),
         helper.display({
           id: "actions",
           header: () => <span className="sr-only">{t("columns.actions")}</span>,
           cell: ({ row }) => <RowActions order={row.original} />,
         }),
       ]),
-    [t, locale, panelPath],
+    [t, locale, panelPath, showMethods],
   );
 
   const table = useTable({
@@ -306,7 +333,7 @@ export function OrdersTable({
             .filter((column) => column.getCanHide() && column.id !== "actions")
             .map((column) => ({
               id: column.id,
-              label: t(`columns.${column.id as "date" | "customer" | "units" | "total" | "status" | "payment"}`),
+              label: t(`columns.${column.id as "date" | "customer" | "units" | "total" | "status" | "payment" | "method"}`),
               visible: column.getIsVisible(),
             }))}
           onToggle={(id, visible) => table.getColumn(id)?.toggleVisibility(visible)}

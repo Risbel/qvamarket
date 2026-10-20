@@ -16,7 +16,11 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
   // Filters, sort and page come from the URL (shareable, back button works); anything
   // unexpected is ignored. Dates are days in the timezone the URL names (see date-filter.tsx)
   const list = parseOrderListParams(await searchParams);
-  const [{ orders, total }, facets] = await Promise.all([listOrders(scope, list), countOrderFacets(scope, list)]);
+  const canSeePayments = merchant.can({ payment: ["read"] });
+  const [{ orders, total }, facets] = await Promise.all([
+    listOrders(scope, list, { withPayments: canSeePayments }),
+    countOrderFacets(scope, list),
+  ]);
 
   const rows: OrderRow[] = orders.map((o) => ({
     id: o.id,
@@ -26,6 +30,7 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
     customerPhone: o.customerPhone,
     status: o.status as OrderStatus,
     paymentStatus: o.paymentStatus as PaymentStatus,
+    paymentMethods: o.paymentMethods,
     fulfillmentType: o.fulfillmentType,
     currencyCode: o.currencyCode,
     totalMinor: o.totalMinor,
@@ -38,7 +43,7 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
       {total === 0 && !hasOrderFilters(list) ? (
         <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
-        <OrdersTable rows={rows} total={total} facets={facets} params={list} />
+        <OrdersTable rows={rows} total={total} facets={facets} params={list} showMethods={canSeePayments} />
       )}
     </div>
   );

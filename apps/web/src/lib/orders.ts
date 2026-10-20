@@ -86,6 +86,16 @@ export function paymentTotals(totalMinor: number, payments: { kind: string; amou
   return { paid, refunded, net, due: Math.max(totalMinor - net, 0), overpaid: Math.max(net - totalMinor, 0) };
 }
 
+/**
+ * How an order was paid: the methods that still hold money (payments - refunds of that
+ * method > 0), in `PAYMENT_METHODS` order. Half by transfer and half in cash = both.
+ */
+export function paymentMethodsOf(payments: { kind: string; method: string; amountMinor: number }[]): PaymentMethod[] {
+  const net = new Map<string, number>();
+  for (const p of payments) net.set(p.method, (net.get(p.method) ?? 0) + (p.kind === "refund" ? -p.amountMinor : p.amountMinor));
+  return PAYMENT_METHODS.filter((method) => (net.get(method) ?? 0) > 0);
+}
+
 /** The cached `order.payment_status`, always derived from the payment records. */
 export function paymentStatusOf(totalMinor: number, payments: { kind: string; amountMinor: number }[]): PaymentStatus {
   const { refunded, net } = paymentTotals(totalMinor, payments);

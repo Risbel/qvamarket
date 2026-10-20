@@ -19,7 +19,7 @@ import {
 } from "@qvashop/db";
 import { onLocalDays } from "./date-sql";
 import type { OrderListParams, OrderSort } from "@/lib/order-list";
-import { canChangeStatus, type OrderStatus } from "@/lib/orders";
+import { canChangeStatus, paymentMethodsOf, type OrderStatus } from "@/lib/orders";
 
 // Orders of the merchant's store. Every query matches tenant_id AND store_id (from
 // requireMerchant(), never from client input).
@@ -64,8 +64,11 @@ function listOrderBy({ id, desc: descending }: OrderSort) {
   return [dir(order.createdAt), dir(order.number)];
 }
 
-/** A page of orders with the number of units of each. */
-export async function listOrders(scope: Scope, params: OrderListParams) {
+/**
+ * A page of orders with the number of units of each and, with `withPayments` (the viewer
+ * has `payment:read`), how each was paid (`paymentMethodsOf`; empty otherwise).
+ */
+export async function listOrders(scope: Scope, params: OrderListParams, { withPayments = false } = {}) {
   const where = listCondition(scope, params);
   const [rows, [{ total }]] = await Promise.all([
     db
@@ -106,9 +109,29 @@ export async function listOrders(scope: Scope, params: OrderListParams) {
     for (const row of sums) units.set(row.orderId, row.units);
   }
 
+  // order_payment has no store_id: the ids come from this store's page of orders
+  const payments = new Map<string, { kind: string; method: string; amountMinor: number }[]>();
+  if (withPayments && rows.length > 0) {
+    const records = await db
+      .select({
+        orderId: orderPayment.orderId,
+        kind: orderPayment.kind,
+        method: orderPayment.method,
+        amountMinor: sql<number>`sum(${orderPayment.amountMinor})::bigint`.mapWith(Number),
+      })
+      .from(orderPayment)
+      .where(and(eq(orderPayment.tenantId, scope.tenantId), inArray(orderPayment.orderId, rows.map((row) => row.id))))
+      .groupBy(orderPayment.orderId, orderPayment.kind, orderPayment.method);
+    for (const { orderId, ...record } of records) payments.set(orderId, [...(payments.get(orderId) ?? []), record]);
+  }
+
   return {
     total,
-    orders: rows.map((row) => ({ ...row, units: units.get(row.id) ?? 0 })),
+    orders: rows.map((row) => ({
+      ...row,
+      units: units.get(row.id) ?? 0,
+      paymentMethods: paymentMethodsOf(payments.get(row.id) ?? []),
+    })),
   };
 }
 

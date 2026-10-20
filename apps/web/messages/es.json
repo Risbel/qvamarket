@@ -1525,6 +1525,7 @@
       "total": "Total",
       "status": "Estado",
       "payment": "Pago",
+      "method": "Método",
       "actions": "Acciones"
     },
     "status": {

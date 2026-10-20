@@ -9,6 +9,7 @@ import {
   canEditItems,
   orderReference,
   orderStatusVariant,
+  paymentMethodsOf,
   paymentStatusVariant,
   paymentTotals,
   type OrderStatus,
@@ -70,6 +71,12 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
               <Badge variant={paymentStatusVariant(placed.paymentStatus)}>
                 {t(`payment.${placed.paymentStatus as PaymentStatus}`)}
               </Badge>
+              {canSeePayments &&
+                paymentMethodsOf(placed.payments).map((method) => (
+                  <Badge key={method} variant="outline">
+                    {t(`payments.method.${method}`)}
+                  </Badge>
+                ))}
             </div>
             <p className="text-sm text-muted-foreground">
               <LocalDateTime iso={placed.createdAt.toISOString()} locale={locale} /> ·{" "}
