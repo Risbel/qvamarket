@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
+  ReceiptText,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -61,6 +62,7 @@ const ITEMS = {
   inventory: { path: "/inventory", icon: Warehouse, exact: false },
   categories: { path: "/categories", icon: FolderTree, exact: false },
   promotions: { path: "/promotions", icon: BadgePercent, exact: false },
+  expenses: { path: "/expenses", icon: ReceiptText, exact: false },
   settings: { path: "/settings", icon: Settings, exact: false },
   // company panel
   stores: { path: "", icon: Store, exact: true },
@@ -74,7 +76,7 @@ const ITEMS = {
 export type PanelNavKey = keyof typeof ITEMS;
 export type PanelNavGroup = {
   /** Key in `Panel.groups`; no label for the first, unnamed group. */
-  label?: "catalog" | "store" | "team" | "platform";
+  label?: "catalog" | "finance" | "store" | "team" | "platform";
   items: PanelNavKey[];
 };
 

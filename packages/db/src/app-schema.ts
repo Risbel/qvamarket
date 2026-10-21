@@ -1448,6 +1448,76 @@ export const inventoryMovement = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------------------
+// Expenses
+// ---------------------------------------------------------------------------------------
+
+/**
+ * What a store spends on running the business. Buying goods for resale is NOT an expense
+ * here: it is stock received in the inventory, and its cost reaches the profit as the cost
+ * of the goods sold (counting it twice would understate the profit).
+ */
+export const EXPENSE_CATEGORIES = [
+  "salaries",
+  "rent",
+  "utilities",
+  "transport",
+  "maintenance",
+  "marketing",
+  "taxes",
+  "fees",
+  "supplies",
+  "other",
+] as const;
+
+/**
+ * Money a store paid out, recorded by hand. `amount_minor` is positive, in `currency_code`
+ * (one of the store's currencies when recorded; the FK is to the platform list so removing a
+ * currency from the store never touches old expenses). `member_user_id` = the team member a
+ * salary was paid to (SET NULL when the account goes; `payee` keeps the name).
+ */
+export const expense = pgTable(
+  "expense",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    category: text("category").notNull(),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    method: text("method").notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
+    payee: text("payee"),
+    memberUserId: uuid("member_user_id").references(() => user.id, { onDelete: "set null" }),
+    note: text("note"),
+    recordedByUserId: uuid("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "expense_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    index("expense_storeId_paidAt_idx").on(table.storeId, table.paidAt),
+    check(
+      "expense_category",
+      sql.raw(`category in (${EXPENSE_CATEGORIES.map((c) => `'${c}'`).join(", ")})`),
+    ),
+    check("expense_method", sql`${table.method} in ('cash', 'transfer', 'other')`),
+    check("expense_amount", sql`${table.amountMinor} > 0`),
+    check("expense_payee_not_empty", sql`${table.payee} is null or length(trim(${table.payee})) > 0`),
+  ],
+);
+
 // Platform-level audit trail (not tenant data): every superadmin impersonation.
 // Emails are snapshotted and the user/tenant FKs are SET NULL so the trail
 // survives deleting an account.

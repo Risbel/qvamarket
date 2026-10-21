@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 
-const PRESETS = ["today", "yesterday", "last7", "thisMonth"] as const;
+const PRESETS = ["today", "yesterday", "last7", "thisMonth", "lastMonth"] as const;
 const CALENDAR_LOCALES = { es, en: enUS } as const;
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -38,12 +38,13 @@ function formatDays(from: string, to: string, locale: string) {
 }
 
 /**
- * Filter by the day orders were placed, in the VIEWER's timezone (the browser's): "today"
- * means today where the merchant is, matching the local times shown in the list. The URL
- * carries the dates and that timezone, so the server can compute the exact instants.
+ * Filter a list by day (orders placed, expenses paid...) in the VIEWER's timezone (the
+ * browser's): "today" means today where the merchant is, matching the local times shown in
+ * the list. The URL carries the dates and that timezone, so the server can compute the exact
+ * instants.
  */
 export function DateFilter({ value, onChange }: { value: DateRange | null; onChange: (range: DateRange | null) => void }) {
-  const t = useTranslations("Orders.dates");
+  const t = useTranslations("DataTable.dates");
   const locale = useLocale();
   const hydrated = useHydrated();
   const timeZone = hydrated ? Intl.DateTimeFormat().resolvedOptions().timeZone : null;
@@ -55,6 +56,10 @@ export function DateFilter({ value, onChange }: { value: DateRange | null; onCha
     if (key === "today") return { from: today, to: today };
     if (key === "yesterday") return { from: addDays(today, -1), to: addDays(today, -1) };
     if (key === "last7") return { from: addDays(today, -6), to: today };
+    if (key === "lastMonth") {
+      const lastDay = addDays(startOfMonth(today), -1);
+      return { from: startOfMonth(lastDay), to: lastDay };
+    }
     return { from: startOfMonth(today), to: today };
   }
 

@@ -41,6 +41,7 @@ import {
   type PaymentStatus,
 } from "@/lib/orders";
 import { cn } from "@/lib/utils";
+import { DateFilter } from "@/components/data-table/date-filter";
 import { FacetedFilter } from "@/components/data-table/faceted-filter";
 import { Pagination } from "@/components/data-table/pagination";
 import { Search } from "@/components/data-table/search";
@@ -57,7 +58,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DateFilter } from "./date-filter";
 
 export type OrderRow = {
   id: string;

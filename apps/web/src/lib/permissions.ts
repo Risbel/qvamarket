@@ -26,6 +26,8 @@ export const statement = {
   customer: ["read"],
   // business totals: sales and money collected (income summary on the store home)
   report: ["read"],
+  // money the store paid out: salaries, rent, utilities...
+  expense: ["read", "create", "update", "delete"],
   // the company's members (add, change role, reset password, remove)
   team: ["read", "create", "update", "delete"],
   // the company's roles
@@ -114,7 +116,7 @@ export function isOwner(roleString: string): boolean {
 // ---------------------------------------------------------------------------------------
 
 export const ROLE_PRESETS = {
-  /** Runs the shop: settings, catalog, orders and payments. Sees the team, cannot manage it. */
+  /** Runs the shop: settings, catalog, orders, payments and expenses. Sees the team, cannot manage it. */
   manager: {
     store: ["read", "update"],
     product: ["read", "create", "update", "delete"],
@@ -125,6 +127,7 @@ export const ROLE_PRESETS = {
     payment: ["read", "create", "delete"],
     customer: ["read"],
     report: ["read"],
+    expense: ["read", "create", "update", "delete"],
     team: ["read"],
   },
   /** Serves customers: processes and edits orders, takes payments; looks at the catalog. */
@@ -161,6 +164,7 @@ export const ROLE_PRESETS = {
     payment: ["read"],
     customer: ["read"],
     report: ["read"],
+    expense: ["read"],
   },
 } as const satisfies Record<string, Permissions>;
 

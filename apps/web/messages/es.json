@@ -578,6 +578,7 @@
       "categories": "Categorías",
       "settings": "Ajustes",
       "promotions": "Promociones",
+      "expenses": "Gastos",
       "merchants": "Comercios",
       "stores": "Tiendas",
       "newMerchant": "Nuevo comercio",
@@ -590,6 +591,7 @@
     },
     "groups": {
       "catalog": "Catálogo",
+      "finance": "Finanzas",
       "store": "Tienda",
       "platform": "Plataforma",
       "team": "Equipo"
@@ -1887,18 +1889,6 @@
       "toRefund": "A devolver",
       "toRefundHelp": "Cobraste más que el total del pedido. Registra un reembolso cuando le devuelvas el dinero al cliente."
     },
-    "dates": {
-      "label": "Fecha",
-      "apply": "Aplicar",
-      "clear": "Quitar fechas",
-      "presets": {
-        "today": "Hoy",
-        "yesterday": "Ayer",
-        "last7": "Últimos 7 días",
-        "thisMonth": "Este mes"
-      },
-      "otherTimeZone": "Días según la zona horaria {timeZone}."
-    },
     "rowActions": {
       "menu": "Acciones del pedido {reference}",
       "view": "Ver pedido",
@@ -1947,6 +1937,104 @@
       "ordersLimited": "Se muestran los {max} más recientes."
     }
   },
+  "Expenses": {
+    "title": "Gastos",
+    "intro": "Lo que pagas para mantener la tienda: salarios, alquiler, electricidad... La mercancía para vender no va aquí: regístrala como entrada en Inventario.",
+    "empty": "Todavía no hay gastos. Registra el primero con «Nuevo gasto».",
+    "noMatches": "Ningún gasto coincide con estos filtros.",
+    "new": "Nuevo gasto",
+    "count": "{count, plural, =0 {Ningún gasto} one {# gasto} other {# gastos}}",
+    "recordedBy": "por {name}",
+    "summary": {
+      "total": "Total gastado",
+      "totalFiltered": "Total con estos filtros",
+      "byCategory": "Por categoría"
+    },
+    "search": {
+      "label": "Buscar gastos",
+      "placeholder": "Buscar por a quién se pagó o la nota"
+    },
+    "columns": {
+      "date": "Fecha",
+      "category": "Categoría",
+      "payee": "Pagado a",
+      "method": "Forma de pago",
+      "amount": "Importe",
+      "actions": "Acciones"
+    },
+    "categories": {
+      "salaries": "Salarios",
+      "rent": "Alquiler",
+      "utilities": "Electricidad, agua y gas",
+      "transport": "Transporte y combustible",
+      "maintenance": "Reparaciones y mantenimiento",
+      "marketing": "Publicidad",
+      "taxes": "Impuestos y licencias",
+      "fees": "Comisiones bancarias",
+      "supplies": "Materiales y envases",
+      "other": "Otros"
+    },
+    "methods": {
+      "cash": "Efectivo",
+      "transfer": "Transferencia",
+      "other": "Otro"
+    },
+    "rowActions": {
+      "menu": "Acciones del gasto",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "form": {
+      "newTitle": "Nuevo gasto",
+      "editTitle": "Editar gasto",
+      "help": "Anota el dinero que salió de la tienda. Solo lo ve tu equipo.",
+      "category": "Categoría",
+      "amount": "Importe",
+      "amountPlaceholder": "Ej.: {example}",
+      "currency": "Moneda",
+      "member": "Miembro del equipo (opcional)",
+      "noMember": "Ninguno",
+      "memberHelp": "Para los salarios de tu equipo. Si no pones a quién se pagó, se usa su nombre.",
+      "payee": "Pagado a (opcional)",
+      "payeePlaceholder": "Ej.: Empresa Eléctrica",
+      "payeeSalaryPlaceholder": "Ej.: Ana Pérez",
+      "method": "Forma de pago",
+      "paidAt": "Fecha del pago",
+      "paidAtHelp": "Déjala vacía para usar la fecha y hora actuales.",
+      "datePlaceholder": "Ahora",
+      "time": "Hora del pago",
+      "dateClear": "Quitar la fecha (usar la actual)",
+      "timeZone": "Horas en tu zona horaria ({zone}).",
+      "note": "Nota (opcional)",
+      "notePlaceholder": "Ej.: Salario de octubre, factura n.º 0045",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "toasts": {
+        "created": "Gasto registrado.",
+        "updated": "Gasto actualizado."
+      },
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "El gasto ya no existe.",
+        "memberNotFound": "Esa persona ya no es miembro de la empresa.",
+        "failed": "No se pudo guardar el gasto. Inténtalo de nuevo."
+      }
+    },
+    "delete": {
+      "title": "¿Eliminar este gasto?",
+      "confirm": "{category}, {amount}. No se puede deshacer.",
+      "cancel": "Cancelar",
+      "submit": "Eliminar",
+      "deleting": "Eliminando…",
+      "done": "Gasto eliminado.",
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "El gasto ya no existe.",
+        "failed": "No se pudo eliminar. Inténtalo de nuevo."
+      }
+    }
+  },
   "DataTable": {
     "view": "Columnas",
     "toggleColumns": "Mostrar columnas",
@@ -1961,6 +2049,19 @@
       "previous": "Página anterior",
       "next": "Página siguiente",
       "last": "Última página"
+    },
+    "dates": {
+      "label": "Fecha",
+      "apply": "Aplicar",
+      "clear": "Quitar fechas",
+      "presets": {
+        "today": "Hoy",
+        "yesterday": "Ayer",
+        "last7": "Últimos 7 días",
+        "thisMonth": "Este mes",
+        "lastMonth": "Mes pasado"
+      },
+      "otherTimeZone": "Días según la zona horaria {timeZone}."
     }
   },
   "Roles": {
@@ -2061,6 +2162,10 @@
         "name": "Informes",
         "description": "Ventas y dinero cobrado del día, el mes y el año, en el inicio de la tienda."
       },
+      "expense": {
+        "name": "Gastos",
+        "description": "Lo que paga la tienda: salarios, alquiler, electricidad, transporte, impuestos..."
+      },
       "team": {
         "name": "Equipo",
         "description": "Los miembros de la empresa: añadirlos, cambiar su rol, restablecer su contraseña y quitarlos."
@@ -2085,7 +2190,7 @@
     "presets": {
       "manager": {
         "name": "Gerente",
-        "description": "Lleva la tienda: ajustes, catálogo, pedidos y pagos. Ve el equipo, pero no lo gestiona."
+        "description": "Lleva la tienda: ajustes, catálogo, pedidos, pagos y gastos. Ve el equipo, pero no lo gestiona."
       },
       "cashier": {
         "name": "Dependiente",

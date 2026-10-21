@@ -14,6 +14,7 @@ export const PANEL_ACCESS = {
   inventory: { inventory: ["read"] },
   categories: { category: ["read"] },
   promotions: { promotion: ["read"] },
+  expenses: { expense: ["read"] },
   settings: { store: ["read"] },
   // the income summary on the store home (not a sidebar section)
   income: { report: ["read"] },

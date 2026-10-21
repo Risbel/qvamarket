@@ -578,6 +578,7 @@
       "categories": "Categories",
       "settings": "Settings",
       "promotions": "Promotions",
+      "expenses": "Expenses",
       "merchants": "Merchants",
       "stores": "Stores",
       "newMerchant": "New merchant",
@@ -590,6 +591,7 @@
     },
     "groups": {
       "catalog": "Catalog",
+      "finance": "Finance",
       "store": "Store",
       "platform": "Platform",
       "team": "Team"
@@ -1887,18 +1889,6 @@
       "toRefund": "To refund",
       "toRefundHelp": "You collected more than the order total. Record a refund when you give the money back to the customer."
     },
-    "dates": {
-      "label": "Date",
-      "apply": "Apply",
-      "clear": "Clear dates",
-      "presets": {
-        "today": "Today",
-        "yesterday": "Yesterday",
-        "last7": "Last 7 days",
-        "thisMonth": "This month"
-      },
-      "otherTimeZone": "Days in the {timeZone} timezone."
-    },
     "rowActions": {
       "menu": "Actions for order {reference}",
       "view": "View order",
@@ -1947,6 +1937,104 @@
       "ordersLimited": "Showing the {max} most recent."
     }
   },
+  "Expenses": {
+    "title": "Expenses",
+    "intro": "What you pay to run the store: salaries, rent, power... Goods for resale do not go here: record them as received stock in Inventory.",
+    "empty": "No expenses yet. Record the first one with \"New expense\".",
+    "noMatches": "No expense matches these filters.",
+    "new": "New expense",
+    "count": "{count, plural, =0 {No expenses} one {# expense} other {# expenses}}",
+    "recordedBy": "by {name}",
+    "summary": {
+      "total": "Total spent",
+      "totalFiltered": "Total with these filters",
+      "byCategory": "By category"
+    },
+    "search": {
+      "label": "Search expenses",
+      "placeholder": "Search by who was paid or the note"
+    },
+    "columns": {
+      "date": "Date",
+      "category": "Category",
+      "payee": "Paid to",
+      "method": "Payment method",
+      "amount": "Amount",
+      "actions": "Actions"
+    },
+    "categories": {
+      "salaries": "Salaries",
+      "rent": "Rent",
+      "utilities": "Power, water and gas",
+      "transport": "Transport and fuel",
+      "maintenance": "Repairs and maintenance",
+      "marketing": "Advertising",
+      "taxes": "Taxes and licenses",
+      "fees": "Bank fees",
+      "supplies": "Supplies and packaging",
+      "other": "Other"
+    },
+    "methods": {
+      "cash": "Cash",
+      "transfer": "Transfer",
+      "other": "Other"
+    },
+    "rowActions": {
+      "menu": "Expense actions",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "form": {
+      "newTitle": "New expense",
+      "editTitle": "Edit expense",
+      "help": "Write down money that left the store. Only your team sees it.",
+      "category": "Category",
+      "amount": "Amount",
+      "amountPlaceholder": "E.g. {example}",
+      "currency": "Currency",
+      "member": "Team member (optional)",
+      "noMember": "None",
+      "memberHelp": "For your team's salaries. If you leave \"Paid to\" empty, their name is used.",
+      "payee": "Paid to (optional)",
+      "payeePlaceholder": "E.g. Power company",
+      "payeeSalaryPlaceholder": "E.g. Ana Pérez",
+      "method": "Payment method",
+      "paidAt": "Payment date",
+      "paidAtHelp": "Leave it empty to use the current date and time.",
+      "datePlaceholder": "Now",
+      "time": "Payment time",
+      "dateClear": "Clear the date (use the current one)",
+      "timeZone": "Times in your timezone ({zone}).",
+      "note": "Note (optional)",
+      "notePlaceholder": "E.g. October salary, invoice no. 0045",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "toasts": {
+        "created": "Expense recorded.",
+        "updated": "Expense updated."
+      },
+      "errors": {
+        "forbidden": "You do not have permission to do this.",
+        "notFound": "The expense no longer exists.",
+        "memberNotFound": "That person is no longer a member of the company.",
+        "failed": "Could not save the expense. Try again."
+      }
+    },
+    "delete": {
+      "title": "Delete this expense?",
+      "confirm": "{category}, {amount}. This cannot be undone.",
+      "cancel": "Cancel",
+      "submit": "Delete",
+      "deleting": "Deleting…",
+      "done": "Expense deleted.",
+      "errors": {
+        "forbidden": "You do not have permission to do this.",
+        "notFound": "The expense no longer exists.",
+        "failed": "Could not delete. Try again."
+      }
+    }
+  },
   "DataTable": {
     "view": "Columns",
     "toggleColumns": "Show columns",
@@ -1961,6 +2049,19 @@
       "previous": "Previous page",
       "next": "Next page",
       "last": "Last page"
+    },
+    "dates": {
+      "label": "Date",
+      "apply": "Apply",
+      "clear": "Clear dates",
+      "presets": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last7": "Last 7 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      },
+      "otherTimeZone": "Days in the {timeZone} timezone."
     }
   },
   "Roles": {
@@ -2061,6 +2162,10 @@
         "name": "Reports",
         "description": "Sales and money collected today, this month and this year, on the store home."
       },
+      "expense": {
+        "name": "Expenses",
+        "description": "What the store pays: salaries, rent, power, transport, taxes..."
+      },
       "team": {
         "name": "Team",
         "description": "The company's members: add them, change their role, reset their password and remove them."
@@ -2085,7 +2190,7 @@
     "presets": {
       "manager": {
         "name": "Manager",
-        "description": "Runs the shop: settings, catalog, orders and payments. Sees the team but cannot manage it."
+        "description": "Runs the shop: settings, catalog, orders, payments and expenses. Sees the team but cannot manage it."
       },
       "cashier": {
         "name": "Sales clerk",

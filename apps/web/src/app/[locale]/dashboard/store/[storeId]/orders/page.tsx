@@ -14,7 +14,7 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
 
   // Filters, sort and page come from the URL (shareable, back button works); anything
-  // unexpected is ignored. Dates are days in the timezone the URL names (see date-filter.tsx)
+  // unexpected is ignored. Dates are days in the timezone the URL names (see components/data-table/date-filter.tsx)
   const list = parseOrderListParams(await searchParams);
   const canSeePayments = merchant.can({ payment: ["read"] });
   const [{ orders, total }, facets] = await Promise.all([
