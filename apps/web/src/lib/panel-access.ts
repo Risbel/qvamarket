@@ -9,6 +9,7 @@ import type { PermissionRequest } from "./permissions";
 export const PANEL_ACCESS = {
   // store sections (/dashboard/store/<storeId>/...)
   orders: { order: ["read"] },
+  customers: { customer: ["read"] },
   products: { product: ["read"] },
   categories: { category: ["read"] },
   promotions: { promotion: ["read"] },

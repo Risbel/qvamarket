@@ -5,6 +5,7 @@ import {
   BadgePercent,
   Building2,
   ChevronsUpDown,
+  Contact,
   ExternalLink,
   FolderTree,
   KeyRound,
@@ -54,6 +55,7 @@ const ITEMS = {
   // store panel
   home: { path: "", icon: LayoutDashboard, exact: true },
   orders: { path: "/orders", icon: ShoppingBag, exact: false },
+  customers: { path: "/customers", icon: Contact, exact: false },
   products: { path: "/products", icon: Package, exact: false },
   categories: { path: "/categories", icon: FolderTree, exact: false },
   promotions: { path: "/promotions", icon: BadgePercent, exact: false },

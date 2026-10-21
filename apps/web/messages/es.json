@@ -566,6 +566,7 @@
       "label": "Navegación",
       "home": "Inicio",
       "orders": "Pedidos",
+      "customers": "Clientes",
       "products": "Productos",
       "categories": "Categorías",
       "settings": "Ajustes",
@@ -1615,7 +1616,8 @@
       "edited": "Productos modificados",
       "editChange": "{from} → {to}",
       "editRestocked": "{count, plural, one {# devuelta al inventario} other {# devueltas al inventario}}",
-      "editSubtotal": "Subtotal: {from} → {to}"
+      "editSubtotal": "Subtotal: {from} → {to}",
+      "viewCustomer": "Ver cliente"
     },
     "actions": {
       "to": {
@@ -1764,6 +1766,47 @@
       "whatsapp": "Escribir por WhatsApp"
     }
   },
+  "Customers": {
+    "title": "Clientes",
+    "empty": "Aún no tienes clientes. Aparecerán aquí cuando alguien haga un pedido en tu tienda.",
+    "noMatches": "Ningún cliente coincide con la búsqueda.",
+    "count": "{count, plural, =0 {Ningún cliente} one {# cliente} other {# clientes}}",
+    "back": "Clientes",
+    "search": {
+      "label": "Buscar clientes",
+      "placeholder": "Nombre, teléfono o email"
+    },
+    "currency": "Moneda del importe gastado",
+    "columns": {
+      "customer": "Cliente",
+      "orders": "Pedidos",
+      "spent": "Gastado",
+      "lastOrder": "Último pedido",
+      "actions": "Acciones"
+    },
+    "account": "Con cuenta",
+    "guest": "Invitado",
+    "rowActions": {
+      "menu": "Acciones de {name}",
+      "view": "Ver cliente",
+      "call": "Llamar",
+      "whatsapp": "Escribir por WhatsApp",
+      "email": "Enviar un email"
+    },
+    "detail": {
+      "contact": "Contacto",
+      "noContact": "Sin datos de contacto.",
+      "since": "Cliente desde",
+      "accountHint": "Tiene una cuenta y compra con sesión iniciada.",
+      "guestHint": "Compra como invitado: sus pedidos se agrupan por el teléfono.",
+      "orders": "Pedidos",
+      "spent": "Gastado",
+      "spentHint": "Sin contar los pedidos cancelados.",
+      "lastOrder": "Último pedido",
+      "orderList": "Pedidos en esta tienda",
+      "ordersLimited": "Se muestran los {max} más recientes."
+    }
+  },
   "DataTable": {
     "view": "Columnas",
     "toggleColumns": "Mostrar columnas",
@@ -1862,6 +1905,10 @@
         "actions": {
           "create": "Registrar"
         }
+      },
+      "customer": {
+        "name": "Clientes",
+        "description": "Ver los clientes que compraron en la tienda: contacto, pedidos e importe gastado."
       },
       "report": {
         "name": "Informes",

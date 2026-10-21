@@ -3,7 +3,6 @@
 import { useStorePath } from "@/components/panel-scope";
 import { useMemo, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useDebouncedCallback } from "use-debounce";
 import {
   columnFilteringFeature,
   columnVisibilityFeature,
@@ -19,7 +18,7 @@ import {
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
-import { EyeIcon, MessageCircleIcon, MoreHorizontalIcon, PhoneIcon, SearchIcon, Truck, XIcon } from "lucide-react";
+import { EyeIcon, MessageCircleIcon, MoreHorizontalIcon, PhoneIcon, Truck, XIcon } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { DateRange } from "@/lib/date-range";
 import { formatMoney } from "@/lib/money";
@@ -44,6 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FacetedFilter } from "@/components/data-table/faceted-filter";
 import { Pagination } from "@/components/data-table/pagination";
+import { Search } from "@/components/data-table/search";
 import { SortButton } from "@/components/data-table/sort-button";
 import { ViewOptions } from "@/components/data-table/view-options";
 import { LocalDateTime } from "@/components/local-date-time";
@@ -56,7 +56,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DateFilter } from "./date-filter";
 
@@ -304,7 +303,15 @@ export function OrdersTable({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <OrderSearch value={params.query} hidden={orderListQuery({ ...params, query: "", page: 1 })} onChange={table.setGlobalFilter} />
+        {/* by order number, name or phone */}
+        <Search
+          value={params.query}
+          hidden={orderListQuery({ ...params, query: "", page: 1 })}
+          maxLength={ORDER_QUERY_MAX}
+          label={t("search.label")}
+          placeholder={t("search.placeholder")}
+          onChange={table.setGlobalFilter}
+        />
         <FacetedFilter
           title={t("columns.status")}
           options={ORDER_STATUSES.map((value) => ({ value, label: t(`status.${value}`), count: facets.status[value] ?? 0 }))}
@@ -395,65 +402,6 @@ export function OrdersTable({
         onPageSizeChange={table.setPageSize}
       />
     </div>
-  );
-}
-
-/**
- * Search by order number, name or phone. The list follows the typing (debounced); it is also
- * a GET form, so Enter works even before hydration (the other filters ride along hidden).
- */
-function OrderSearch({
-  value,
-  hidden,
-  onChange,
-}: {
-  value: string;
-  hidden: Record<string, string>;
-  onChange: (query: string) => void;
-}) {
-  const t = useTranslations("Orders.search");
-  const [text, setText] = useState(value);
-  const [shown, setShown] = useState(value);
-  const debounced = useDebouncedCallback((query: string) => onChange(query.trim()), 400);
-
-  // The URL changed elsewhere (reset, back button): show its query, unless the merchant is
-  // still typing (a newer search is on its way)
-  if (value !== shown) {
-    setShown(value);
-    if (!debounced.isPending() && value !== text.trim()) setText(value);
-  }
-
-  return (
-    <form
-      method="get"
-      role="search"
-      className="w-full sm:w-64"
-      onSubmit={(event) => {
-        event.preventDefault();
-        debounced.flush();
-      }}
-    >
-      {Object.entries(hidden).map(([name, val]) => (
-        <input key={name} type="hidden" name={name} value={val} />
-      ))}
-      <InputGroup>
-        <InputGroupAddon>
-          <SearchIcon />
-        </InputGroupAddon>
-        <InputGroupInput
-          name="q"
-          type="search"
-          value={text}
-          maxLength={ORDER_QUERY_MAX}
-          onChange={(event) => {
-            setText(event.target.value);
-            debounced(event.target.value);
-          }}
-          placeholder={t("placeholder")}
-          aria-label={t("label")}
-        />
-      </InputGroup>
-    </form>
   );
 }
 

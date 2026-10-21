@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/money";
+import { PANEL_ACCESS } from "@/lib/panel-access";
 import {
   canEditItems,
   orderReference,
@@ -40,6 +41,9 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   const t = await getTranslations("Orders");
   const canChangeStatus = merchant.can({ order: ["update"] }) || merchant.can({ order: ["cancel"] });
   const canSeePayments = merchant.can({ payment: ["read"] });
+  // the customer record the order is grouped under (null if that record was deleted)
+  const customerHref =
+    placed.customerId && merchant.can(PANEL_ACCESS.customers) ? storePath(storeId, `/customers/${placed.customerId}`) : null;
   const canEdit = merchant.can({ order: ["edit"] }) && canEditItems(placed.status);
   const money = (minor: number) => formatMoney(minor, placed.currencyCode, locale);
   const status = (value: string) => t(`status.${value as OrderStatus}`);
@@ -245,6 +249,13 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
                 <h2 id="customer-title">{t("detail.customer")}</h2>
               </CardTitle>
               <CardDescription className="font-medium text-foreground">{placed.customerName}</CardDescription>
+              {customerHref && (
+                <CardAction>
+                  <Link href={customerHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                    {t("detail.viewCustomer")}
+                  </Link>
+                </CardAction>
+              )}
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <ul className="flex flex-col gap-2">

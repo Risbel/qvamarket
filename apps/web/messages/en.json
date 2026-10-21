@@ -566,6 +566,7 @@
       "label": "Navigation",
       "home": "Home",
       "orders": "Orders",
+      "customers": "Customers",
       "products": "Products",
       "categories": "Categories",
       "settings": "Settings",
@@ -1615,7 +1616,8 @@
       "edited": "Items changed",
       "editChange": "{from} → {to}",
       "editRestocked": "{count, plural, one {# restocked} other {# restocked}}",
-      "editSubtotal": "Subtotal: {from} → {to}"
+      "editSubtotal": "Subtotal: {from} → {to}",
+      "viewCustomer": "View customer"
     },
     "actions": {
       "to": {
@@ -1764,6 +1766,47 @@
       "whatsapp": "Message on WhatsApp"
     }
   },
+  "Customers": {
+    "title": "Customers",
+    "empty": "You have no customers yet. They will show up here when someone places an order in your store.",
+    "noMatches": "No customer matches the search.",
+    "count": "{count, plural, =0 {No customers} one {# customer} other {# customers}}",
+    "back": "Customers",
+    "search": {
+      "label": "Search customers",
+      "placeholder": "Name, phone or email"
+    },
+    "currency": "Currency of the amount spent",
+    "columns": {
+      "customer": "Customer",
+      "orders": "Orders",
+      "spent": "Spent",
+      "lastOrder": "Last order",
+      "actions": "Actions"
+    },
+    "account": "Has account",
+    "guest": "Guest",
+    "rowActions": {
+      "menu": "Actions for {name}",
+      "view": "View customer",
+      "call": "Call",
+      "whatsapp": "Message on WhatsApp",
+      "email": "Send an email"
+    },
+    "detail": {
+      "contact": "Contact",
+      "noContact": "No contact details.",
+      "since": "Customer since",
+      "accountHint": "Has an account and buys signed in.",
+      "guestHint": "Buys as a guest: their orders are grouped by phone.",
+      "orders": "Orders",
+      "spent": "Spent",
+      "spentHint": "Cancelled orders not included.",
+      "lastOrder": "Last order",
+      "orderList": "Orders in this store",
+      "ordersLimited": "Showing the {max} most recent."
+    }
+  },
   "DataTable": {
     "view": "Columns",
     "toggleColumns": "Show columns",
@@ -1862,6 +1905,10 @@
         "actions": {
           "create": "Record"
         }
+      },
+      "customer": {
+        "name": "Customers",
+        "description": "See the customers who bought in the store: contact, orders and amount spent."
       },
       "report": {
         "name": "Reports",
