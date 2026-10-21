@@ -28,6 +28,7 @@ const toValues = (variants: Variant[], currencies: FormCurrency[]): VariantsForm
     id: v.id,
     sku: v.sku ?? "",
     stock: v.stock == null ? "" : String(v.stock),
+    stockLoaded: v.stock == null ? "" : String(v.stock),
     prices: pricesToFormValues(v.prices, currencies),
   })),
 });

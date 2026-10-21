@@ -55,6 +55,17 @@ export const stockSchema = (t: Translator) =>
     .refine((value) => value === "" || Number(value) <= MAX_STOCK, t("stockInvalid"));
 
 /**
+ * The stock the form was opened with (hidden field, "" = not tracked): the server keeps the
+ * live stock when the field was not touched, and refuses a new count if it moved meanwhile.
+ */
+export const stockLoadedSchema = z.string().max(12);
+
+/** stockLoadedSchema value -> number or null (anything that is not a count = not tracked). */
+export function parseLoadedStock(text: string): number | null {
+  return /^\d{1,10}$/.test(text) ? Number(text) : null;
+}
+
+/**
  * The prices of one variant, as form strings: one entry per currency the store sells in. The
  * base currency's price is required (with `requireBase`). Another currency is `manual` (its
  * own prices, price required) or not (it follows the base prices through the rate; its fields
@@ -168,6 +179,7 @@ export function createProductSchema(t: Translator, currencies: FormCurrency[], {
     metaDescription: z.string().trim().max(160, t("tooLong", { max: 160 })),
     sku: skuSchema(t),
     stock: stockSchema(t),
+    stockLoaded: stockLoadedSchema,
     prices: createPricesSchema(t, currencies, { requireBase: simple }),
     images: imagesSchema(t),
   });
@@ -186,7 +198,8 @@ export type ProductInput = {
     metaTitle: string | null;
     metaDescription: string | null;
   };
-  variant: { sku: string | null; stock: number | null };
+  /** stockLoaded: the stock the form showed (see stockLoadedSchema) */
+  variant: { sku: string | null; stock: number | null; stockLoaded: number | null };
   /** regular prices of the (default) variant: one row per currency and tier */
   prices: PriceRowInput[];
   /** the product's images, main first: makes the saved list exactly this */
@@ -237,6 +250,7 @@ export function toProductInput(values: ProductFormValues, currencies: FormCurren
     variant: {
       sku: orNull(values.sku),
       stock: values.stock === "" ? null : Number(values.stock),
+      stockLoaded: parseLoadedStock(values.stockLoaded),
     },
     prices: pricesToRows(values.prices, currencies),
     images: values.images,
@@ -308,6 +322,7 @@ export function createVariantsSchema(t: Translator, currencies: FormCurrency[]) 
             id: z.string().refine((value) => UUID.test(value)),
             sku: skuSchema(t),
             stock: stockSchema(t),
+            stockLoaded: stockLoadedSchema,
             prices: createPricesSchema(t, currencies),
           }),
         )
@@ -325,13 +340,20 @@ export function createVariantsSchema(t: Translator, currencies: FormCurrency[]) 
 
 export type VariantsFormValues = z.infer<ReturnType<typeof createVariantsSchema>>;
 
-export type VariantInput = { id: string; sku: string | null; stock: number | null; prices: PriceRowInput[] };
+export type VariantInput = {
+  id: string;
+  sku: string | null;
+  stock: number | null;
+  stockLoaded: number | null;
+  prices: PriceRowInput[];
+};
 
 export function toVariantsInput(values: VariantsFormValues, currencies: FormCurrency[]): VariantInput[] {
   return values.variants.map((variant) => ({
     id: variant.id,
     sku: variant.sku === "" ? null : variant.sku,
     stock: variant.stock === "" ? null : Number(variant.stock),
+    stockLoaded: parseLoadedStock(variant.stockLoaded),
     prices: pricesToRows(variant.prices, currencies),
   }));
 }

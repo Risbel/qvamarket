@@ -1,8 +1,11 @@
 import { and, asc, customer, db, eq, gt, inArray, order, orderDelivery, orderItem, orderStatusHistory, productVariant, sql, store } from "@qvashop/db";
 import type { CartItem } from "@/lib/cart";
 import { deliveryFee, distanceMeters, insideArea } from "@/lib/delivery";
+import { costIn } from "@/lib/inventory";
 import type { LatLng } from "@/lib/map";
 import { priceCart } from "./cart";
+import { recordMovements } from "./inventory-ledger";
+import { storeCurrencies } from "./pricing";
 import { getPublicDelivery } from "./public-delivery";
 
 // Public writes of the storefront (checkout) and the order confirmation. Like
@@ -61,7 +64,8 @@ class CheckoutAbort extends Error {
  *      area, the subtotal above the minimum, and the fee (computed here) the one the customer
  *      saw, otherwise `deliveryChanged`
  *   2. take the next order number
- *   3. lock the variants and take their stock (only where stock is tracked)
+ *   3. lock the variants and take their stock (only where stock is tracked; a `sale`
+ *      movement per line, and each line keeps the variant's unit cost)
  *   4. find the customer (the signed-in account's record, or by phone for a guest), insert
  *      order, items and the first history row
  */
@@ -90,6 +94,8 @@ export async function placeOrder(input: {
   ) {
     return { ok: false, error: "cartChanged" };
   }
+  // to snapshot each line's unit cost in the order's currency
+  const currencies = await storeCurrencies(storeId);
 
   try {
     const orderId = await db.transaction(async (tx) => {
@@ -118,7 +124,14 @@ export async function placeOrder(input: {
         .returning({ number: store.lastOrderNumber });
 
       const variants = await tx
-        .select({ id: productVariant.id, productId: productVariant.productId, sku: productVariant.sku, stock: productVariant.stock })
+        .select({
+          id: productVariant.id,
+          productId: productVariant.productId,
+          sku: productVariant.sku,
+          stock: productVariant.stock,
+          costMinor: productVariant.costMinor,
+          costCurrencyCode: productVariant.costCurrencyCode,
+        })
         .from(productVariant)
         .where(
           and(
@@ -186,7 +199,32 @@ export async function placeOrder(input: {
             compareAtMinor: line.compareAtMinor,
             lineTotalMinor: line.lineTotalMinor,
             stockDeducted: variant.stock !== null,
+            unitCostMinor: costIn(
+              variant.costMinor === null || variant.costCurrencyCode === null
+                ? null
+                : { minor: variant.costMinor, currencyCode: variant.costCurrencyCode },
+              currencyCode,
+              currencies,
+            ),
           };
+        }),
+      );
+
+      await recordMovements(
+        tx,
+        { tenantId, storeId },
+        cart.lines.flatMap((line) => {
+          const variant = byId.get(line.variantId)!;
+          if (variant.stock === null) return [];
+          return [
+            {
+              variantId: variant.id,
+              reason: "sale" as const,
+              delta: -line.quantity,
+              stockAfter: variant.stock - line.quantity,
+              orderId: created.id,
+            },
+          ];
         }),
       );
 

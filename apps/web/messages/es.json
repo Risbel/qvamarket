@@ -45,7 +45,10 @@
         "other": "Otro"
       },
       "chartTitle": "Cobrado en los últimos 30 días",
-      "chartDescription": "Por forma de pago, en {currency}. Un día con devoluciones puede quedar por debajo de 0."
+      "chartDescription": "Por forma de pago, en {currency}. Un día con devoluciones puede quedar por debajo de 0.",
+      "grossProfit": "Ganancia bruta",
+      "margin": "{percent} de margen",
+      "uncosted": "{count, plural, one {# unidad vendida sin costo no cuenta} other {# unidades vendidas sin costo no cuentan}} en la ganancia."
     }
   },
   "Store": {
@@ -401,7 +404,10 @@
     "storeAccessEmpty": "Elige al menos una tienda",
     "orderEditMore": "Como máximo {max}: al editar solo puedes bajar la cantidad.",
     "orderEditNoChange": "No cambiaste ningún producto.",
-    "orderEditEmpty": "No puedes quitar todos los productos. Si el cliente ya no quiere nada, cancela el pedido."
+    "orderEditEmpty": "No puedes quitar todos los productos. Si el cliente ya no quiere nada, cancela el pedido.",
+    "quantityInvalid": "Escribe un número entero de unidades.",
+    "stockNoChange": "Es el mismo stock que ya hay.",
+    "stockBelowZero": "No puedes quitar más de lo que hay ({stock})."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -568,6 +574,7 @@
       "orders": "Pedidos",
       "customers": "Clientes",
       "products": "Productos",
+      "inventory": "Inventario",
       "categories": "Categorías",
       "settings": "Ajustes",
       "promotions": "Promociones",
@@ -699,7 +706,8 @@
         "categoryNotFound": "La categoría ya no existe. Elige otra.",
         "hasVariants": "Este producto tiene variantes; su precio y stock se editan por variante.",
         "imagesStale": "Las imágenes de este producto cambiaron mientras editabas (o alguna subida caducó). Recarga la página y vuelve a añadirlas.",
-        "imagesLimit": "Un producto puede tener como máximo {max} imágenes."
+        "imagesLimit": "Un producto puede tener como máximo {max} imágenes.",
+        "stockStale": "El stock cambió mientras editabas (por ejemplo, una venta). Recarga la página para ver el stock actual."
       },
       "category": "Categoría",
       "noCategory": "Sin categoría",
@@ -835,7 +843,7 @@
       "errors": {
         "forbidden": "No tienes permiso para hacer esto.",
         "notFound": "No se encontró el producto.",
-        "stale": "Las opciones cambiaron mientras editabas. Hemos recargado las variantes: revisa y vuelve a guardar.",
+        "stale": "Las variantes o su stock cambiaron mientras editabas (por ejemplo, una venta). Hemos recargado las variantes: revisa y vuelve a guardar.",
         "skuTaken": "Algún SKU ya lo usa otro producto.",
         "failed": "No se pudieron guardar las variantes. Inténtalo de nuevo."
       }
@@ -882,6 +890,138 @@
         "tooHigh": "Algún precio pasaría del máximo permitido. Prueba con un porcentaje menor.",
         "failed": "No se pudieron cambiar los precios. Inténtalo de nuevo."
       }
+    }
+  },
+  "Inventory": {
+    "title": "Inventario",
+    "intro": "Stock y costo de cada variante. Cada cambio de stock queda en su historial.",
+    "empty": "Todavía no hay productos. Crea uno en Productos.",
+    "noMatches": "Ninguna variante coincide con este filtro.",
+    "untracked": "Sin control",
+    "outOfStock": "Agotado",
+    "lowStock": "Bajo",
+    "noCost": "Sin costo",
+    "stats": {
+      "units": "Unidades en stock",
+      "unitsHelp": "{count, plural, =0 {Ninguna variante controla su stock.} one {De # variante que controla su stock.} other {De # variantes que controlan su stock.}}",
+      "value": "Valor del inventario",
+      "valueHelp": "Stock × costo unitario, solo de las variantes con costo.",
+      "withoutCost": "Variantes sin costo",
+      "withoutCostHelp": "Añade su costo para conocer el valor del inventario y la ganancia.",
+      "low": "Stock bajo",
+      "lowHelp": "Variantes con {max} unidades o menos (agotadas incluidas)."
+    },
+    "columns": {
+      "product": "Producto",
+      "sku": "SKU",
+      "stock": "Stock",
+      "cost": "Costo unitario",
+      "value": "Valor",
+      "actions": "Acciones"
+    },
+    "filters": {
+      "label": "Filtrar variantes",
+      "all": "Todas",
+      "low": "Stock bajo",
+      "out": "Agotadas",
+      "noCost": "Sin costo"
+    },
+    "actions": {
+      "menu": "Acciones de {name}",
+      "adjust": "Ajustar stock",
+      "cost": "Editar costo",
+      "history": "Ver historial",
+      "product": "Abrir producto"
+    },
+    "reasons": {
+      "initial": "Stock inicial",
+      "received": "Entrada de mercancía",
+      "sale": "Venta",
+      "cancel": "Pedido cancelado",
+      "order_edit": "Pedido editado",
+      "adjustment": "Recuento",
+      "damaged": "Dañado o perdido",
+      "gift": "Regalo o muestra",
+      "return": "Devolución de cliente",
+      "other": "Otro"
+    },
+    "adjust": {
+      "title": "Ajustar stock",
+      "description": "{name}: ahora hay {stock, plural, one {# unidad} other {# unidades}}.",
+      "modeLabel": "Qué quieres hacer",
+      "mode": {
+        "add": "Añadir",
+        "remove": "Quitar",
+        "set": "Contar"
+      },
+      "quantity": {
+        "add": "Unidades que entran",
+        "remove": "Unidades que salen",
+        "set": "Unidades contadas"
+      },
+      "quantityPlaceholder": {
+        "add": "Ej.: 20",
+        "remove": "Ej.: 2",
+        "set": "Ej.: 37"
+      },
+      "reasonLabel": "Motivo",
+      "preview": "Stock:",
+      "unitCost": "Costo por unidad (opcional)",
+      "unitCostPlaceholder": "Ej.: 250",
+      "unitCostHelp": "Lo que pagaste por cada unidad. Será el costo de esta variante.",
+      "unitCostHelpAverage": "Costo actual: {cost}. Se promedia con el stock que ya tienes.",
+      "note": "Nota (opcional)",
+      "notePlaceholder": "Ej.: Factura 0045 del proveedor",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "toasts": {
+        "saved": "Stock de {name} actualizado."
+      },
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "La variante ya no existe.",
+        "untracked": "Esta variante no controla su stock. Actívalo en el producto.",
+        "stale": "El stock cambió mientras tanto (por ejemplo, una venta). Revisa el número actual y vuelve a guardar.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      }
+    },
+    "cost": {
+      "title": "Costo unitario",
+      "description": "Lo que te cuesta una unidad de {name}. Solo lo ve tu equipo.",
+      "label": "Costo por unidad",
+      "placeholder": "Ej.: 250",
+      "help": "Déjalo vacío si no lo sabes. Se usa para el valor del inventario y la ganancia de las ventas nuevas.",
+      "otherCurrency": "Costo guardado: {cost} (en otra moneda). Escríbelo en la moneda base para reemplazarlo.",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "toasts": {
+        "saved": "Costo de {name} guardado."
+      },
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "La variante ya no existe.",
+        "failed": "No se pudo guardar. Inténtalo de nuevo."
+      }
+    },
+    "history": {
+      "back": "Inventario",
+      "sku": "SKU {sku}",
+      "subtitle": "Historial de stock",
+      "title": "Movimientos",
+      "help": "Los últimos {max} cambios de stock, el más reciente primero.",
+      "empty": "Todavía no hay movimientos.",
+      "columns": {
+        "date": "Fecha",
+        "reason": "Motivo",
+        "change": "Cambio",
+        "after": "Stock después",
+        "by": "Quién"
+      },
+      "order": "Pedido {number}",
+      "unitCost": "Costo: {cost} por unidad",
+      "customer": "Cliente"
     }
   },
   "Branding": {
@@ -1891,6 +2031,13 @@
         "name": "Promociones",
         "description": "Rebajas y precios especiales con fechas."
       },
+      "inventory": {
+        "name": "Inventario",
+        "description": "Stock de cada variante, su costo y el historial de movimientos (entradas, ventas, mermas).",
+        "actions": {
+          "update": "Ajustar stock y costos"
+        }
+      },
       "order": {
         "name": "Pedidos",
         "description": "Ver los pedidos, avanzar su estado, cancelarlos (cancelar devuelve el stock) y quitar productos antes de entregarlos.",
@@ -1946,7 +2093,7 @@
       },
       "catalog": {
         "name": "Editor de catálogo",
-        "description": "Mantiene el catálogo al día: productos, categorías y promociones. Sin acceso a pedidos."
+        "description": "Mantiene el catálogo al día: productos, categorías, promociones e inventario. Sin acceso a pedidos."
       },
       "dispatch": {
         "name": "Despacho",

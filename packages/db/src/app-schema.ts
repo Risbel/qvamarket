@@ -731,6 +731,10 @@ export const productVariant = pgTable(
     isDefault: boolean("is_default").default(false).notNull(),
     // null = stock not tracked (always available)
     stock: integer("stock"),
+    // What one unit cost the store (inventory value and profit), in `cost_currency_code`
+    // (the base currency when it was typed); null = unknown. Never shown to shoppers.
+    costMinor: bigint("cost_minor", { mode: "number" }),
+    costCurrencyCode: text("cost_currency_code").references(() => currency.code),
     weightGrams: integer("weight_grams"),
     optionKey: text("option_key").default("").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -759,6 +763,10 @@ export const productVariant = pgTable(
     check("product_variant_stock_non_negative", sql`${table.stock} is null or ${table.stock} >= 0`),
     check("product_variant_weight_positive", sql`${table.weightGrams} is null or ${table.weightGrams} > 0`),
     check("product_variant_sku_not_empty", sql`${table.sku} is null or length(trim(${table.sku})) > 0`),
+    check(
+      "product_variant_cost",
+      sql`(${table.costMinor} is null) = (${table.costCurrencyCode} is null) and (${table.costMinor} is null or ${table.costMinor} >= 0)`,
+    ),
   ],
 );
 
@@ -1164,6 +1172,9 @@ export const orderItem = pgTable(
     // true when checkout took `quantity` from the variant's stock (stock was tracked then);
     // cancelling the order gives it back only in that case
     stockDeducted: boolean("stock_deducted").default(false).notNull(),
+    // What one unit cost the store, in the order's currency (the variant's cost converted at
+    // checkout); null = unknown. For gross profit, never shown to the customer.
+    unitCostMinor: bigint("unit_cost_minor", { mode: "number" }),
   },
   (table) => [
     foreignKey({
@@ -1196,6 +1207,7 @@ export const orderItem = pgTable(
       "order_item_compare_at",
       sql`${table.compareAtMinor} is null or ${table.compareAtMinor} > ${table.unitPriceMinor}`,
     ),
+    check("order_item_unit_cost", sql`${table.unitCostMinor} is null or ${table.unitCostMinor} >= 0`),
     check(
       "order_item_line_total",
       sql`${table.lineTotalMinor} = ${table.unitPriceMinor} * ${table.quantity}`,
@@ -1360,6 +1372,79 @@ export const orderPayment = pgTable(
     check("order_payment_kind", sql`${table.kind} in ('payment', 'refund')`),
     check("order_payment_method", sql`${table.method} in ('cash', 'transfer', 'other')`),
     check("order_payment_amount", sql`${table.amountMinor} > 0`),
+  ],
+);
+
+// ---------------------------------------------------------------------------------------
+// Inventory
+// ---------------------------------------------------------------------------------------
+
+/**
+ * Why a variant's stock changed. `sale`, `cancel` and `order_edit` are written by orders;
+ * the rest by the merchant (`initial` = the first count of a new product, `adjustment` = a
+ * count correction).
+ */
+export const INVENTORY_REASONS = [
+  "initial",
+  "received",
+  "sale",
+  "cancel",
+  "order_edit",
+  "adjustment",
+  "damaged",
+  "gift",
+  "return",
+  "other",
+] as const;
+
+/**
+ * Every change of a tracked variant's stock, written in the same transaction as the change.
+ * `delta` is signed (units in > 0, out < 0) and `stock_after` is the stock right after it.
+ * The cost is the unit cost of a reception (null = unknown or not applicable).
+ */
+export const inventoryMovement = pgTable(
+  "inventory_movement",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    variantId: uuid("variant_id").notNull(),
+    reason: text("reason").notNull(),
+    delta: integer("delta").notNull(),
+    stockAfter: integer("stock_after").notNull(),
+    unitCostMinor: bigint("unit_cost_minor", { mode: "number" }),
+    costCurrencyCode: text("cost_currency_code").references(() => currency.code),
+    orderId: uuid("order_id"),
+    actorUserId: uuid("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "inventory_movement_variant_store_tenant_fk",
+      columns: [table.variantId, table.storeId, table.tenantId],
+      foreignColumns: [productVariant.id, productVariant.storeId, productVariant.tenantId],
+    }).onDelete("cascade"),
+    // ON DELETE SET NULL ("order_id") only: hand-edited in the migration SQL (see category)
+    foreignKey({
+      name: "inventory_movement_order_tenant_fk",
+      columns: [table.orderId, table.tenantId],
+      foreignColumns: [order.id, order.tenantId],
+    }).onDelete("set null"),
+    index("inventory_movement_variantId_idx").on(table.variantId, table.createdAt),
+    index("inventory_movement_storeId_idx").on(table.storeId, table.createdAt),
+    check(
+      "inventory_movement_reason",
+      sql.raw(`reason in (${INVENTORY_REASONS.map((r) => `'${r}'`).join(", ")})`),
+    ),
+    check("inventory_movement_delta", sql`${table.delta} <> 0`),
+    check("inventory_movement_stock_after", sql`${table.stockAfter} >= 0`),
+    check(
+      "inventory_movement_cost",
+      sql`(${table.unitCostMinor} is null) = (${table.costCurrencyCode} is null) and (${table.unitCostMinor} is null or ${table.unitCostMinor} >= 0)`,
+    ),
   ],
 );
 

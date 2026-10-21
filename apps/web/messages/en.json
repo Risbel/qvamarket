@@ -45,7 +45,10 @@
         "other": "Other"
       },
       "chartTitle": "Collected in the last 30 days",
-      "chartDescription": "By payment method, in {currency}. A day with refunds can go below 0."
+      "chartDescription": "By payment method, in {currency}. A day with refunds can go below 0.",
+      "grossProfit": "Gross profit",
+      "margin": "{percent} margin",
+      "uncosted": "{count, plural, one {# unit sold without a cost is} other {# units sold without a cost are}} left out of the profit."
     }
   },
   "Store": {
@@ -401,7 +404,10 @@
     "storeAccessEmpty": "Choose at least one store",
     "orderEditMore": "At most {max}: an edit can only lower the quantity.",
     "orderEditNoChange": "You did not change any item.",
-    "orderEditEmpty": "You cannot remove every item. If the customer wants nothing, cancel the order."
+    "orderEditEmpty": "You cannot remove every item. If the customer wants nothing, cancel the order.",
+    "quantityInvalid": "Type a whole number of units.",
+    "stockNoChange": "That is the stock there already is.",
+    "stockBelowZero": "You cannot remove more than there is ({stock})."
   },
   "Admin": {
     "title": "Admin panel",
@@ -568,6 +574,7 @@
       "orders": "Orders",
       "customers": "Customers",
       "products": "Products",
+      "inventory": "Inventory",
       "categories": "Categories",
       "settings": "Settings",
       "promotions": "Promotions",
@@ -699,7 +706,8 @@
         "categoryNotFound": "That category no longer exists. Choose another one.",
         "hasVariants": "This product has variants; its price and stock are edited per variant.",
         "imagesStale": "This product's images changed while you were editing (or an upload expired). Reload the page and add them again.",
-        "imagesLimit": "A product can have at most {max} images."
+        "imagesLimit": "A product can have at most {max} images.",
+        "stockStale": "The stock changed while you were editing (for example, a sale). Reload the page to see the current stock."
       },
       "category": "Category",
       "noCategory": "No category",
@@ -835,7 +843,7 @@
       "errors": {
         "forbidden": "You don't have permission to do this.",
         "notFound": "Product not found.",
-        "stale": "The options changed while you were editing. We reloaded the variants: check and save again.",
+        "stale": "The variants or their stock changed while you were editing (for example, a sale). We reloaded the variants: check them and save again.",
         "skuTaken": "Another product already uses one of these SKUs.",
         "failed": "The variants could not be saved. Please try again."
       }
@@ -882,6 +890,138 @@
         "tooHigh": "Some price would go over the maximum. Try a smaller percentage.",
         "failed": "The prices could not be changed. Please try again."
       }
+    }
+  },
+  "Inventory": {
+    "title": "Inventory",
+    "intro": "Stock and cost of every variant. Every stock change is kept in its history.",
+    "empty": "No products yet. Create one in Products.",
+    "noMatches": "No variant matches this filter.",
+    "untracked": "Not tracked",
+    "outOfStock": "Out of stock",
+    "lowStock": "Low",
+    "noCost": "No cost",
+    "stats": {
+      "units": "Units in stock",
+      "unitsHelp": "{count, plural, =0 {No variant tracks its stock.} one {From # variant that tracks its stock.} other {From # variants that track their stock.}}",
+      "value": "Inventory value",
+      "valueHelp": "Stock × unit cost, only for variants with a cost.",
+      "withoutCost": "Variants without cost",
+      "withoutCostHelp": "Add their cost to know your inventory value and profit.",
+      "low": "Low stock",
+      "lowHelp": "Variants with {max} units or fewer (sold out included)."
+    },
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "stock": "Stock",
+      "cost": "Unit cost",
+      "value": "Value",
+      "actions": "Actions"
+    },
+    "filters": {
+      "label": "Filter variants",
+      "all": "All",
+      "low": "Low stock",
+      "out": "Sold out",
+      "noCost": "No cost"
+    },
+    "actions": {
+      "menu": "Actions for {name}",
+      "adjust": "Adjust stock",
+      "cost": "Edit cost",
+      "history": "View history",
+      "product": "Open product"
+    },
+    "reasons": {
+      "initial": "Initial stock",
+      "received": "Stock received",
+      "sale": "Sale",
+      "cancel": "Order cancelled",
+      "order_edit": "Order edited",
+      "adjustment": "Count",
+      "damaged": "Damaged or lost",
+      "gift": "Gift or sample",
+      "return": "Customer return",
+      "other": "Other"
+    },
+    "adjust": {
+      "title": "Adjust stock",
+      "description": "{name}: there {stock, plural, one {is # unit} other {are # units}} now.",
+      "modeLabel": "What do you want to do",
+      "mode": {
+        "add": "Add",
+        "remove": "Remove",
+        "set": "Count"
+      },
+      "quantity": {
+        "add": "Units coming in",
+        "remove": "Units going out",
+        "set": "Units counted"
+      },
+      "quantityPlaceholder": {
+        "add": "E.g. 20",
+        "remove": "E.g. 2",
+        "set": "E.g. 37"
+      },
+      "reasonLabel": "Reason",
+      "preview": "Stock:",
+      "unitCost": "Cost per unit (optional)",
+      "unitCostPlaceholder": "E.g. 250",
+      "unitCostHelp": "What you paid for each unit. It becomes this variant's cost.",
+      "unitCostHelpAverage": "Current cost: {cost}. It is averaged with the stock you already have.",
+      "note": "Note (optional)",
+      "notePlaceholder": "E.g. Supplier invoice 0045",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "toasts": {
+        "saved": "Stock of {name} updated."
+      },
+      "errors": {
+        "forbidden": "You do not have permission to do this.",
+        "notFound": "The variant no longer exists.",
+        "untracked": "This variant does not track its stock. Turn it on in the product.",
+        "stale": "The stock changed in the meantime (for example, a sale). Check the current number and save again.",
+        "failed": "Could not save. Try again."
+      }
+    },
+    "cost": {
+      "title": "Unit cost",
+      "description": "What one unit of {name} costs you. Only your team sees it.",
+      "label": "Cost per unit",
+      "placeholder": "E.g. 250",
+      "help": "Leave it empty if you do not know it. It is used for the inventory value and the profit of new sales.",
+      "otherCurrency": "Saved cost: {cost} (in another currency). Type it in the base currency to replace it.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "toasts": {
+        "saved": "Cost of {name} saved."
+      },
+      "errors": {
+        "forbidden": "You do not have permission to do this.",
+        "notFound": "The variant no longer exists.",
+        "failed": "Could not save. Try again."
+      }
+    },
+    "history": {
+      "back": "Inventory",
+      "sku": "SKU {sku}",
+      "subtitle": "Stock history",
+      "title": "Movements",
+      "help": "The last {max} stock changes, newest first.",
+      "empty": "No movements yet.",
+      "columns": {
+        "date": "Date",
+        "reason": "Reason",
+        "change": "Change",
+        "after": "Stock after",
+        "by": "Who"
+      },
+      "order": "Order {number}",
+      "unitCost": "Cost: {cost} per unit",
+      "customer": "Customer"
     }
   },
   "Branding": {
@@ -1891,6 +2031,13 @@
         "name": "Promotions",
         "description": "Dated sales and special prices."
       },
+      "inventory": {
+        "name": "Inventory",
+        "description": "Each variant's stock, its cost and the history of movements (received, sold, losses).",
+        "actions": {
+          "update": "Adjust stock and costs"
+        }
+      },
       "order": {
         "name": "Orders",
         "description": "See orders, move their status forward, cancel them (cancelling gives stock back) and remove items before handing them over.",
@@ -1946,7 +2093,7 @@
       },
       "catalog": {
         "name": "Catalog editor",
-        "description": "Keeps the catalog up to date: products, categories and promotions. No access to orders."
+        "description": "Keeps the catalog up to date: products, categories, promotions and inventory. No access to orders."
       },
       "dispatch": {
         "name": "Dispatch",

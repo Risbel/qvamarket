@@ -18,6 +18,7 @@ import {
   user,
 } from "@qvashop/db";
 import { onLocalDays } from "./date-sql";
+import { recordMovements, type Movement } from "./inventory-ledger";
 import type { OrderListParams, OrderSort } from "@/lib/order-list";
 import { canChangeStatus, paymentMethodsOf, type OrderStatus } from "@/lib/orders";
 
@@ -267,7 +268,7 @@ export async function changeOrderStatus(
     if (!canChangeStatus(input.from, input.to, row.fulfillmentType)) return { ok: false, error: "notAllowed" };
 
     await tx.update(order).set({ status: input.to }).where(and(inScope(scope), eq(order.id, input.orderId)));
-    const restockedUnits = input.to === "cancelled" ? await restock(tx, scope, input.orderId) : 0;
+    const restockedUnits = input.to === "cancelled" ? await restock(tx, scope, input.orderId, input.userId) : 0;
     await tx.insert(orderStatusHistory).values({
       tenantId: scope.tenantId,
       orderId: input.orderId,
@@ -284,9 +285,10 @@ export async function changeOrderStatus(
 /**
  * Gives back the units of the lines where checkout took stock (`stock_deducted`) and clears
  * the flag, so it can never happen twice. A variant that was deleted or no longer tracks
- * stock gets nothing back. Returns the number of units given back.
+ * stock gets nothing back. Each line given back is a `cancel` movement. Returns the number
+ * of units given back.
  */
-async function restock(tx: Tx, scope: Scope, orderId: string): Promise<number> {
+async function restock(tx: Tx, scope: Scope, orderId: string, userId: string): Promise<number> {
   const lines = await tx
     .select({ variantId: orderItem.variantId, quantity: orderItem.quantity })
     .from(orderItem)
@@ -314,17 +316,30 @@ async function restock(tx: Tx, scope: Scope, orderId: string): Promise<number> {
     )
     .orderBy(asc(productVariant.id))
     .for("no key update");
-  const tracking = new Set(tracked.filter((variant) => variant.stock !== null).map((variant) => variant.id));
+  // stock of each tracked variant, followed line by line for the movements
+  const stock = new Map(tracked.flatMap((variant) => (variant.stock === null ? [] : [[variant.id, variant.stock] as const])));
 
   let units = 0;
+  const movements: Movement[] = [];
   for (const line of lines) {
-    if (!line.variantId || !tracking.has(line.variantId)) continue;
+    const current = line.variantId ? stock.get(line.variantId) : undefined;
+    if (!line.variantId || current === undefined) continue;
     await tx
       .update(productVariant)
       .set({ stock: sql`${productVariant.stock} + ${line.quantity}` })
       .where(and(eq(productVariant.id, line.variantId), eq(productVariant.tenantId, scope.tenantId)));
+    stock.set(line.variantId, current + line.quantity);
+    movements.push({
+      variantId: line.variantId,
+      reason: "cancel",
+      delta: line.quantity,
+      stockAfter: current + line.quantity,
+      orderId,
+      actorUserId: userId,
+    });
     units += line.quantity;
   }
+  await recordMovements(tx, scope, movements);
   await tx
     .update(orderItem)
     .set({ stockDeducted: false })

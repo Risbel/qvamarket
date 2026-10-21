@@ -13,7 +13,9 @@ import {
   sql,
   variantPrice,
 } from "@qvashop/db";
+import { formStockChange } from "@/lib/inventory";
 import type { ProductInput } from "@/lib/validation/product";
+import { recordMovements } from "./inventory-ledger";
 import { loadRegularPrices } from "./pricing";
 import { applyProductImages, deleteRemovedImageFiles } from "./product-images";
 import { deleteObject } from "./storage";
@@ -174,7 +176,15 @@ export type SaveProductResult =
   | { ok: true; id: string }
   | {
       ok: false;
-      error: "notFound" | "slugTaken" | "skuTaken" | "categoryNotFound" | "hasVariants" | "imagesStale" | "imagesLimit";
+      error:
+        | "notFound"
+        | "slugTaken"
+        | "skuTaken"
+        | "categoryNotFound"
+        | "hasVariants"
+        | "imagesStale"
+        | "imagesLimit"
+        | "stockStale";
     };
 
 /** Thrown inside a save transaction to roll it back and answer with `result`. */
@@ -215,8 +225,11 @@ function mapSaveError(error: unknown): SaveProductResult | null {
   return null;
 }
 
-/** Creates a simple product: product + default variant + its regular prices. */
-export async function createProduct(scope: Scope, input: ProductInput): Promise<SaveProductResult> {
+/**
+ * Creates a simple product: product + default variant + its regular prices. A first stock
+ * count is its `initial` movement.
+ */
+export async function createProduct(scope: Scope, input: ProductInput, actorUserId: string): Promise<SaveProductResult> {
   if (!(await categoryInStore(scope, input.product.categoryId))) {
     return { ok: false, error: "categoryNotFound" };
   }
@@ -238,6 +251,10 @@ export async function createProduct(scope: Scope, input: ProductInput): Promise<
           stock: input.variant.stock,
         })
         .returning({ id: productVariant.id });
+      const stock = input.variant.stock;
+      if (stock !== null && stock > 0) {
+        await recordMovements(tx, scope, [{ variantId: variant.id, reason: "initial", delta: stock, stockAfter: stock, actorUserId }]);
+      }
       if (input.prices.length > 0) {
         await tx.insert(variantPrice).values(
           input.prices.map((price) => ({ tenantId: scope.tenantId, storeId: scope.storeId, variantId: variant.id, ...price })),
@@ -259,8 +276,15 @@ export async function createProduct(scope: Scope, input: ProductInput): Promise<
  * Updates a product's own fields. For a simple product also its default variant's SKU/stock
  * and regular prices (replaced as a whole; promotion prices are left alone). For a product with
  * options `input.variant` / `input.prices` are ignored: its variants have their own form.
+ * The stock follows formStockChange(): untouched = kept (orders taken meanwhile stay taken),
+ * a new count over a stock that moved meanwhile = `stockStale`, otherwise an `adjustment`.
  */
-export async function updateProduct(scope: Scope, id: string, input: ProductInput): Promise<SaveProductResult> {
+export async function updateProduct(
+  scope: Scope,
+  id: string,
+  input: ProductInput,
+  actorUserId: string,
+): Promise<SaveProductResult> {
   if (!(await categoryInStore(scope, input.product.categoryId))) {
     return { ok: false, error: "categoryNotFound" };
   }
@@ -276,19 +300,29 @@ export async function updateProduct(scope: Scope, id: string, input: ProductInpu
       const removedKeys = await saveImages(tx, scope, id, input);
       const done = { result: { ok: true as const, id }, removedKeys };
 
+      // Locked like checkout locks it, so a sale cannot slip between reading and writing the stock
       const variants = await tx
-        .select({ id: productVariant.id, isDefault: productVariant.isDefault })
+        .select({ id: productVariant.id, isDefault: productVariant.isDefault, stock: productVariant.stock })
         .from(productVariant)
-        .where(and(eq(productVariant.productId, id), eq(productVariant.tenantId, scope.tenantId)));
+        .where(and(eq(productVariant.productId, id), eq(productVariant.tenantId, scope.tenantId)))
+        .orderBy(asc(productVariant.id))
+        .for("no key update");
       const defaultVariant = variants.find((v) => v.isDefault);
       if (!defaultVariant) return done;
       if (variants.length !== 1) throw new SaveRefused({ ok: false, error: "hasVariants" });
       const variantId = defaultVariant.id;
 
+      const change = formStockChange(defaultVariant.stock, input.variant.stockLoaded, input.variant.stock);
+      if (change.kind === "stale") throw new SaveRefused({ ok: false, error: "stockStale" });
       await tx
         .update(productVariant)
-        .set({ sku: input.variant.sku, stock: input.variant.stock })
+        .set({ sku: input.variant.sku, ...(change.kind === "set" ? { stock: change.stock } : {}) })
         .where(and(eq(productVariant.id, variantId), eq(productVariant.tenantId, scope.tenantId)));
+      if (change.kind === "set" && change.stock !== null) {
+        await recordMovements(tx, scope, [
+          { variantId, reason: change.reason, delta: change.delta, stockAfter: change.stock, actorUserId },
+        ]);
+      }
       await tx
         .delete(variantPrice)
         .where(

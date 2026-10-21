@@ -47,7 +47,7 @@ export default async function StoreHomePage({
       <h1 className="text-2xl font-semibold">
         {t("welcome", { name: merchant.session.user.name })}
       </h1>
-      {income && <IncomeSummary summary={income} />}
+      {income && <IncomeSummary summary={income} showProfit={merchant.can({ inventory: ["read"] })} />}
       <Card>
         <CardHeader>
           <CardTitle>{merchant.store.name}</CardTitle>

@@ -2,6 +2,7 @@ import { and, asc, db, eq, inArray, order, orderEdit, orderItem, orderPayment, p
 import type { OrderEditChange } from "@qvashop/db/schema";
 import { canEditItems, editedSubtotal, paymentStatusOf, paymentTotals } from "@/lib/orders";
 import type { OrderEditValues } from "@/lib/validation/order-edit";
+import { recordMovements, type Movement } from "./inventory-ledger";
 
 // Lowering or removing items of an order after checkout (the customer changed their mind at
 // the counter, or a product was not really in stock). Every query matches tenant_id AND
@@ -66,7 +67,8 @@ export async function editOrderItems(
     const restockIds = [
       ...new Set(changed.flatMap((line) => (line.restock && line.item.stockDeducted && line.item.variantId ? [line.item.variantId] : []))),
     ];
-    const tracking = new Set<string>();
+    // stock of each tracked variant, followed line by line for the movements
+    const stock = new Map<string, number>();
     if (restockIds.length > 0) {
       const variants = await tx
         .select({ id: productVariant.id, stock: productVariant.stock })
@@ -80,19 +82,23 @@ export async function editOrderItems(
         )
         .orderBy(asc(productVariant.id))
         .for("no key update");
-      for (const variant of variants) if (variant.stock !== null) tracking.add(variant.id);
+      for (const variant of variants) if (variant.stock !== null) stock.set(variant.id, variant.stock);
     }
 
     const changes: OrderEditChange[] = [];
     let restockedUnits = 0;
+    const movements: Movement[] = [];
     for (const { item, from, to, restock } of changed) {
-      const restockId = restock && item.stockDeducted && item.variantId && tracking.has(item.variantId) ? item.variantId : null;
+      const restockId = restock && item.stockDeducted && item.variantId && stock.has(item.variantId) ? item.variantId : null;
       const restocked = restockId ? from - to : 0;
       if (restockId) {
         await tx
           .update(productVariant)
           .set({ stock: sql`${productVariant.stock} + ${restocked}` })
           .where(and(eq(productVariant.id, restockId), eq(productVariant.tenantId, scope.tenantId)));
+        const stockAfter = stock.get(restockId)! + restocked;
+        stock.set(restockId, stockAfter);
+        movements.push({ variantId: restockId, reason: "order_edit", delta: restocked, stockAfter, orderId, actorUserId: input.userId });
         restockedUnits += restocked;
       }
       await tx
@@ -107,6 +113,8 @@ export async function editOrderItems(
         .where(and(eq(orderItem.id, item.id), eq(orderItem.tenantId, scope.tenantId)));
       changes.push({ itemId: item.id, productName: item.productName, variantTitle: item.variantTitle, from, to, restocked });
     }
+
+    await recordMovements(tx, scope, movements);
 
     const subtotalMinor = editedSubtotal(items, quantities);
     const totalMinor = subtotalMinor + row.deliveryFeeMinor;

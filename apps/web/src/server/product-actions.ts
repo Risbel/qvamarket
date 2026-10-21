@@ -73,7 +73,7 @@ export async function createProductAction(
   if (error) return error;
 
   try {
-    return await createProduct(scopeOf(merchant), data);
+    return await createProduct(scopeOf(merchant), data, merchant.session.user.id);
   } catch (e) {
     console.error("createProductAction failed", e);
     return { ok: false, error: "failed" };
@@ -100,7 +100,7 @@ export async function updateProductAction(
   if (error) return error;
 
   try {
-    return await updateProduct(scope, parsedId.data, data);
+    return await updateProduct(scope, parsedId.data, data, merchant.session.user.id);
   } catch (e) {
     console.error("updateProductAction failed", e);
     return { ok: false, error: "failed" };

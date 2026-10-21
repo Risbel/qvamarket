@@ -18,6 +18,7 @@ import {
   Store,
   UserPlus,
   Users,
+  Warehouse,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -57,6 +58,7 @@ const ITEMS = {
   orders: { path: "/orders", icon: ShoppingBag, exact: false },
   customers: { path: "/customers", icon: Contact, exact: false },
   products: { path: "/products", icon: Package, exact: false },
+  inventory: { path: "/inventory", icon: Warehouse, exact: false },
   categories: { path: "/categories", icon: FolderTree, exact: false },
   promotions: { path: "/promotions", icon: BadgePercent, exact: false },
   settings: { path: "/settings", icon: Settings, exact: false },

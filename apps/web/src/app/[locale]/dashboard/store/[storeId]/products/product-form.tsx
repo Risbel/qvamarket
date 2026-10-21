@@ -103,6 +103,9 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
       case "categoryNotFound":
         form.setError("categoryId", { message: t("errors.categoryNotFound") });
         return;
+      case "stockStale":
+        form.setError("stock", { message: t("errors.stockStale") });
+        return;
       case "imagesStale":
       case "imagesLimit":
         form.setError("images", { message: t(`errors.${result.error}`, { max: MAX_IMAGES_PER_PRODUCT }) });

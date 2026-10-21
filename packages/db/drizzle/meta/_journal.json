@@ -253,6 +253,13 @@
       "when": 1792549379093,
       "tag": "0035_customer_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792597560902,
+      "tag": "0036_brief_vengeance",
+      "breakpoints": true
     }
   ]
 }

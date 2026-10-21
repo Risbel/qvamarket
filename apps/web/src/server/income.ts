@@ -1,4 +1,4 @@
-import { and, count, db, eq, ne, order, orderPayment, sql } from "@qvashop/db";
+import { and, count, db, eq, ne, order, orderItem, orderPayment, sql } from "@qvashop/db";
 import { todayIn } from "@/lib/date-range";
 import { incomeRange, summarizeIncome, type IncomeSummary } from "@/lib/income";
 import { localDay, onLocalDays } from "./date-sql";
@@ -30,7 +30,7 @@ export async function getIncomeSummary(scope: Scope, timeZone: string, currencie
 
   const paymentDay = localDay(orderPayment.paidAt, timeZone);
   const orderDay = localDay(order.createdAt, timeZone);
-  const [payments, sales] = await Promise.all([
+  const [payments, sales, goods] = await Promise.all([
     // order_payment has no store_id: the order (same tenant) says which store it belongs to
     db
       .select({
@@ -54,7 +54,23 @@ export async function getIncomeSummary(scope: Scope, timeZone: string, currencie
       .from(order)
       .where(and(inStore, ne(order.status, "cancelled"), onLocalDays(order.createdAt, range)))
       .groupBy(byFirstColumn, order.currencyCode),
+    // Goods of the same orders, for gross profit: lines with a cost snapshot vs units without one
+    db
+      .select({
+        day: orderDay,
+        currency: order.currencyCode,
+        costedGoodsMinor: sql<number>`coalesce(sum(${orderItem.lineTotalMinor}) filter (where ${orderItem.unitCostMinor} is not null), 0)::bigint`.mapWith(Number),
+        costMinor: sql<number>`coalesce(sum(${orderItem.unitCostMinor} * ${orderItem.quantity}), 0)::bigint`.mapWith(Number),
+        uncostedUnits: sql<number>`coalesce(sum(${orderItem.quantity}) filter (where ${orderItem.unitCostMinor} is null), 0)::bigint`.mapWith(Number),
+      })
+      .from(orderItem)
+      .innerJoin(
+        order,
+        and(eq(order.id, orderItem.orderId), eq(order.storeId, orderItem.storeId), eq(order.tenantId, orderItem.tenantId)),
+      )
+      .where(and(inStore, eq(orderItem.tenantId, scope.tenantId), ne(order.status, "cancelled"), onLocalDays(order.createdAt, range)))
+      .groupBy(byFirstColumn, order.currencyCode),
   ]);
 
-  return summarizeIncome({ today, timeZone, currencies, payments, sales });
+  return summarizeIncome({ today, timeZone, currencies, payments, sales, goods });
 }

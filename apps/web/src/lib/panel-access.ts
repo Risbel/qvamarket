@@ -11,6 +11,7 @@ export const PANEL_ACCESS = {
   orders: { order: ["read"] },
   customers: { customer: ["read"] },
   products: { product: ["read"] },
+  inventory: { inventory: ["read"] },
   categories: { category: ["read"] },
   promotions: { promotion: ["read"] },
   settings: { store: ["read"] },

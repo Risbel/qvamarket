@@ -12,7 +12,9 @@ import {
   variantOptionValue,
   variantPrice,
 } from "@qvashop/db";
+import { formStockChange } from "@/lib/inventory";
 import type { OptionsFormValues, VariantInput } from "@/lib/validation/product";
+import { recordMovements, type Movement } from "./inventory-ledger";
 import { planVariants, type PlanOption } from "@/lib/variant-plan";
 
 // Options and variants of a product (merchant side). Every function takes the tenant scope from
@@ -306,17 +308,27 @@ export type SaveVariantsResult =
 /**
  * Saves SKU, stock and regular prices of every variant of a product with options (promotion
  * prices are left alone). The form must contain exactly the product's current variants,
- * otherwise `stale` (the options changed since it was opened).
+ * otherwise `stale` (the options changed since it was opened). Stock follows
+ * formStockChange() per variant; a new count over a stock that moved meanwhile (an order) is
+ * `stale` too, so the merchant sees the current stock before counting again.
  */
-export async function saveVariants(scope: Scope, productId: string, input: VariantInput[]): Promise<SaveVariantsResult> {
+export async function saveVariants(
+  scope: Scope,
+  productId: string,
+  input: VariantInput[],
+  actorUserId: string,
+): Promise<SaveVariantsResult> {
   return db.transaction(async (tx) => {
     if (!(await lockProduct(tx, scope, productId))) return { ok: false, error: "notFound" } as const;
     const tenant = scope.tenantId;
 
+    // Locked like checkout locks them, so a sale cannot slip between reading and writing the stock
     const variants = await tx
-      .select({ id: productVariant.id, isDefault: productVariant.isDefault })
+      .select({ id: productVariant.id, isDefault: productVariant.isDefault, stock: productVariant.stock })
       .from(productVariant)
-      .where(and(eq(productVariant.productId, productId), eq(productVariant.tenantId, tenant)));
+      .where(and(eq(productVariant.productId, productId), eq(productVariant.tenantId, tenant)))
+      .orderBy(asc(productVariant.id))
+      .for("no key update");
     const current = new Set(variants.map((v) => v.id));
     const sent = new Set(input.map((v) => v.id));
     if (variants.some((v) => v.isDefault) || current.size !== sent.size || [...sent].some((id) => !current.has(id))) {
@@ -335,15 +347,25 @@ export async function saveVariants(scope: Scope, productId: string, input: Varia
       if (indexes.length) return { ok: false, error: "skuTaken", indexes } as const;
     }
 
+    const stockOf = new Map(variants.map((v) => [v.id, v.stock]));
+    const changes = input.map((variant) => formStockChange(stockOf.get(variant.id) ?? null, variant.stockLoaded, variant.stock));
+    if (changes.some((change) => change.kind === "stale")) return { ok: false, error: "stale" } as const;
+
     const ids = [...current];
     // SKUs are cleared first, so two variants can swap theirs
     await tx.update(productVariant).set({ sku: null }).where(and(inArray(productVariant.id, ids), eq(productVariant.tenantId, tenant)));
-    for (const variant of input) {
+    const movements: Movement[] = [];
+    for (const [i, variant] of input.entries()) {
+      const change = changes[i];
       await tx
         .update(productVariant)
-        .set({ sku: variant.sku, stock: variant.stock })
+        .set({ sku: variant.sku, ...(change.kind === "set" ? { stock: change.stock } : {}) })
         .where(and(eq(productVariant.id, variant.id), eq(productVariant.tenantId, tenant)));
+      if (change.kind === "set" && change.stock !== null) {
+        movements.push({ variantId: variant.id, reason: change.reason, delta: change.delta, stockAfter: change.stock, actorUserId });
+      }
     }
+    await recordMovements(tx, scope, movements);
     await tx
       .delete(variantPrice)
       .where(and(inArray(variantPrice.variantId, ids), eq(variantPrice.tenantId, tenant), isNull(variantPrice.priceListId)));

@@ -15,6 +15,8 @@ export const statement = {
   category: ["read", "create", "update", "delete"],
   // price lists: dated sales and special prices
   promotion: ["read", "create", "update", "delete"],
+  // stock levels, unit costs and stock movements; update = adjust stock, edit costs
+  inventory: ["read", "update"],
   // update = move the status forward; cancel is separate (it gives stock back); edit = lower
   // or remove items after checkout
   order: ["read", "update", "cancel", "edit"],
@@ -118,6 +120,7 @@ export const ROLE_PRESETS = {
     product: ["read", "create", "update", "delete"],
     category: ["read", "create", "update", "delete"],
     promotion: ["read", "create", "update", "delete"],
+    inventory: ["read", "update"],
     order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create", "delete"],
     customer: ["read"],
@@ -134,12 +137,13 @@ export const ROLE_PRESETS = {
     payment: ["read", "create"],
     customer: ["read"],
   },
-  /** Keeps the catalog up to date: products, categories and promotions. No orders. */
+  /** Keeps the catalog up to date: products, categories, promotions and stock. No orders. */
   catalog: {
     store: ["read"],
     product: ["read", "create", "update", "delete"],
     category: ["read", "create", "update", "delete"],
     promotion: ["read", "create", "update", "delete"],
+    inventory: ["read", "update"],
   },
   /** Prepares and delivers orders: moves their status, sees whether they are paid. */
   dispatch: {
@@ -152,6 +156,7 @@ export const ROLE_PRESETS = {
     product: ["read"],
     category: ["read"],
     promotion: ["read"],
+    inventory: ["read"],
     order: ["read"],
     payment: ["read"],
     customer: ["read"],

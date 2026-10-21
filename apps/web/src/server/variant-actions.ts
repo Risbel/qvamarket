@@ -74,6 +74,7 @@ export async function saveVariantsAction(
       { tenantId: merchant.tenantId, storeId: merchant.store.id },
       id.data,
       toVariantsInput(parsed.data, currencies),
+      merchant.session.user.id,
     );
   } catch (error) {
     console.error("saveVariantsAction failed", error);

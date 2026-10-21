@@ -38,6 +38,7 @@ export function emptyProductValues(currencies: FormCurrency[]): ProductFormValue
     metaDescription: "",
     sku: "",
     stock: "",
+    stockLoaded: "",
     prices: emptyPrices(currencies),
     images: [],
   };
@@ -77,6 +78,7 @@ export function productToFormValues(
     metaDescription: saved.metaDescription ?? "",
     sku: saved.defaultVariant?.sku ?? "",
     stock: saved.defaultVariant?.stock == null ? "" : String(saved.defaultVariant.stock),
+    stockLoaded: saved.defaultVariant?.stock == null ? "" : String(saved.defaultVariant.stock),
     prices: saved.hasOptions ? [] : pricesToFormValues(saved.prices, currencies),
     images: imageIds.map((id) => ({ kind: "existing", id })),
   };

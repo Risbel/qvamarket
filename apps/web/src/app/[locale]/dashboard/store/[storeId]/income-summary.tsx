@@ -14,7 +14,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Separator } from "@/components/ui/separator";
-import type { CurrencyIncome, IncomeSummary as Summary, PeriodIncome } from "@/lib/income";
+import { grossProfit, type CurrencyIncome, type IncomeSummary as Summary, type PeriodIncome } from "@/lib/income";
 import { currencyDigits, formatMoney } from "@/lib/money";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/orders";
 
@@ -32,7 +32,8 @@ function formatDay(day: string, locale: string, options: Intl.DateTimeFormatOpti
   return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
-export function IncomeSummary({ summary }: { summary: Summary }) {
+/** `showProfit`: the member may also see costs (inventory:read), so gross profit is shown. */
+export function IncomeSummary({ summary, showProfit }: { summary: Summary; showProfit: boolean }) {
   const t = useTranslations("Dashboard.income");
   const locale = useLocale();
   const [code, setCode] = useState(summary.currencies[0]?.currency);
@@ -80,6 +81,7 @@ export function IncomeSummary({ summary }: { summary: Summary }) {
             detail={period.detail}
             income={current[period.key]}
             currency={current.currency}
+            showProfit={showProfit}
           />
         ))}
       </div>
@@ -94,11 +96,13 @@ function PeriodCard({
   detail,
   income,
   currency,
+  showProfit,
 }: {
   label: string;
   detail: string;
   income: PeriodIncome;
   currency: string;
+  showProfit: boolean;
 }) {
   const t = useTranslations("Dashboard.income");
   const locale = useLocale();
@@ -146,9 +150,37 @@ function PeriodCard({
               <dd className="font-medium tabular-nums">−{money(income.refundsMinor)}</dd>
             </div>
           )}
+          {showProfit && <ProfitRow income={income} money={money} />}
         </dl>
       </CardContent>
     </Card>
+  );
+}
+
+/** Gross profit of the goods with a cost, its margin, and how many units had none. */
+function ProfitRow({ income, money }: { income: PeriodIncome; money: (minor: number) => string }) {
+  const t = useTranslations("Dashboard.income");
+  const locale = useLocale();
+  const { profitMinor, marginPercent } = grossProfit(income);
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
+
+  return (
+    <>
+      <div className="flex justify-between gap-2">
+        <dt className="text-muted-foreground">{t("grossProfit")}</dt>
+        <dd className="text-right font-medium tabular-nums">
+          {income.costedGoodsMinor > 0 ? money(profitMinor) : "—"}
+          {marginPercent !== null && (
+            <span className="ml-1 text-xs font-normal text-muted-foreground">
+              {t("margin", { percent: percent.format(marginPercent / 100) })}
+            </span>
+          )}
+        </dd>
+      </div>
+      {income.uncostedUnits > 0 && (
+        <p className="text-xs text-muted-foreground">{t("uncosted", { count: income.uncostedUnits })}</p>
+      )}
+    </>
   );
 }
 

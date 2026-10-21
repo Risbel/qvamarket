@@ -10,6 +10,9 @@ import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/orders";
 // - Sales = orders CREATED that day and not cancelled (total_minor, edits already applied).
 // - Collected = payment records by their paid_at day, refunds subtracted (refunds of
 //   cancelled orders count too). Per method the same: payments - refunds of that method.
+// - Gross profit = goods sold (line totals, not the delivery fee) minus what they cost the
+//   store (order_item.unit_cost_minor x quantity), on the same orders as sales. Only lines
+//   with a cost count; units without one are reported (`uncostedUnits`), never guessed.
 // Currencies are never added together.
 
 /** Days in the chart (today included). */
@@ -19,6 +22,8 @@ export const INCOME_CHART_DAYS = 30;
 export type PaymentDayRow = { day: string; currency: string; method: string; kind: string; amountMinor: number };
 /** Orders of one day and currency (not cancelled). */
 export type SalesDayRow = { day: string; currency: string; orders: number; totalMinor: number };
+/** Goods of the same orders: line totals and costs of the lines with a cost, units without one. */
+export type GoodsDayRow = { day: string; currency: string; costedGoodsMinor: number; costMinor: number; uncostedUnits: number };
 
 export type MethodTotals = Record<PaymentMethod, number>;
 
@@ -30,7 +35,20 @@ export type PeriodIncome = {
   refundsMinor: number;
   /** payments - refunds, per method (can be negative on a day with only refunds) */
   byMethod: MethodTotals;
+  /** line totals of the goods sold that have a cost */
+  costedGoodsMinor: number;
+  /** what those goods cost the store */
+  costMinor: number;
+  /** units sold without a cost (left out of the gross profit) */
+  uncostedUnits: number;
 };
+
+/** Gross profit of a period (only goods with a cost) and its margin in percent (null without such goods). */
+export function grossProfit(period: Pick<PeriodIncome, "costedGoodsMinor" | "costMinor">) {
+  const profitMinor = period.costedGoodsMinor - period.costMinor;
+  const marginPercent = period.costedGoodsMinor > 0 ? (profitMinor / period.costedGoodsMinor) * 100 : null;
+  return { profitMinor, marginPercent };
+}
 
 export type CurrencyIncome = {
   currency: string;
@@ -56,7 +74,16 @@ export function incomeRange(today: string): { from: string; to: string } {
 }
 
 const zeroMethods = (): MethodTotals => ({ cash: 0, transfer: 0, other: 0 });
-const emptyPeriod = (): PeriodIncome => ({ salesMinor: 0, orders: 0, collectedMinor: 0, refundsMinor: 0, byMethod: zeroMethods() });
+const emptyPeriod = (): PeriodIncome => ({
+  salesMinor: 0,
+  orders: 0,
+  collectedMinor: 0,
+  refundsMinor: 0,
+  byMethod: zeroMethods(),
+  costedGoodsMinor: 0,
+  costMinor: 0,
+  uncostedUnits: 0,
+});
 const isMethod = (value: string): value is PaymentMethod => (PAYMENT_METHODS as readonly string[]).includes(value);
 
 /**
@@ -70,12 +97,14 @@ export function summarizeIncome({
   currencies,
   payments,
   sales,
+  goods = [],
 }: {
   today: string;
   timeZone: string;
   currencies: string[];
   payments: PaymentDayRow[];
   sales: SalesDayRow[];
+  goods?: GoodsDayRow[];
 }): IncomeSummary {
   const monthStart = startOfMonth(today);
   const yearStart = startOfYear(today);
@@ -83,7 +112,7 @@ export function summarizeIncome({
   const chartDays = Array.from({ length: INCOME_CHART_DAYS }, (_, i) => addDays(chartStart, i));
 
   const order = [...currencies];
-  for (const row of [...payments, ...sales]) if (!order.includes(row.currency)) order.push(row.currency);
+  for (const row of [...payments, ...sales, ...goods]) if (!order.includes(row.currency)) order.push(row.currency);
 
   const byCurrency = new Map<string, CurrencyIncome>(
     order.map((currency) => [
@@ -123,6 +152,16 @@ export function summarizeIncome({
     for (const period of periodsOf(entry, row.day)) {
       period.salesMinor += row.totalMinor;
       period.orders += row.orders;
+    }
+  }
+
+  for (const row of goods) {
+    const entry = byCurrency.get(row.currency)!;
+    if (row.day > today) continue;
+    for (const period of periodsOf(entry, row.day)) {
+      period.costedGoodsMinor += row.costedGoodsMinor;
+      period.costMinor += row.costMinor;
+      period.uncostedUnits += row.uncostedUnits;
     }
   }
 
