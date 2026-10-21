@@ -8,18 +8,25 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { HEX_COLOR } from "@/lib/color";
+import { baseSwatches, THEME_BASES, THEME_RADII } from "@/lib/store-theme";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createBrandingSchema, type BrandingValues } from "@/lib/validation/branding";
 import { updateBrandingAction } from "@/server/branding-actions";
 import { Button } from "@/components/ui/button";
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
+  FieldLegend,
+  FieldSet,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { BrandPreview } from "./brand-preview";
 
 export function BrandingForm({
@@ -49,6 +56,7 @@ export function BrandingForm({
 
   const primary = form.watch("primaryColor");
   const accent = form.watch("accentColor");
+  const [radius, base, tinted] = form.watch(["radius", "base", "tinted"]);
   const validPrimary = HEX_COLOR.test(primary.toLowerCase()) ? primary.toLowerCase() : initialValues.primaryColor;
   const validAccent = HEX_COLOR.test(accent.toLowerCase()) ? accent.toLowerCase() : initialValues.accentColor;
 
@@ -89,16 +97,95 @@ export function BrandingForm({
           placeholder={t("colors.placeholder")}
         />
 
+        <Controller
+          name="base"
+          control={form.control}
+          render={({ field }) => (
+            <FieldSet>
+              <FieldLegend variant="label">{t("theme.base")}</FieldLegend>
+              <FieldDescription>{t("theme.baseHelp")}</FieldDescription>
+              <RadioGroup
+                value={field.value}
+                onValueChange={field.onChange}
+                className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+              >
+                {THEME_BASES.map((option) => (
+                  <FieldLabel key={option} htmlFor={`base-${option}`}>
+                    <Field orientation="horizontal">
+                      <FieldContent className="gap-2">
+                        <FieldTitle>{t(`theme.bases.${option}`)}</FieldTitle>
+                        <span className="flex" aria-hidden>
+                          {baseSwatches(option).map((color) => (
+                            <span
+                              key={color}
+                              className="size-4 rounded-full border border-background not-first:-ml-1"
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </span>
+                      </FieldContent>
+                      <RadioGroupItem value={option} id={`base-${option}`} />
+                    </Field>
+                  </FieldLabel>
+                ))}
+              </RadioGroup>
+            </FieldSet>
+          )}
+        />
+
+        <Controller
+          name="radius"
+          control={form.control}
+          render={({ field }) => (
+            <FieldSet>
+              <FieldLegend variant="label">{t("theme.radius")}</FieldLegend>
+              <FieldDescription>{t("theme.radiusHelp")}</FieldDescription>
+              <RadioGroup
+                value={field.value}
+                onValueChange={field.onChange}
+                className="grid-cols-3 sm:grid-cols-6"
+              >
+                {THEME_RADII.map((option) => (
+                  <FieldLabel key={option} htmlFor={`radius-${option}`}>
+                    <Field orientation="horizontal">
+                      <FieldContent className="gap-2">
+                        <span
+                          aria-hidden
+                          className="size-6 border-t-2 border-l-2 border-foreground/70"
+                          style={{ borderTopLeftRadius: `${Number(option) * 1.4}rem` }}
+                        />
+                        <FieldTitle>{option}</FieldTitle>
+                      </FieldContent>
+                      <RadioGroupItem value={option} id={`radius-${option}`} aria-label={t("theme.radiusOption", { value: option })} />
+                    </Field>
+                  </FieldLabel>
+                ))}
+              </RadioGroup>
+            </FieldSet>
+          )}
+        />
+
+        <Controller
+          name="tinted"
+          control={form.control}
+          render={({ field }) => (
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel htmlFor="theme-tinted">{t("theme.tinted")}</FieldLabel>
+                <FieldDescription>{t("theme.tintedHelp")}</FieldDescription>
+              </FieldContent>
+              <Switch id="theme-tinted" checked={field.value} onCheckedChange={field.onChange} />
+            </Field>
+          )}
+        />
+
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">{t("preview.title")}</span>
           <BrandPreview
             name={storeName}
             logoUrl={logoUrl}
             logotypeUrl={logotypeUrl}
-            primary={validPrimary}
-            accent={validAccent}
-            buttonLabel={t("preview.button")}
-            badgeLabel={t("preview.badge")}
+            theme={{ primary: validPrimary, accent: validAccent, radius, base, tinted }}
           />
         </div>
 
@@ -127,7 +214,7 @@ function ColorField({
   placeholder,
 }: {
   control: Control<BrandingValues>;
-  name: keyof BrandingValues;
+  name: "primaryColor" | "accentColor";
   label: string;
   /** Distinct accessible name for the native color picker (the hex field already has `label`) */
   pickerLabel: string;

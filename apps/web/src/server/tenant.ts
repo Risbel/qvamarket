@@ -31,6 +31,9 @@ export type CompanyStore = {
   logotypeKey: string | null;
   primaryColor: string | null;
   accentColor: string | null;
+  themeRadius: string | null;
+  themeBase: string | null;
+  themeTinted: boolean;
 };
 
 export type MerchantStore = CompanyStore & {
@@ -102,6 +105,9 @@ export const getCompanyContext = cache(
           logotypeKey: store.logotypeKey,
           primaryColor: store.primaryColor,
           accentColor: store.accentColor,
+          themeRadius: store.themeRadius,
+          themeBase: store.themeBase,
+          themeTinted: store.themeTinted,
         })
         .from(store)
         .where(eq(store.tenantId, membership.id))

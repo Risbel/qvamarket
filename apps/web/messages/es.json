@@ -923,7 +923,6 @@
       }
     },
     "colors": {
-      "title": "Colores",
       "primary": "Color principal",
       "primaryHelp": "Cabecera y botones de tu tienda.",
       "accent": "Color de acento",
@@ -931,10 +930,35 @@
       "picker": "{label} (selector de color)",
       "placeholder": "#1d4ed8"
     },
+    "theme": {
+      "title": "Tema",
+      "base": "Gris base",
+      "baseHelp": "El tono del fondo, las tarjetas, los bordes y el texto secundario.",
+      "bases": {
+        "neutral": "Neutro",
+        "stone": "Piedra",
+        "zinc": "Zinc",
+        "gray": "Gris",
+        "slate": "Pizarra"
+      },
+      "radius": "Redondeo de esquinas",
+      "radiusHelp": "Cuánto se redondean botones, tarjetas y campos (en rem). 0 = esquinas rectas.",
+      "radiusOption": "{value} rem",
+      "tinted": "Superficies teñidas",
+      "tintedHelp": "Los botones secundarios, las zonas resaltadas y el contorno de foco toman un toque suave de tu color principal en lugar de gris."
+    },
     "preview": {
       "title": "Vista previa",
+      "light": "Modo claro",
+      "dark": "Modo oscuro",
+      "product": "Café molido",
+      "description": "Así ven tus clientes tu tienda.",
       "button": "Comprar",
-      "badge": "Oferta"
+      "secondary": "Detalles",
+      "outline": "Favoritos",
+      "input": "Buscar productos...",
+      "badge": "Oferta",
+      "scroll": "Vista previa en {mode} (desplázate para ver la cabecera sobre el contenido)"
     },
     "save": "Guardar cambios",
     "saving": "Guardando...",

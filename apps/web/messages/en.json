@@ -923,7 +923,6 @@
       }
     },
     "colors": {
-      "title": "Colors",
       "primary": "Primary color",
       "primaryHelp": "Your store's header and buttons.",
       "accent": "Accent color",
@@ -931,10 +930,35 @@
       "picker": "{label} (color picker)",
       "placeholder": "#1d4ed8"
     },
+    "theme": {
+      "title": "Theme",
+      "base": "Base gray",
+      "baseHelp": "The tone of the background, cards, borders and secondary text.",
+      "bases": {
+        "neutral": "Neutral",
+        "stone": "Stone",
+        "zinc": "Zinc",
+        "gray": "Gray",
+        "slate": "Slate"
+      },
+      "radius": "Corner radius",
+      "radiusHelp": "How rounded buttons, cards and fields are (in rem). 0 = square corners.",
+      "radiusOption": "{value} rem",
+      "tinted": "Tinted surfaces",
+      "tintedHelp": "Secondary buttons, highlighted areas and the focus outline take a soft touch of your primary color instead of plain gray."
+    },
     "preview": {
       "title": "Preview",
+      "light": "Light mode",
+      "dark": "Dark mode",
+      "product": "Ground coffee",
+      "description": "Your customers see your store like this.",
       "button": "Buy",
-      "badge": "Sale"
+      "secondary": "Details",
+      "outline": "Favorites",
+      "input": "Search products...",
+      "badge": "Sale",
+      "scroll": "{mode} preview (scroll to see the header over the content)"
     },
     "save": "Save changes",
     "saving": "Saving...",

@@ -15,7 +15,13 @@ const owns = ({ tenantId, storeId }: Scope) =>
 export async function updateBranding(scope: Scope, values: BrandingValues) {
   const rows = await db
     .update(store)
-    .set({ primaryColor: values.primaryColor, accentColor: values.accentColor })
+    .set({
+      primaryColor: values.primaryColor,
+      accentColor: values.accentColor,
+      themeRadius: values.radius,
+      themeBase: values.base,
+      themeTinted: values.tinted,
+    })
     .where(owns(scope))
     .returning({ id: store.id });
   return rows.length === 1;
