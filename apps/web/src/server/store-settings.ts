@@ -1,5 +1,7 @@
 import { and, db, eq, store } from "@qvashop/db";
+import { findPhoneCountry } from "@/lib/countries";
 import { storeTimeZone } from "@/lib/date-range";
+import { normalizePhone } from "@/lib/phone";
 import { parseFooterLinks, type FooterLinkGroup } from "@/lib/footer";
 import { parseFooterSocial, type SocialLink } from "@/lib/social";
 import type { PickupValues, StoreProfileValues } from "@/lib/validation/catalog-settings";
@@ -29,15 +31,17 @@ export async function getStoreProfile(scope: Scope) {
 }
 
 const orNull = (value: string) => (value === "" ? null : value);
+// the schema accepted the number, so normalizePhone() has an answer
+const phoneOrNull = (value: string, country: string) => (value === "" ? null : normalizePhone(value, findPhoneCountry(country)));
 
-/** Saves the public profile; empty fields are stored as NULL. */
+/** Saves the public profile; empty fields are stored as NULL, phone numbers international (with their own country). */
 export async function updateStoreProfile(scope: Scope, values: StoreProfileValues) {
   const rows = await db
     .update(store)
     .set({
       description: orNull(values.description),
-      phone: orNull(values.phone),
-      whatsapp: orNull(values.whatsapp),
+      phone: phoneOrNull(values.phone, values.phoneNumberCountry),
+      whatsapp: phoneOrNull(values.whatsapp, values.whatsappCountry),
       contactEmail: orNull(values.contactEmail),
       address: orNull(values.address),
       phoneCountry: orNull(values.phoneCountry),

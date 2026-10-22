@@ -1,4 +1,4 @@
-import type { PhoneCountry } from "./countries";
+import { PHONE_COUNTRIES, type PhoneCountry } from "./countries";
 
 /**
  * Phone number as the customer typed it -> the form we store and match customers by.
@@ -28,4 +28,16 @@ export function normalizePhone(input: string, country?: PhoneCountry | null): st
     phone = digits;
   }
   return /^\+?[0-9]{6,20}$/.test(phone) ? phone : null;
+}
+
+/**
+ * A stored number back into what a phone field shows: its country and the rest of the number
+ * ("+5354353930" -> CU, "54353930"). A number in another country ("+44...") keeps its "+" with
+ * no country; one saved without "+" (typed before numbers were normalized) gets `fallback`.
+ */
+export function splitPhone(stored: string | null | undefined, fallback: string): { country: string; national: string } {
+  if (!stored) return { country: fallback, national: "" };
+  if (!stored.startsWith("+")) return { country: fallback, national: stored };
+  const country = PHONE_COUNTRIES.find((candidate) => stored.startsWith(`+${candidate.dial}`));
+  return country ? { country: country.code, national: stored.slice(country.dial.length + 1) } : { country: "", national: stored };
 }

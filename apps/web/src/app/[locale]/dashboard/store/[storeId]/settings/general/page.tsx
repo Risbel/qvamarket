@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { phoneCountryOptions } from "@/lib/countries";
+import { splitPhone } from "@/lib/phone";
 import { storeTimeZone } from "@/lib/date-range";
 import { timeZoneOptions } from "@/lib/time-zones";
 import { getStoreProfile } from "@/server/store-settings";
@@ -17,6 +18,9 @@ export default async function GeneralSettingsPage({
   const merchant = await requirePanelSection(locale, storeId, "settings");
   const t = await getTranslations("Settings.profile");
   const profile = await getStoreProfile({ tenantId: merchant.tenantId, storeId: merchant.store.id });
+  const phoneCountry = profile?.phoneCountry ?? "";
+  const phone = splitPhone(profile?.phone, phoneCountry);
+  const whatsapp = splitPhone(profile?.whatsapp, phoneCountry);
 
   return (
     <>
@@ -27,11 +31,13 @@ export default async function GeneralSettingsPage({
           timeZones={timeZoneOptions()}
           initialValues={{
             description: profile?.description ?? "",
-            phone: profile?.phone ?? "",
-            whatsapp: profile?.whatsapp ?? "",
+            phone: phone.national,
+            phoneNumberCountry: phone.country,
+            whatsapp: whatsapp.national,
+            whatsappCountry: whatsapp.country,
             contactEmail: profile?.contactEmail ?? "",
             address: profile?.address ?? "",
-            phoneCountry: profile?.phoneCountry ?? "",
+            phoneCountry,
             timeZone: storeTimeZone(profile?.timeZone),
             metaTitle: profile?.metaTitle ?? "",
             metaDescription: profile?.metaDescription ?? "",

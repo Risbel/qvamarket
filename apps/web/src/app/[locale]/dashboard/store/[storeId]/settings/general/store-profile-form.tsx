@@ -11,6 +11,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { createStoreProfileSchema, type StoreProfileValues } from "@/lib/validation/catalog-settings";
 import { updateStoreProfileAction } from "@/server/catalog-actions";
 import { CountrySelect, type CountryOption } from "@/components/country-select";
+import { PhoneInput } from "@/components/phone-input";
 import { TimeZoneSelect } from "@/components/time-zone-select";
 import { canonicalTimeZone } from "@/lib/date-range";
 import type { TimeZoneOption } from "@/lib/time-zones";
@@ -64,15 +65,26 @@ export function StoreProfileForm({
           rows={3}
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Text
+          <Phone
             control={form.control}
             name="phone"
+            countryName="phoneNumberCountry"
             label={t("phone")}
+            countryLabel={t("phoneNumberCountry")}
             placeholder={t("phonePlaceholder")}
-            type="tel"
-            autoComplete="tel"
+            countries={countries}
+            countryPlaceholder={t("numberCountryNone")}
           />
-          <Text control={form.control} name="whatsapp" label={t("whatsapp")} placeholder={t("whatsappPlaceholder")} type="tel" />
+          <Phone
+            control={form.control}
+            name="whatsapp"
+            countryName="whatsappCountry"
+            label={t("whatsapp")}
+            countryLabel={t("whatsappCountry")}
+            placeholder={t("whatsappPlaceholder")}
+            countries={countries}
+            countryPlaceholder={t("numberCountryNone")}
+          />
         </div>
         <Controller
           name="phoneCountry"
@@ -186,6 +198,56 @@ function Text({ control, name, label, help, ...inputProps }: FieldProps & Omit<R
           {help && <FieldDescription>{help}</FieldDescription>}
           <FieldError errors={[fieldState.error]} />
         </Field>
+      )}
+    />
+  );
+}
+
+/** A phone number with its own country select (the number is saved international). */
+function Phone({
+  control,
+  name,
+  countryName,
+  label,
+  countryLabel,
+  placeholder,
+  countries,
+  countryPlaceholder,
+}: Omit<FieldProps, "name" | "help"> & {
+  name: "phone" | "whatsapp";
+  countryName: "phoneNumberCountry" | "whatsappCountry";
+  countryLabel: string;
+  placeholder: string;
+  countries: CountryOption[];
+  countryPlaceholder: string;
+}) {
+  return (
+    <Controller
+      name={countryName}
+      control={control}
+      render={({ field: country }) => (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={name}>{label}</FieldLabel>
+              <PhoneInput
+                {...field}
+                id={name}
+                autoComplete={name === "phone" ? "tel" : undefined}
+                placeholder={placeholder}
+                invalid={fieldState.invalid}
+                country={country.value}
+                onCountryChange={country.onChange}
+                options={countries}
+                countryLabel={countryLabel}
+                countryPlaceholder={countryPlaceholder}
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
       )}
     />
   );

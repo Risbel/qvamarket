@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { canonicalTimeZone } from "@/lib/date-range";
 import { normalizeRate } from "@/lib/exchange";
+import { findPhoneCountry } from "@/lib/countries";
+import { normalizePhone } from "@/lib/phone";
 import { phoneCountrySchema } from "./checkout";
 import type { Translator } from "./types";
 
@@ -15,19 +17,35 @@ export type CategoryValues = z.infer<ReturnType<typeof createCategorySchema>>;
 const optionalText = (t: Translator, max: number) =>
   z.string().trim().max(max, t("tooLong", { max }));
 
-/** Public store profile (Settings > General): shown on the storefront and on order confirmations. */
+/**
+ * Public store profile (Settings > General): shown on the storefront and on order confirmations.
+ * The phone and the WhatsApp number each have their own country (a Cuban landline and a US
+ * WhatsApp, say) and are saved international (normalizePhone). `phoneCountry` is only the
+ * country preselected for customers at checkout.
+ */
 export function createStoreProfileSchema(t: Translator) {
-  return z.object({
-    description: optionalText(t, 1000),
-    phone: optionalText(t, 30).regex(/^[0-9+()\s-]*$/, t("phoneInvalid")),
-    whatsapp: optionalText(t, 30).regex(/^[0-9+()\s-]*$/, t("phoneInvalid")),
-    contactEmail: z.union([z.literal(""), z.email(t("emailInvalid"))]),
-    address: optionalText(t, 300),
-    phoneCountry: phoneCountrySchema,
-    timeZone: z.string().refine((value): boolean => canonicalTimeZone(value) !== null, t("timeZoneInvalid")),
-    metaTitle: optionalText(t, 70),
-    metaDescription: optionalText(t, 160),
-  });
+  return z
+    .object({
+      description: optionalText(t, 1000),
+      phone: optionalText(t, 30).regex(/^[0-9+()\s-]*$/, t("phoneInvalid")),
+      phoneNumberCountry: phoneCountrySchema,
+      whatsapp: optionalText(t, 30).regex(/^[0-9+()\s-]*$/, t("phoneInvalid")),
+      whatsappCountry: phoneCountrySchema,
+      contactEmail: z.union([z.literal(""), z.email(t("emailInvalid"))]),
+      address: optionalText(t, 300),
+      phoneCountry: phoneCountrySchema,
+      timeZone: z.string().refine((value): boolean => canonicalTimeZone(value) !== null, t("timeZoneInvalid")),
+      metaTitle: optionalText(t, 70),
+      metaDescription: optionalText(t, 160),
+    })
+    .superRefine((values, ctx) => {
+      if (values.phone && normalizePhone(values.phone, findPhoneCountry(values.phoneNumberCountry)) === null) {
+        ctx.addIssue({ code: "custom", path: ["phone"], message: t("phoneInvalid") });
+      }
+      if (values.whatsapp && normalizePhone(values.whatsapp, findPhoneCountry(values.whatsappCountry)) === null) {
+        ctx.addIssue({ code: "custom", path: ["whatsapp"], message: t("phoneInvalid") });
+      }
+    });
 }
 export type StoreProfileValues = z.infer<ReturnType<typeof createStoreProfileSchema>>;
 

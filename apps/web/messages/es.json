@@ -1335,7 +1335,10 @@
         "forbidden": "No tienes permiso para hacer esto.",
         "failed": "No se pudo guardar. Inténtalo de nuevo."
       },
-      "phoneCountry": "País de los teléfonos",
+      "phoneNumberCountry": "País del teléfono",
+      "whatsappCountry": "País del WhatsApp",
+      "numberCountryNone": "Código",
+      "phoneCountry": "País de los teléfonos de tus clientes",
       "phoneCountryNone": "Ninguno (solo números con +)",
       "phoneCountryHelp": "Se preselecciona al hacer un pedido: si el cliente escribe su número sin +, se le añade el código de este país (ej. 5 435 3930 → +53 5435 3930).",
       "timeZone": "Zona horaria del negocio",
