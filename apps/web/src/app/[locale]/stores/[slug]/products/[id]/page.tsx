@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeftIcon, TagIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { buildStoreUrl } from "@/lib/tenancy";
+import { OG_SIZE, productOgVersion } from "@/server/product-og";
 import { getPublicProduct, listRelatedProducts } from "@/server/public-catalog";
 import { getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
@@ -28,14 +31,31 @@ async function load(slug: string, key: string) {
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/stores/[slug]/products/[id]">): Promise<Metadata> {
-  const { slug, id } = await params;
+  const { locale, slug, id } = await params;
   const found = await load(slug, id);
   if (!found) return {};
-  const { store, product } = found;
+  const { store, currency, product } = found;
+  const title = product.metaTitle ?? `${product.name} · ${store.name}`;
+  const description = product.metaDescription ?? product.description?.slice(0, 160) ?? undefined;
+
+  // Generated card (/api/og/product/...), priced in the store's default currency like the route
+  const cardProduct =
+    currency.code === store.defaultCurrency.code
+      ? product
+      : ((await getPublicProduct(store.id, product.slug, store.defaultCurrency.code)) ?? product);
+  const origin = buildStoreUrl(store.slug, (await headers()).get("host"));
+  const version = productOgVersion(store, cardProduct, locale);
+  const image = {
+    url: `${origin}/api/og/product/${encodeURIComponent(product.slug)}?locale=${locale}&v=${version}`,
+    ...OG_SIZE,
+    alt: product.name,
+    type: "image/jpeg",
+  };
   return {
-    title: product.metaTitle ?? `${product.name} · ${store.name}`,
-    description: product.metaDescription ?? product.description?.slice(0, 160) ?? undefined,
-    openGraph: product.imageKeys[0] ? { images: [publicUrl(product.imageKeys[0])] } : undefined,
+    title,
+    description,
+    openGraph: { title, description, url: `${origin}/${locale}/products/${product.slug}`, siteName: store.name, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

@@ -119,6 +119,17 @@ export async function getObjectRange(key: string, offset: number, length: number
   return { data, etag: response.ETag };
 }
 
+/** Whole object as bytes (small files only, e.g. an image < 1 MB), or null when it does not exist. */
+export async function getObject(key: string): Promise<Uint8Array | null> {
+  try {
+    const response = await getClient().send(new GetObjectCommand({ Bucket: env("S3_BUCKET"), Key: key }));
+    return await response.Body!.transformToByteArray();
+  } catch (error) {
+    if (error instanceof Error && error.name === "NoSuchKey") return null;
+    throw error;
+  }
+}
+
 /** Public URL of an object (the bucket allows anonymous reads). */
 export function publicUrl(key: string): string {
   return `${env("S3_PUBLIC_URL").replace(/\/$/, "")}/${key}`;
