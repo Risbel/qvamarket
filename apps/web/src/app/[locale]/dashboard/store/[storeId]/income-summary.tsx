@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
-import { Button } from "@/components/ui/button";
+import { useStorePath } from "@/components/panel-scope";
+import { Link } from "@/i18n/navigation";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,9 +34,13 @@ function formatDay(day: string, locale: string, options: Intl.DateTimeFormatOpti
   return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
-/** `showProfit`: the member may also see costs (inventory:read), so gross profit is shown. */
-export function IncomeSummary({ summary, showProfit }: { summary: Summary; showProfit: boolean }) {
+/**
+ * `showProfit`: the member may also see costs (inventory:read), so gross profit is shown.
+ * `profitLink`: they may open the profit report.
+ */
+export function IncomeSummary({ summary, showProfit, profitLink }: { summary: Summary; showProfit: boolean; profitLink: boolean }) {
   const t = useTranslations("Dashboard.income");
+  const panelPath = useStorePath();
   const locale = useLocale();
   const [code, setCode] = useState(summary.currencies[0]?.currency);
   const current = summary.currencies.find((c) => c.currency === code) ?? summary.currencies[0];
@@ -54,6 +60,11 @@ export function IncomeSummary({ summary, showProfit }: { summary: Summary; showP
             {t("title")}
           </h2>
           <p className="text-sm text-muted-foreground">{t("timeZone", { zone: summary.timeZone.replaceAll("_", " ") })}</p>
+          {profitLink && (
+            <Link href={panelPath("/profit")} className={buttonVariants({ variant: "link", size: "sm", className: "h-auto px-0" })}>
+              {t("profitLink")}
+            </Link>
+          )}
         </div>
         {summary.currencies.length > 1 && (
           <ButtonGroup aria-label={t("currency")}>

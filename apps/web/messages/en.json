@@ -48,7 +48,8 @@
       "chartDescription": "By payment method, in {currency}. A day with refunds can go below 0.",
       "grossProfit": "Gross profit",
       "margin": "{percent} margin",
-      "uncosted": "{count, plural, one {# unit sold without a cost is} other {# units sold without a cost are}} left out of the profit."
+      "uncosted": "{count, plural, one {# unit sold without a cost is} other {# units sold without a cost are}} left out of the profit.",
+      "profitLink": "See this month's profit"
     }
   },
   "Store": {
@@ -579,6 +580,7 @@
       "settings": "Settings",
       "promotions": "Promotions",
       "expenses": "Expenses",
+      "profit": "Profit",
       "merchants": "Merchants",
       "stores": "Stores",
       "newMerchant": "New merchant",
@@ -2033,6 +2035,39 @@
         "notFound": "The expense no longer exists.",
         "failed": "Could not delete. Try again."
       }
+    }
+  },
+  "Profit": {
+    "title": "Profit",
+    "intro": "What the store earned each month: sales, minus what the goods cost, stock losses and expenses. Months in the store's timezone ({zone}).",
+    "monthNav": "Choose month",
+    "previous": "Previous month",
+    "next": "Next month",
+    "thisMonth": "This month",
+    "currency": "Currency",
+    "netProfit": "Net profit",
+    "margin": "{percent} of sales",
+    "lines": {
+      "goods": "Product sales ({count, plural, =0 {no orders} one {# order} other {# orders}})",
+      "delivery": "Delivery fees charged",
+      "revenue": "Total sales",
+      "costOfGoods": "Cost of goods sold",
+      "grossProfit": "Gross profit",
+      "loss": "Losses: {reason}",
+      "expenses": "Expenses",
+      "netProfit": "Net profit"
+    },
+    "expensesByCategory": "Expenses by category",
+    "noExpenses": "No expenses this month.",
+    "warnings": {
+      "uncostedSales": "{count, plural, one {# unit sold has} other {# units sold have}} no cost: the real profit is lower. Add the costs in Inventory.",
+      "uncostedLosses": "{count, plural, one {# unit lost or given away has} other {# units lost or given away have}} no cost and are not subtracted.",
+      "otherCurrency": "Each currency has its own report. Stock losses are valued in {base}, so they do not show in {currency}."
+    },
+    "months": {
+      "title": "Last 12 months",
+      "month": "Month",
+      "lossesAndExpenses": "Losses and expenses"
     }
   },
   "DataTable": {

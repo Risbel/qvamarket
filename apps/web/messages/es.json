@@ -48,7 +48,8 @@
       "chartDescription": "Por forma de pago, en {currency}. Un día con devoluciones puede quedar por debajo de 0.",
       "grossProfit": "Ganancia bruta",
       "margin": "{percent} de margen",
-      "uncosted": "{count, plural, one {# unidad vendida sin costo no cuenta} other {# unidades vendidas sin costo no cuentan}} en la ganancia."
+      "uncosted": "{count, plural, one {# unidad vendida sin costo no cuenta} other {# unidades vendidas sin costo no cuentan}} en la ganancia.",
+      "profitLink": "Ver ganancias del mes"
     }
   },
   "Store": {
@@ -579,6 +580,7 @@
       "settings": "Ajustes",
       "promotions": "Promociones",
       "expenses": "Gastos",
+      "profit": "Ganancias",
       "merchants": "Comercios",
       "stores": "Tiendas",
       "newMerchant": "Nuevo comercio",
@@ -2033,6 +2035,39 @@
         "notFound": "El gasto ya no existe.",
         "failed": "No se pudo eliminar. Inténtalo de nuevo."
       }
+    }
+  },
+  "Profit": {
+    "title": "Ganancias",
+    "intro": "Lo que ganó la tienda cada mes: ventas, menos lo que costó la mercancía, las pérdidas de stock y los gastos. Meses según la zona horaria de la tienda ({zone}).",
+    "monthNav": "Elegir mes",
+    "previous": "Mes anterior",
+    "next": "Mes siguiente",
+    "thisMonth": "Este mes",
+    "currency": "Moneda",
+    "netProfit": "Ganancia neta",
+    "margin": "{percent} de las ventas",
+    "lines": {
+      "goods": "Ventas de productos ({count, plural, =0 {sin pedidos} one {# pedido} other {# pedidos}})",
+      "delivery": "Cobrado por envíos",
+      "revenue": "Ventas totales",
+      "costOfGoods": "Costo de lo vendido",
+      "grossProfit": "Ganancia bruta",
+      "loss": "Pérdidas: {reason}",
+      "expenses": "Gastos",
+      "netProfit": "Ganancia neta"
+    },
+    "expensesByCategory": "Gastos por categoría",
+    "noExpenses": "Sin gastos este mes.",
+    "warnings": {
+      "uncostedSales": "{count, plural, one {# unidad vendida no tiene} other {# unidades vendidas no tienen}} costo: la ganancia real es menor. Añade los costos en Inventario.",
+      "uncostedLosses": "{count, plural, one {# unidad perdida o regalada no tiene} other {# unidades perdidas o regaladas no tienen}} costo y no se descuentan.",
+      "otherCurrency": "Cada moneda tiene su propio informe. Las pérdidas de stock se valoran en {base}, así que no aparecen en {currency}."
+    },
+    "months": {
+      "title": "Últimos 12 meses",
+      "month": "Mes",
+      "lossesAndExpenses": "Pérdidas y gastos"
     }
   },
   "DataTable": {

@@ -26,7 +26,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/[l
   const groups = ([
     { items: ["home", ...allowed("orders", "customers")] },
     { label: "catalog", items: allowed("products", "inventory", "categories", "promotions") },
-    { label: "finance", items: allowed("expenses") },
+    { label: "finance", items: allowed("expenses", "profit") },
     { label: "store", items: allowed("settings") },
   ] satisfies PanelNavGroup[]).filter((group) => group.items.length > 0);
 

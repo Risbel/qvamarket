@@ -1,7 +1,11 @@
-import { and, expense, order, orderPayment, sql } from "@qvashop/db";
+import { and, expense, inventoryMovement, order, orderPayment, sql } from "@qvashop/db";
 import type { DateRange } from "@/lib/date-range";
 
-type InstantColumn = typeof order.createdAt | typeof orderPayment.paidAt | typeof expense.paidAt;
+type InstantColumn =
+  | typeof order.createdAt
+  | typeof orderPayment.paidAt
+  | typeof expense.paidAt
+  | typeof inventoryMovement.createdAt;
 
 /**
  * Rows whose instant falls on the calendar days `from`..`to` of the range's timezone. The exact

@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BadgePercent,
   Building2,
+  ChartNoAxesCombined,
   ChevronsUpDown,
   Contact,
   ExternalLink,
@@ -63,6 +64,7 @@ const ITEMS = {
   categories: { path: "/categories", icon: FolderTree, exact: false },
   promotions: { path: "/promotions", icon: BadgePercent, exact: false },
   expenses: { path: "/expenses", icon: ReceiptText, exact: false },
+  profit: { path: "/profit", icon: ChartNoAxesCombined, exact: false },
   settings: { path: "/settings", icon: Settings, exact: false },
   // company panel
   stores: { path: "", icon: Store, exact: true },

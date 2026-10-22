@@ -101,7 +101,8 @@ export type AdjustStockResult =
  * A manual stock change, in one transaction: lock the variant (like checkout, so an order
  * cannot slip in between), refuse `stale` when its stock is no longer `expectedStock` (what
  * the merchant saw), apply the change and write the movement. Receiving units with a unit
- * cost (in the base currency) sets the variant's cost to the weighted average.
+ * cost (in the base currency) sets the variant's cost to the weighted average; units that go
+ * out keep the variant's cost on the movement (stock losses in the profit report).
  */
 export async function adjustStock(
   scope: Scope,
@@ -153,7 +154,9 @@ export async function adjustStock(
         cost:
           input.reason === "received" && input.unitCostMinor !== null
             ? { minor: input.unitCostMinor, currencyCode: input.baseCurrencyCode }
-            : null,
+            : next < variant.stock && variant.costMinor !== null && variant.costCurrencyCode !== null
+              ? { minor: variant.costMinor, currencyCode: variant.costCurrencyCode }
+              : null,
         note: input.note,
       },
     ]);
