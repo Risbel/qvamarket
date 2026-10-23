@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { BILLING_CYCLES, BILLING_PAYMENT_METHODS, MAX_DUE_DAYS, MAX_PAUSE_DAYS } from "@/lib/billing";
+import {
+  BILLING_CYCLES,
+  BILLING_PAYMENT_METHODS,
+  BILLING_REQUEST_KINDS,
+  BILLING_REQUEST_MESSAGE_MAX,
+  MAX_DUE_DAYS,
+  MAX_PAUSE_DAYS,
+} from "@/lib/billing";
 import { currencyDigits, parsePriceToMinor } from "@/lib/money";
 import { PLAN_KEYS } from "@/lib/plans";
 import type { Translator } from "./types";
@@ -158,3 +165,21 @@ export type PlanPriceValues = z.infer<ReturnType<typeof createPlanPriceSchema>>;
 export function planPriceMinor(values: PlanPriceValues): number {
   return parsePriceToMinor(values.amount, currencyDigits(values.currencyCode), Number.MAX_SAFE_INTEGER) ?? 0;
 }
+
+/** What a company owner asks the platform from the Billing page: a plan (and cycle), a pause, or anything else. */
+export function createBillingRequestSchema(t: Translator) {
+  return z
+    .object({
+      kind: z.enum(BILLING_REQUEST_KINDS),
+      planKey: z.enum(PLAN_KEYS).nullable(),
+      cycle: z.enum(BILLING_CYCLES).nullable(),
+      message: z.string().trim().max(BILLING_REQUEST_MESSAGE_MAX, t("tooLong", { max: BILLING_REQUEST_MESSAGE_MAX })),
+    })
+    .superRefine((values, ctx) => {
+      if (values.kind === "plan" && (!values.planKey || !values.cycle)) {
+        ctx.addIssue({ code: "custom", path: ["planKey"], message: t("required") });
+      }
+      if (values.kind !== "plan" && !values.message) ctx.addIssue({ code: "custom", path: ["message"], message: t("required") });
+    });
+}
+export type BillingRequestValues = z.infer<ReturnType<typeof createBillingRequestSchema>>;

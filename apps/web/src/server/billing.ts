@@ -1,10 +1,12 @@
 import {
   and,
   asc,
+  billingRequest,
   db,
   desc,
   eq,
   inArray,
+  or,
   organization,
   planPrice,
   subscription,
@@ -15,6 +17,8 @@ import {
 } from "@qvashop/db";
 import {
   DEFAULT_DUE_DAYS,
+  GRACE_DAYS,
+  RENEWAL_LEAD_DAYS,
   addCycle,
   addDays,
   effectiveSubscription,
@@ -24,6 +28,8 @@ import {
   prorate,
   type BillingCycle,
   type BillingPaymentMethod,
+  type BillingRequestKind,
+  type PlanChangeOutcome,
   type SubscriptionEventType,
 } from "@/lib/billing";
 import { FALLBACK_PLAN, isPlanKey, planRank, type PlanKey } from "@/lib/plans";
@@ -225,6 +231,8 @@ export type ChangePlanInput = {
   startsAt: Date | null;
   dueDays: number;
   note: string;
+  /** owners may only schedule changes for the end of the period: anything else is refused */
+  allowedOutcomes?: PlanChangeOutcome[];
 };
 
 export type BillingResult =
@@ -243,7 +251,8 @@ export type BillingResult =
         | "exceedsDue"
         | "exceedsPaid"
         | "hasPayments"
-        | "notTrialing";
+        | "notTrialing"
+        | "notAllowed";
     };
 
 /**
@@ -268,6 +277,7 @@ export async function changePlan(tenantId: string, input: ChangePlanInput, actor
       now,
     );
     const note = input.note;
+    if (input.allowedOutcomes && !input.allowedOutcomes.includes(outcome)) return { ok: false, error: "notAllowed" } as const;
 
     switch (outcome) {
       case "noChange":
@@ -465,6 +475,8 @@ export async function issueNextInvoice(
     const price = await priceOf(tx, plan, cycle, row.currencyCode);
     if (price === null) return { ok: false, error: "noPrice" } as const;
     const start = row.currentPeriodEnd;
+    // That period already invoiced, or a period still waiting to be paid (e.g. the first one of
+    // a new plan, whose paid-until is only its due date): never two unpaid renewals at once
     const [existing] = await tx
       .select({ id: subscriptionInvoice.id })
       .from(subscriptionInvoice)
@@ -472,8 +484,10 @@ export async function issueNextInvoice(
         and(
           eq(subscriptionInvoice.tenantId, tenantId),
           eq(subscriptionInvoice.kind, "renewal"),
-          eq(subscriptionInvoice.periodStart, start),
-          inArray(subscriptionInvoice.status, ["open", "partial", "paid"]),
+          or(
+            and(eq(subscriptionInvoice.periodStart, start), inArray(subscriptionInvoice.status, ["open", "partial", "paid"])),
+            inArray(subscriptionInvoice.status, ["open", "partial"]),
+          ),
         ),
       );
     if (existing) return { ok: false, error: "alreadyIssued" } as const;
@@ -649,27 +663,31 @@ export async function resumeSubscription(tenantId: string, note: string, actor: 
     const row = await lockSubscription(tx, tenantId);
     if (!row) return { ok: false, error: "notFound" } as const;
     if (row.status !== "paused" || !row.pausedAt) return { ok: false, error: "notPaused" } as const;
-    const now = new Date();
-    const until = row.pauseResumesAt && row.pauseResumesAt < now ? row.pauseResumesAt : now;
-    const paused = Math.max(0, until.getTime() - row.pausedAt.getTime());
-    const shift = (date: Date | null) => (date && date > row.pausedAt! ? new Date(date.getTime() + paused) : date);
-    const trialEndsAt = shift(row.trialEndsAt);
-    await updateSubscription(
-      tx,
-      row,
-      {
-        status: trialEndsAt && trialEndsAt > now ? "trialing" : "active",
-        pausedAt: null,
-        pauseResumesAt: null,
-        currentPeriodEnd: shift(row.currentPeriodEnd),
-        trialEndsAt,
-      },
-      "resumed",
-      actor,
-      { note },
-    );
+    await resumeLocked(tx, row, note, actor);
     return { ok: true } as const;
   });
+}
+
+async function resumeLocked(tx: Tx, row: SubscriptionRow, note: string, actor: BillingActor, now = new Date()) {
+  const pausedAt = row.pausedAt ?? now;
+  const until = row.pauseResumesAt && row.pauseResumesAt < now ? row.pauseResumesAt : now;
+  const paused = Math.max(0, until.getTime() - pausedAt.getTime());
+  const shift = (date: Date | null) => (date && date > pausedAt ? new Date(date.getTime() + paused) : date);
+  const trialEndsAt = shift(row.trialEndsAt);
+  return updateSubscription(
+    tx,
+    row,
+    {
+      status: trialEndsAt && trialEndsAt > now ? "trialing" : "active",
+      pausedAt: null,
+      pauseResumesAt: null,
+      currentPeriodEnd: shift(row.currentPeriodEnd),
+      trialEndsAt,
+    },
+    "resumed",
+    actor,
+    { note },
+  );
 }
 
 /** Cancels at the end of the paid period (`atPeriodEnd`) or right away (falls to the free plan). */
@@ -889,4 +907,177 @@ export async function getCompanyBilling(tenantId: string) {
     }),
     events,
   };
+}
+
+// ---------------------------------------------------------------------------------------
+// Renewal job (POST /api/cron/billing, daily; also "Run now" in the admin)
+// ---------------------------------------------------------------------------------------
+
+const SYSTEM: BillingActor = { kind: "system", userId: null };
+
+/**
+ * Brings one company's stored subscription in line with the clock (what effectiveSubscription
+ * already shows), each move logged as the system: a trial that ended -> free; a pause past
+ * its date -> resumed (paused days given back); a period that ended with a cancellation or a
+ * downgrade to free scheduled -> that; unpaid -> past_due, then expired after the grace days.
+ */
+async function maintainSubscription(tenantId: string, now: Date): Promise<SubscriptionEventType[]> {
+  return db.transaction(async (tx) => {
+    let row = await lockSubscription(tx, tenantId);
+    if (!row) return [];
+    const done: SubscriptionEventType[] = [];
+
+    if (row.status === "trialing" && row.trialEndsAt && row.trialEndsAt <= now) {
+      row = await updateSubscription(tx, row, { planKey: FALLBACK_PLAN, status: "active", trialEndsAt: null }, "trial_ended", SYSTEM);
+      done.push("trial_ended");
+    }
+    if (row.status === "paused" && row.pauseResumesAt && row.pauseResumesAt <= now) {
+      row = await resumeLocked(tx, row, "", SYSTEM, now);
+      done.push("resumed");
+    }
+    const end = row.currentPeriodEnd;
+    if ((row.status === "active" || row.status === "past_due") && end && end <= now) {
+      if (row.cancelAtPeriodEnd) {
+        await updateSubscription(tx, row, { status: "cancelled", cancelAtPeriodEnd: false, scheduledPlanKey: null, scheduledCycle: null }, "cancelled", SYSTEM);
+        done.push("cancelled");
+      } else if (row.scheduledPlanKey === FALLBACK_PLAN || row.planKey === FALLBACK_PLAN) {
+        await updateSubscription(
+          tx,
+          row,
+          { planKey: FALLBACK_PLAN, status: "active", currentPeriodStart: null, currentPeriodEnd: null, scheduledPlanKey: null, scheduledCycle: null },
+          "plan_downgraded",
+          SYSTEM,
+        );
+        done.push("plan_downgraded");
+      } else if (addDays(end, GRACE_DAYS) <= now) {
+        await updateSubscription(tx, row, { status: "expired" }, "expired", SYSTEM);
+        done.push("expired");
+      } else if (row.status === "active") {
+        await updateSubscription(tx, row, { status: "past_due" }, "became_past_due", SYSTEM);
+        done.push("became_past_due");
+      }
+    }
+    return done;
+  });
+}
+
+/** Should the job issue the next period's invoice now? (the rest is checked by issueNextInvoice) */
+function renewalDue(row: SubscriptionRow, now: Date) {
+  if (row.status !== "active" && row.status !== "past_due") return false;
+  if (!row.currentPeriodEnd || row.cancelAtPeriodEnd) return false;
+  return row.currentPeriodEnd.getTime() - now.getTime() <= RENEWAL_LEAD_DAYS * 86_400_000;
+}
+
+export type BillingJobSummary = {
+  companies: number;
+  events: Partial<Record<SubscriptionEventType, number>>;
+  invoices: number;
+  failed: number;
+};
+
+/**
+ * Runs the maintenance and the renewals of every company that may need them. Idempotent (each
+ * move checks the stored state under the lock, renewals are one per period), so running it
+ * twice, or late, does no harm. One company failing does not stop the others.
+ */
+export async function runBillingJob(now: Date = new Date()): Promise<BillingJobSummary> {
+  const rows = await db
+    .select({ tenantId: subscription.tenantId })
+    .from(subscription)
+    .where(inArray(subscription.status, ["trialing", "active", "past_due", "paused"]));
+  const summary: BillingJobSummary = { companies: rows.length, events: {}, invoices: 0, failed: 0 };
+  for (const { tenantId } of rows) {
+    try {
+      for (const type of await maintainSubscription(tenantId, now)) summary.events[type] = (summary.events[type] ?? 0) + 1;
+      const [row] = await db.select().from(subscription).where(eq(subscription.tenantId, tenantId));
+      if (row && renewalDue(row, now)) {
+        const issued = await issueNextInvoice(tenantId, SYSTEM);
+        if (issued.ok) summary.invoices += 1;
+      }
+    } catch (error) {
+      summary.failed += 1;
+      console.error("billing job failed for company", tenantId, error);
+    }
+  }
+  console.info("billing job", JSON.stringify(summary));
+  return summary;
+}
+
+// ---------------------------------------------------------------------------------------
+// Requests from the company owner (plan change, pause, anything else)
+// ---------------------------------------------------------------------------------------
+
+export type BillingRequestInput = {
+  kind: BillingRequestKind;
+  planKey: PlanKey | null;
+  cycle: BillingCycle | null;
+  message: string;
+};
+
+/** Records (or replaces) the company's open request, logged as the owner. */
+export async function createBillingRequest(tenantId: string, input: BillingRequestInput, actor: BillingActor): Promise<BillingResult> {
+  return db.transaction(async (tx) => {
+    const row = await lockSubscription(tx, tenantId);
+    if (!row) return { ok: false, error: "notFound" } as const;
+    const values = {
+      kind: input.kind,
+      planKey: input.kind === "plan" ? input.planKey : null,
+      cycle: input.kind === "plan" ? input.cycle : null,
+      message: input.message || null,
+      createdByUserId: actor.userId,
+    };
+    const [open] = await tx
+      .select({ id: billingRequest.id })
+      .from(billingRequest)
+      .where(and(eq(billingRequest.tenantId, tenantId), eq(billingRequest.status, "open")))
+      .for("update");
+    if (open) await tx.update(billingRequest).set({ ...values, createdAt: new Date() }).where(eq(billingRequest.id, open.id));
+    else await tx.insert(billingRequest).values({ tenantId, ...values });
+    await logEvent(tx, tenantId, "change_requested", actor, {
+      after: { kind: values.kind, planKey: values.planKey, cycle: values.cycle },
+      note: values.message,
+    });
+    return { ok: true } as const;
+  });
+}
+
+/** Closes the company's open request: done / dismissed by the superadmin, or withdrawn by the owner. */
+export async function closeBillingRequest(tenantId: string, status: "done" | "dismissed", actor: BillingActor): Promise<BillingResult> {
+  return db.transaction(async (tx) => {
+    const row = await lockSubscription(tx, tenantId);
+    if (!row) return { ok: false, error: "notFound" } as const;
+    const closed = await tx
+      .update(billingRequest)
+      .set({ status, handledByUserId: actor.userId, handledAt: new Date() })
+      .where(and(eq(billingRequest.tenantId, tenantId), eq(billingRequest.status, "open")))
+      .returning({ id: billingRequest.id, kind: billingRequest.kind });
+    if (closed.length === 0) return { ok: false, error: "notFound" } as const;
+    await logEvent(tx, tenantId, "request_closed", actor, { after: { kind: closed[0].kind, status } });
+    return { ok: true } as const;
+  });
+}
+
+export async function getOpenBillingRequest(tenantId: string) {
+  const [row] = await db
+    .select({
+      id: billingRequest.id,
+      kind: billingRequest.kind,
+      planKey: billingRequest.planKey,
+      cycle: billingRequest.cycle,
+      message: billingRequest.message,
+      createdAt: billingRequest.createdAt,
+      createdBy: user.name,
+    })
+    .from(billingRequest)
+    .leftJoin(user, eq(user.id, billingRequest.createdByUserId))
+    .where(and(eq(billingRequest.tenantId, tenantId), eq(billingRequest.status, "open")));
+  return row ?? null;
+}
+
+/** Companies with an open request (admin overview). */
+export async function listOpenBillingRequests() {
+  return db
+    .select({ tenantId: billingRequest.tenantId, kind: billingRequest.kind, createdAt: billingRequest.createdAt })
+    .from(billingRequest)
+    .where(eq(billingRequest.status, "open"));
 }

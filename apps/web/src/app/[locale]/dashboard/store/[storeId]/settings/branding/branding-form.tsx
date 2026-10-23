@@ -1,5 +1,6 @@
 "use client";
 
+import { PlanFeatureGate } from "@/components/plans/plan-feature-gate";
 import { useStoreId } from "@/components/panel-scope";
 import { useMemo, useState } from "react";
 import { Controller, useForm, type Control } from "react-hook-form";
@@ -97,6 +98,8 @@ export function BrandingForm({
           placeholder={t("colors.placeholder")}
         />
 
+        {/* the theme options are a plan feature: saved only with it (the colors are on every plan) */}
+        <PlanFeatureGate feature="theme">
         <Controller
           name="base"
           control={form.control}
@@ -178,6 +181,7 @@ export function BrandingForm({
             </Field>
           )}
         />
+        </PlanFeatureGate>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">{t("preview.title")}</span>

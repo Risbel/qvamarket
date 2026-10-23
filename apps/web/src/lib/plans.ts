@@ -1,5 +1,5 @@
 import type { PLAN_KEYS as DB_PLAN_KEYS } from "@qvashop/db/schema";
-import { RESOURCES, normalizePermissions, type Permissions, type Resource } from "./permissions";
+import { RESOURCES, normalizePermissions, type PermissionRequest, type Permissions, type Resource } from "./permissions";
 
 /**
  * Plans: what a company gets for its subscription. Features and limits are defined here, once;
@@ -150,6 +150,17 @@ export function planPermissions(granted: Permissions, plan: PlanKey): Permission
       }),
     ),
   );
+}
+
+/** The plan features a permission request needs (empty = it is on every plan). */
+export function featuresFor(request: PermissionRequest): PlanFeature[] {
+  const features: PlanFeature[] = [];
+  for (const [resource, actions] of Object.entries(request) as [Resource, readonly string[] | undefined][]) {
+    const gate = PLAN_GATES[resource];
+    if (!gate) continue;
+    if (!gate.actions || (actions ?? []).some((action) => gate.actions?.includes(action))) features.push(gate.feature);
+  }
+  return [...new Set(features)];
 }
 
 /** The cheapest plan that has `feature` (for "available from Pro" hints). */

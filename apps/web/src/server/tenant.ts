@@ -5,7 +5,9 @@ import { z } from "zod";
 import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { hasPermissions, isOwner, type PermissionRequest, type Permissions } from "@/lib/permissions";
-import { planHas, planPermissions, type PlanFeature } from "@/lib/plans";
+import { featuresFor, planHas, planPermissions, type PlanFeature } from "@/lib/plans";
+import { storePath } from "@/lib/panel-paths";
+import { redirect } from "@/i18n/navigation";
 import type { EffectiveSubscription } from "@/lib/billing";
 import { PANEL_ACCESS, type CompanySection, type StoreSection } from "@/lib/panel-access";
 import type { StoreAccess } from "@/lib/store-access";
@@ -208,6 +210,14 @@ function withCan<T extends CompanyContext>(context: T) {
     can: (request: PermissionRequest) => hasPermissions(context.effectivePermissions, request),
     /** Does the company's plan include this feature? */
     hasFeature: (feature: PlanFeature) => planHas(context.subscription.plan, feature),
+    /**
+     * The plan feature that keeps the member from `request` although their role grants it
+     * (an upgrade would open it), or null (allowed, or the role does not grant it anyway).
+     */
+    planLock: (request: PermissionRequest): PlanFeature | null => {
+      if (!hasPermissions(context.permissions, request) || hasPermissions(context.effectivePermissions, request)) return null;
+      return featuresFor(request).find((feature) => !planHas(context.subscription.plan, feature)) ?? null;
+    },
   };
 }
 
@@ -240,10 +250,17 @@ export async function getMerchantOrNull(storeId: unknown) {
   return { session, ...withCan(context) };
 }
 
-/** requireMerchant + a required permission; a missing permission is a 404. */
+/**
+ * requireMerchant + a required permission; a missing permission is a 404. When only the plan
+ * stands in the way (the role grants it), the member goes to the store's upgrade page instead.
+ */
 export async function requireMerchantPermission(locale: string, storeId: string, request: PermissionRequest) {
   const merchant = await requireMerchant(locale, storeId);
-  if (!merchant.can(request)) notFound();
+  if (!merchant.can(request)) {
+    const feature = merchant.planLock(request);
+    if (feature) redirect({ href: storePath(merchant.store.id, `/upgrade?feature=${feature}`), locale });
+    notFound();
+  }
   return merchant;
 }
 

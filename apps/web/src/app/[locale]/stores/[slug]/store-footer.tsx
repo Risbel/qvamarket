@@ -19,6 +19,7 @@ export async function StoreFooter({
   text,
   groups,
   social,
+  badgeUrl,
 }: {
   name: string;
   logoUrl: string | null;
@@ -26,6 +27,8 @@ export async function StoreFooter({
   text: string | null;
   groups: FooterLinkGroup[];
   social: SocialLink[];
+  /** "Hecho con QvaShop" linking here, on plans without `hideBadge` (null = not shown) */
+  badgeUrl: string | null;
 }) {
   const t = await getTranslations("Store.footer");
 
@@ -96,6 +99,14 @@ export async function StoreFooter({
           </nav>
         )}
       </div>
+      {badgeUrl && (
+        <div className="border-t py-3 text-center text-xs text-muted-foreground">
+          <a href={badgeUrl} target="_blank" rel="noopener" className="underline-offset-4 hover:text-foreground hover:underline">
+            {t("madeWith")}
+            <span className="sr-only"> {t("newTab")}</span>
+          </a>
+        </div>
+      )}
     </footer>
   );
 }

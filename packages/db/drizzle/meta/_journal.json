@@ -281,6 +281,13 @@
       "when": 1792717384147,
       "tag": "0039_mute_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792719107514,
+      "tag": "0040_abnormal_oracle",
+      "breakpoints": true
     }
   ]
 }

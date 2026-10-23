@@ -9,8 +9,9 @@ import { LocalDateTime } from "@/components/local-date-time";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getCompanyBilling, listPlanPrices } from "@/server/billing";
-import { InvoicesTable, type InvoiceView } from "./invoices-table";
+import { getCompanyBilling, getOpenBillingRequest, listPlanPrices } from "@/server/billing";
+import { RequestCard, type RequestView } from "./request-card";
+import { InvoicesTable, type InvoiceView } from "@/components/billing/invoices-table";
 import { SubscriptionActions, type SubscriptionView } from "./subscription-actions";
 
 const iso = (date: Date | null | undefined) => date?.toISOString() ?? null;
@@ -21,7 +22,11 @@ export default async function CompanyBillingPage({ params }: PageProps<"/[locale
   setRequestLocale(locale);
   if (!z.uuid().safeParse(tenantId).success) notFound();
   // The layout already enforced the admin role
-  const [billing, prices] = await Promise.all([getCompanyBilling(tenantId.toLowerCase()), listPlanPrices()]);
+  const [billing, prices, request] = await Promise.all([
+    getCompanyBilling(tenantId.toLowerCase()),
+    listPlanPrices(),
+    getOpenBillingRequest(tenantId.toLowerCase()),
+  ]);
   if (!billing) notFound();
   const t = await getTranslations("Billing");
   const tp = await getTranslations("Plans.plans");
@@ -88,6 +93,20 @@ export default async function CompanyBillingPage({ params }: PageProps<"/[locale
           <Badge variant={STATUS_BADGE[effective.status]}>{t(`status.${effective.status}`)}</Badge>
         </div>
       </div>
+
+      {request && (
+        <RequestCard
+          tenantId={billing.tenantId}
+          request={{
+            kind: request.kind as RequestView["kind"],
+            planKey: isPlanKey(request.planKey) ? request.planKey : null,
+            cycle: request.cycle as RequestView["cycle"],
+            message: request.message,
+            createdAt: request.createdAt.toISOString(),
+            createdBy: request.createdBy,
+          }}
+        />
+      )}
 
       <Card>
         <CardHeader>

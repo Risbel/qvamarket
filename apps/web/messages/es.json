@@ -49,7 +49,12 @@
       "grossProfit": "Ganancia bruta",
       "margin": "{percent} de margen",
       "uncosted": "{count, plural, one {# unidad vendida sin costo no cuenta} other {# unidades vendidas sin costo no cuentan}} en la ganancia.",
-      "profitLink": "Ver ganancias del mes"
+      "profitLink": "Ver ganancias del mes",
+      "basicHint": "Con el plan Pro ves lo cobrado por método de pago, un gráfico de 30 días y la ganancia.",
+      "seePlans": "Ver planes",
+      "soldTotal": "vendido",
+      "ordersLabel": "Pedidos",
+      "unitsLabel": "Unidades vendidas"
     }
   },
   "Store": {
@@ -311,7 +316,8 @@
       "label": "Enlaces de la tienda",
       "newTab": "(se abre en una pestaña nueva)",
       "socialLabel": "Redes sociales",
-      "social": "{name} (se abre en una pestaña nueva)"
+      "social": "{name} (se abre en una pestaña nueva)",
+      "madeWith": "Hecho con QvaShop"
     },
     "favorites": {
       "add": "Añadir {name} a favoritos",
@@ -335,6 +341,9 @@
         "tooManyAttempts": "Demasiados cambios seguidos. Espera un momento.",
         "failed": "No se pudo guardar el cambio. Inténtalo de nuevo."
       }
+    },
+    "closed": {
+      "description": "Esta tienda está cerrada por ahora. Vuelve pronto."
     }
   },
   "Validation": {
@@ -621,7 +630,8 @@
       "switch": "Cambiar de empresa",
       "current": "Empresa activa"
     },
-    "allStores": "Todas las tiendas"
+    "allStores": "Todas las tiendas",
+    "lockedHint": "Disponible desde el plan {plan}"
   },
   "Stores": {
     "title": "Tiendas",
@@ -2413,6 +2423,28 @@
       "bannerImages": "Tu plan permite hasta {max, plural, one {# imagen} other {# imágenes}} por pantalla en el banner. Mejora tu plan para añadir más.",
       "pages": "Tu plan permite hasta {max, plural, one {# página} other {# páginas}} por tienda. Mejora tu plan para crear más.",
       "members": "{max, plural, =0 {Tu plan no incluye miembros del equipo.} one {Tu plan permite # miembro en el equipo (las invitaciones pendientes cuentan).} other {Tu plan permite # miembros en el equipo (las invitaciones pendientes cuentan).}} Mejora tu plan para añadir más."
+    },
+    "upgrade": {
+      "title": "{feature} está disponible desde el plan {plan}",
+      "genericTitle": "Esta sección no está en tu plan",
+      "current": "Tu empresa tiene ahora el plan {plan}.",
+      "seePlans": "Ver planes",
+      "askOwner": "Pide al dueño de la empresa que mejore el plan desde Facturación.",
+      "back": "Volver al inicio",
+      "about": {
+        "customers": "La lista de clientes con sus pedidos, lo que gastaron y cómo contactarlos.",
+        "promotions": "Rebajas y precios especiales con fechas de inicio y fin.",
+        "inventory": "Costos por unidad, historial de cada movimiento de stock, ajustes y valor del inventario.",
+        "expenses": "Registra salarios, alquiler, luz y demás gastos de la tienda.",
+        "advancedReports": "Lo cobrado por método de pago, el gráfico de 30 días y la ganancia bruta.",
+        "theme": "Gris base, esquinas y superficies teñidas para la tienda.",
+        "secondaryBanner": "Una fila de promociones bajo el banner principal.",
+        "distanceFees": "Cobra el envío según la distancia a la tienda.",
+        "bulkPrices": "Cambia muchos precios a la vez.",
+        "customRoles": "Crea y edita los roles del equipo.",
+        "storeAccess": "Elige qué tiendas puede abrir cada miembro.",
+        "hideBadge": "Quita «Hecho con QvaShop» del pie de la tienda."
+      }
     }
   },
   "Billing": {
@@ -2530,7 +2562,9 @@
       "expired": "Suscripción vencida",
       "price_changed": "Precio cambiado",
       "period_adjusted": "Fecha de pago corregida",
-      "trial_adjusted": "Fin de la prueba cambiado"
+      "trial_adjusted": "Fin de la prueba cambiado",
+      "change_requested": "Solicitud del dueño",
+      "request_closed": "Solicitud cerrada"
     },
     "actions": {
       "changePlan": "Cambiar plan",
@@ -2574,7 +2608,8 @@
         "hasPayments": "Tiene pagos: regístralos como devolución antes de anularla.",
         "notTrialing": "La empresa no está en prueba.",
         "alreadyIssued": "La factura de ese periodo ya existe.",
-        "unknownCurrency": "Esa moneda no existe en la plataforma."
+        "unknownCurrency": "Esa moneda no existe en la plataforma.",
+        "notAllowed": "Este cambio no está permitido aquí."
       },
       "noteHelp": "Opcional. Queda en el historial.",
       "noteRequiredHelp": "Queda en el historial.",
@@ -2730,6 +2765,171 @@
       "toasts": {
         "saved": "Precio guardado."
       }
+    },
+    "requestBadge": "Solicitud",
+    "job": {
+      "run": "Ejecutar renovaciones",
+      "running": "Ejecutando...",
+      "done": "Listo: {invoices} facturas emitidas, {moves} cambios de estado.",
+      "failed": "No se pudo ejecutar."
+    },
+    "request": {
+      "title": "Solicitud del dueño",
+      "plan": "Pide el plan {plan} ({cycle})",
+      "kind": {
+        "plan": "Pide un cambio de plan",
+        "pause": "Pide una pausa",
+        "other": "Consulta"
+      },
+      "help": "Haz el cambio con las acciones de abajo y marca la solicitud como hecha.",
+      "done": "Marcar como hecha",
+      "dismiss": "Descartar",
+      "failed": "No se pudo actualizar la solicitud.",
+      "toasts": {
+        "done": "Solicitud marcada como hecha.",
+        "dismissed": "Solicitud descartada."
+      }
+    }
+  },
+  "CompanyBilling": {
+    "title": "Facturación",
+    "intro": "Tu plan, lo que usas de él y tus facturas. Los pagos se hacen fuera de la plataforma (efectivo, transferencia o Zelle) y los registramos nosotros.",
+    "currentPlan": "Plan {plan}",
+    "invoices": "Facturas",
+    "history": "Historial",
+    "statusLine": {
+      "trial": "La prueba gratuita termina el",
+      "paidUntil": "{cycle} · Pagado hasta el",
+      "noEnd": "Sin fecha de fin.",
+      "pastDue": "El pago está vencido. El plan sigue funcionando hasta el",
+      "paused": "La suscripción está pausada: tus tiendas no son públicas.",
+      "pausedUntil": "La suscripción está pausada hasta el",
+      "expired": "Tu plan {plan} venció sin pago y ahora tienes el plan Gratis. Tus datos siguen ahí.",
+      "cancelled": "Cancelaste el plan {plan}; ahora tienes el plan Gratis. Tus datos siguen ahí.",
+      "scheduled": "Pasarás al plan {plan} el",
+      "cancelling": "Tu suscripción se cancela el"
+    },
+    "usage": {
+      "title": "Uso del plan",
+      "description": "Lo que usas frente a lo que permite tu plan. Los límites por tienda cuentan en cada tienda.",
+      "store": "Tienda",
+      "of": "{used} / {max}",
+      "over": "Si pasas de un límite (por ejemplo, al bajar de plan) no se borra nada: todo sigue funcionando, solo no puedes crear más.",
+      "limits": {
+        "stores": "Tiendas",
+        "activeProducts": "Productos activos",
+        "imagesPerProduct": "Imágenes por producto",
+        "currencies": "Monedas",
+        "bannerImages": "Imágenes del banner",
+        "pages": "Páginas",
+        "members": "Miembros del equipo"
+      }
+    },
+    "features": {
+      "customers": "Clientes",
+      "promotions": "Promociones",
+      "inventory": "Inventario y costos",
+      "expenses": "Gastos",
+      "advancedReports": "Informe completo de ingresos",
+      "theme": "Tema de la tienda",
+      "secondaryBanner": "Banner secundario",
+      "distanceFees": "Envío por distancia",
+      "bulkPrices": "Precios en bloque",
+      "customRoles": "Roles a medida",
+      "storeAccess": "Acceso por tienda",
+      "hideBadge": "Sin «Hecho con QvaShop»"
+    },
+    "plans": "Planes",
+    "cycle": "Ciclo de pago",
+    "yourPlan": "Tu plan",
+    "free": "Gratis",
+    "ask": "Consultar",
+    "per": {
+      "monthly": "/ mes",
+      "quarterly": "/ trimestre",
+      "yearly": "/ año"
+    },
+    "unlimited": "Sin límite",
+    "included": "incluido",
+    "notIncluded": "no incluido",
+    "howToPay": "Al pedir un plan de pago te contactamos para el pago. El plan se activa en cuanto registramos el pago o desde el momento que acordemos.",
+    "back": "Volver",
+    "whatsappText": "Hola, escribo por la facturación de {company} en QvaShop.",
+    "actions": {
+      "unschedule": "Retirar el cambio programado",
+      "reactivate": "Seguir con mi plan",
+      "cancel": "Cancelar al final del periodo",
+      "requestPause": "Pedir una pausa",
+      "other": "Otra consulta",
+      "whatsapp": "Escribir por WhatsApp",
+      "switchAtEnd": "Cambiar el {date}",
+      "requestPlan": "Pedir este plan"
+    },
+    "errors": {
+      "forbidden": "Solo el dueño de la empresa puede hacer esto.",
+      "notFound": "No se encontró.",
+      "invalid": "Revisa los datos.",
+      "failed": "No se pudo completar. Inténtalo de nuevo.",
+      "noPrice": "Ese plan no tiene precio en tu moneda para ese ciclo. Pídelo y lo vemos contigo.",
+      "noChange": "No hay nada que cambiar.",
+      "notAllowed": "Este cambio necesita un pago: pídelo y te contactamos.",
+      "notActive": "No es posible con la suscripción en este estado.",
+      "noPeriod": "No hay un periodo pagado en curso."
+    },
+    "toasts": {
+      "requestWithdrawn": "Solicitud retirada.",
+      "unscheduled": "Cambio programado retirado.",
+      "reactivated": "Tu suscripción seguirá.",
+      "cancelled": "Tu suscripción se cancelará al terminar el periodo.",
+      "scheduled": "Cambio programado para el final del periodo.",
+      "requested": "Solicitud enviada. Te contactaremos pronto."
+    },
+    "request": {
+      "pendingPlan": "Pediste el plan {plan} ({cycle}).",
+      "pending": {
+        "plan": "Pediste un cambio de plan.",
+        "pause": "Pediste una pausa.",
+        "other": "Nos enviaste una consulta."
+      },
+      "sent": "Enviada el",
+      "next": "Te contactaremos para terminarlo",
+      "withdraw": "Retirar solicitud",
+      "titlePlan": "Pedir el plan {plan}",
+      "title": {
+        "plan": "Pedir un plan",
+        "pause": "Pedir una pausa",
+        "other": "Otra consulta"
+      },
+      "description": "Lo vemos y te contactamos para el pago o los detalles.",
+      "replaces": "Sustituye a tu solicitud anterior.",
+      "cycle": "Ciclo de pago",
+      "message": "Mensaje",
+      "messageOptional": "Mensaje (opcional)",
+      "messageHelp": "Por ejemplo, cómo prefieres pagar o desde cuándo.",
+      "placeholder": {
+        "plan": "Ej.: Pagaré por transferencia esta semana",
+        "pause": "Ej.: Cerramos del 1 al 20 de diciembre",
+        "other": "Ej.: ¿Puedo pagar el año en dos partes?"
+      },
+      "failed": "No se pudo enviar. Inténtalo de nuevo.",
+      "back": "Volver",
+      "submit": "Enviar"
+    },
+    "downgrade": {
+      "title": "Cambiar al plan {plan}",
+      "description": "Sigues con tu plan actual hasta el {date}; desde ese día tendrás el nuevo. No se borra nada de lo que tengas.",
+      "submit": "Programar cambio"
+    },
+    "cancel": {
+      "title": "Cancelar la suscripción",
+      "description": "Mantienes tu plan hasta el {date}; después pasas al plan Gratis. Puedes retirarlo antes de esa fecha.",
+      "submit": "Cancelar al final del periodo"
+    },
+    "banner": {
+      "pastDue": "Tu pago está vencido. El plan sigue hasta el",
+      "paused": "Tu suscripción está pausada: tus tiendas no son públicas.",
+      "trialEnding": "Tu prueba gratuita termina el",
+      "link": "Ver facturación"
     }
   }
 }

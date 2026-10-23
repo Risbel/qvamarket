@@ -6,7 +6,8 @@ import { LocalDateTime } from "@/components/local-date-time";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { listCompanySubscriptions } from "@/server/billing";
+import { listCompanySubscriptions, listOpenBillingRequests } from "@/server/billing";
+import { RunJobButton } from "./run-job-button";
 
 // Status order of the list: what needs attention first
 const ORDER = ["past_due", "expired", "trialing", "paused", "active", "cancelled"];
@@ -18,15 +19,24 @@ export default async function BillingOverviewPage({ params }: PageProps<"/[local
   const t = await getTranslations("Billing");
   const tp = await getTranslations("Plans.plans");
   // The layout already enforced the admin role
-  const companies = (await listCompanySubscriptions()).sort(
-    (a, b) => ORDER.indexOf(a.effective.status) - ORDER.indexOf(b.effective.status) || a.name.localeCompare(b.name, locale),
+  const [all, requests] = await Promise.all([listCompanySubscriptions(), listOpenBillingRequests()]);
+  const requested = new Set(requests.map((r) => r.tenantId));
+  // Open requests first, then what needs attention
+  const companies = all.sort(
+    (a, b) =>
+      Number(requested.has(b.tenantId)) - Number(requested.has(a.tenantId)) ||
+      ORDER.indexOf(a.effective.status) - ORDER.indexOf(b.effective.status) ||
+      a.name.localeCompare(b.name, locale),
   );
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-muted-foreground">{t("intro")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("intro")}</p>
+        </div>
+        <RunJobButton />
       </div>
       {companies.length === 0 ? (
         <p className="text-muted-foreground">{t("empty")}</p>
@@ -50,7 +60,14 @@ export default async function BillingOverviewPage({ params }: PageProps<"/[local
               const until = effective.status === "trialing" ? row?.trialEndsAt : row?.currentPeriodEnd;
               return (
                 <TableRow key={company.tenantId}>
-                  <TableCell className="font-medium">{company.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {company.name}
+                    {requested.has(company.tenantId) && (
+                      <Badge variant="outline" className="ml-2">
+                        {t("requestBadge")}
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span>{tp(`${effective.plan}.name`)}</span>

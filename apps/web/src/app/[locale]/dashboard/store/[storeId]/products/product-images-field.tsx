@@ -1,6 +1,8 @@
 "use client";
 
 import { useStoreId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
+import { usePlanLimit } from "@/components/plans/plan-provider";
 import { useEffect, useState } from "react";
 import { useController, useFormState, type UseFormReturn } from "react-hook-form";
 import { ImageUpIcon, Loader2Icon } from "lucide-react";
@@ -56,7 +58,12 @@ export function ProductImagesField({
 
   const images = field.value;
   const busy = pending.length > 0;
-  const remaining = MAX_IMAGES_PER_PRODUCT - images.length - pending.length;
+  const planError = usePlanErrorMessage();
+  const planMax = usePlanLimit("imagesPerProduct", MAX_IMAGES_PER_PRODUCT);
+  // A product saved with more images than the plan allows (before a downgrade) keeps them
+  const [savedCount] = useState(() => field.value.filter((ref) => ref.kind === "existing").length);
+  const max = Math.max(planMax, Math.min(savedCount, MAX_IMAGES_PER_PRODUCT));
+  const remaining = max - images.length - pending.length;
 
   // Several drops can upload at once: the form waits until none is left
   useEffect(() => onBusyChange(busy), [busy, onBusyChange]);
@@ -70,7 +77,15 @@ export function ProductImagesField({
     if (files.length === 0) return;
     setLines([]);
     if (files.length > remaining) {
-      setLines([{ name: "", text: t("tooMany", { count: remaining }) }]);
+      const byPlan = max < MAX_IMAGES_PER_PRODUCT;
+      setLines([
+        {
+          name: "",
+          text: byPlan
+            ? planError({ ok: false, error: "planLimit", limit: "imagesPerProduct", max })
+            : t("tooMany", { count: Math.max(0, remaining) }),
+        },
+      ]);
       return;
     }
 
@@ -142,7 +157,7 @@ export function ProductImagesField({
         <h2 id="images-title" className="text-base font-semibold">
           {t("title")}{" "}
           <span className="text-sm font-normal text-muted-foreground">
-            {t("count", { count: images.length, max: MAX_IMAGES_PER_PRODUCT })}
+            {t("count", { count: images.length, max })}
           </span>
         </h2>
         <p className="text-sm text-muted-foreground">

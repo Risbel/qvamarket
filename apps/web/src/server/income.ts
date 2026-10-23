@@ -59,6 +59,7 @@ export async function getIncomeSummary(scope: Scope, timeZone: string, currencie
       .select({
         day: orderDay,
         currency: order.currencyCode,
+        units: sql<number>`coalesce(sum(${orderItem.quantity}), 0)::bigint`.mapWith(Number),
         costedGoodsMinor: sql<number>`coalesce(sum(${orderItem.lineTotalMinor}) filter (where ${orderItem.unitCostMinor} is not null), 0)::bigint`.mapWith(Number),
         costMinor: sql<number>`coalesce(sum(${orderItem.unitCostMinor} * ${orderItem.quantity}), 0)::bigint`.mapWith(Number),
         uncostedUnits: sql<number>`coalesce(sum(${orderItem.quantity}) filter (where ${orderItem.unitCostMinor} is null), 0)::bigint`.mapWith(Number),

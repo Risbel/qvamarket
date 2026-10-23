@@ -5,6 +5,8 @@ import type { StoreAccessValues } from "@/lib/validation/team";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldDescription, FieldError, FieldLegend, FieldSet } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PlanBadge } from "@/components/plans/plan-badge";
+import { useHasFeature } from "@/components/plans/plan-provider";
 
 export type StoreOption = { id: string; name: string };
 
@@ -31,6 +33,8 @@ export function StoreAccessField({
   disabled?: boolean;
 }) {
   const t = useTranslations("Team.storeAccess");
+  // choosing some stores is a plan feature ("All stores" is always possible)
+  const perStore = useHasFeature("storeAccess");
 
   function toggle(storeId: string, checked: boolean) {
     const storeIds = checked ? [...value.storeIds, storeId] : value.storeIds.filter((s) => s !== storeId);
@@ -53,9 +57,10 @@ export function StoreAccessField({
             <span className="block text-muted-foreground">{t("allHelp")}</span>
           </span>
         </label>
-        <label htmlFor={`${id}-some`} className="flex items-start gap-2 text-sm">
-          <RadioGroupItem value="some" id={`${id}-some`} disabled={disabled} className="mt-0.5" />
+        <label htmlFor={`${id}-some`} className="flex items-start gap-2 text-sm has-disabled:opacity-60">
+          <RadioGroupItem value="some" id={`${id}-some`} disabled={disabled || (!perStore && value.all)} className="mt-0.5" />
           <span className="font-medium">{t("some")}</span>
+          <PlanBadge feature="storeAccess" />
         </label>
       </RadioGroup>
       {!value.all && (

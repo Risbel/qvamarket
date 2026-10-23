@@ -4,7 +4,9 @@ import { parseFooterLinks } from "@/lib/footer";
 import type { BannerDevice } from "@/lib/images";
 import { parseFooterSocial } from "@/lib/social";
 import { getStoreSlug } from "@/lib/tenancy";
+import { planHas } from "@/lib/plans";
 import { getStoreCurrencies } from "./currencies";
+import { getCompanySubscription, storeClosure } from "./subscriptions";
 import { publicUrl } from "./storage";
 
 /**
@@ -14,6 +16,9 @@ import { publicUrl } from "./storage";
  * tenant_id) and only for APPROVED stores (status "active"): pending and suspended stores
  * do not exist for the public. Products are read through public-catalog.ts with the same
  * rules; everything else uses requireMerchant()'s tenantId.
+ * A store is also closed while its company's subscription is paused, or when the company has
+ * more stores than its plan allows (`storeClosure`; the layout shows a "temporarily closed"
+ * page, see getClosedStoreBySlug). `features` = what the plan lets the storefront show.
  *
  * Cached per request: the storefront layout and its pages all need the store.
  */
@@ -43,22 +48,60 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
       footerLinks: store.footerLinks,
       footerText: store.footerText,
       footerSocial: store.footerSocial,
+      tenantId: store.tenantId,
+      createdAt: store.createdAt,
     })
     .from(store)
     .where(and(eq(store.slug, slug), eq(store.status, "active")))
     .limit(1);
   if (!row) return null;
+  if (await storeClosure(row)) return null;
+  // tenant_id and created_at never leave this file
+  const { tenantId, createdAt, ...publicRow } = row;
+  void createdAt;
+  const { plan } = await getCompanySubscription(tenantId);
+  const features = {
+    theme: planHas(plan, "theme"),
+    secondaryBanner: planHas(plan, "secondaryBanner"),
+    hideBadge: planHas(plan, "hideBadge"),
+  };
   const currencies = (await getStoreCurrencies([row.id])).get(row.id) ?? [];
   const defaultCurrency = currencies.find((c) => c.isDefault) ?? currencies[0];
   if (!defaultCurrency) return null; // a store without currencies cannot sell anything
   // Re-checked on read too: only safe URLs reach an href
   return {
-    ...row,
+    ...publicRow,
+    features,
     footerLinks: parseFooterLinks(row.footerLinks),
     footerSocial: parseFooterSocial(row.footerSocial),
     currencies,
     defaultCurrency,
   };
+});
+
+/**
+ * An approved store that is closed for now (its company's subscription is paused, or it is
+ * over the plan's store limit): only what the "temporarily closed" page shows. null for
+ * unknown, pending, suspended or open stores.
+ */
+export const getClosedStoreBySlug = cache(async (slug: string) => {
+  const [row] = await db
+    .select({
+      id: store.id,
+      tenantId: store.tenantId,
+      createdAt: store.createdAt,
+      name: store.name,
+      logoKey: store.logoKey,
+      primaryColor: store.primaryColor,
+      accentColor: store.accentColor,
+    })
+    .from(store)
+    .where(and(eq(store.slug, slug), eq(store.status, "active")))
+    .limit(1);
+  if (!row) return null;
+  const reason = await storeClosure(row);
+  if (!reason) return null;
+  return { name: row.name, logoUrl: row.logoKey ? publicUrl(row.logoKey) : null, primaryColor: row.primaryColor, accentColor: row.accentColor, reason };
 });
 
 /**

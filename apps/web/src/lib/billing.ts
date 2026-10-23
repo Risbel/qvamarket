@@ -4,6 +4,7 @@ import type {
   INVOICE_KINDS as DB_INVOICE_KINDS,
   INVOICE_STATUSES as DB_INVOICE_STATUSES,
   SUBSCRIPTION_EVENT_TYPES as DB_SUBSCRIPTION_EVENT_TYPES,
+  BILLING_REQUEST_KINDS as DB_BILLING_REQUEST_KINDS,
   SUBSCRIPTION_STATUSES as DB_SUBSCRIPTION_STATUSES,
 } from "@qvashop/db/schema";
 import { FALLBACK_PLAN, isPlanKey, planRank, type PlanKey } from "./plans";
@@ -72,12 +73,15 @@ export type EffectiveSubscription = {
   graceEndsAt: Date | null;
   /** paused: the stores are not public and nothing is billed */
   paused: boolean;
+  /** trialing: when the trial ends */
+  trialEndsAt: Date | null;
 };
 
 /**
  * What a subscription gives at `now`. A period that ended unpaid is `past_due` (plan kept)
  * for GRACE_DAYS, then `expired` (free plan). A cancellation or a scheduled downgrade takes
- * effect when the period ends. A pause past its resume date counts as resumed.
+ * effect when the period ends. A pause past its resume date counts as resumed. A trial past its
+ * end is the free plan, active.
  */
 export function effectiveSubscription(row: SubscriptionRow | null, now: Date = new Date()): EffectiveSubscription {
   const chosenPlan = row && isPlanKey(row.planKey) ? row.planKey : FALLBACK_PLAN;
@@ -87,6 +91,7 @@ export function effectiveSubscription(row: SubscriptionRow | null, now: Date = n
     status,
     graceEndsAt,
     paused: status === "paused",
+    trialEndsAt: status === "trialing" ? (row?.trialEndsAt ?? null) : null,
   });
   if (!row) return result(FALLBACK_PLAN, "active");
 
@@ -98,8 +103,9 @@ export function effectiveSubscription(row: SubscriptionRow | null, now: Date = n
       if (row.pauseResumesAt && row.pauseResumesAt <= now) break;
       return result(chosenPlan, "paused");
     case "trialing":
+      // a trial that ended leaves the company on the free plan (nothing was owed)
       if (row.trialEndsAt && row.trialEndsAt > now) return result(chosenPlan, "trialing");
-      return result(FALLBACK_PLAN, "expired");
+      return result(FALLBACK_PLAN, "active");
   }
 
   // active or past_due: the paid period decides
@@ -143,7 +149,18 @@ export const SUBSCRIPTION_EVENT_TYPES = [
   "price_changed",
   "period_adjusted",
   "trial_adjusted",
+  "change_requested",
+  "request_closed",
 ] as const satisfies typeof DB_SUBSCRIPTION_EVENT_TYPES;
+
+export const BILLING_REQUEST_KINDS = ["plan", "pause", "other"] as const satisfies typeof DB_BILLING_REQUEST_KINDS;
+export type BillingRequestKind = (typeof BILLING_REQUEST_KINDS)[number];
+export const BILLING_REQUEST_MESSAGE_MAX = 500;
+
+/** The renewal job issues the next period's invoice this many days before paid-until. */
+export const RENEWAL_LEAD_DAYS = 5;
+/** Owners see a banner when the trial ends within this many days. */
+export const TRIAL_WARNING_DAYS = 3;
 export type SubscriptionEventType = (typeof SUBSCRIPTION_EVENT_TYPES)[number];
 
 /** Days a new invoice gives to pay it (the plan works meanwhile). */
@@ -241,4 +258,21 @@ export const INVOICE_BADGE: Record<InvoiceStatus | "overdue", "default" | "secon
 /** Invoice number as shown: QS-000123. */
 export function formatInvoiceNumber(number: number): string {
   return `QS-${String(number).padStart(6, "0")}`;
+}
+
+/**
+ * What the owners' banner says, if anything: payment overdue (until `date`, then free),
+ * paused, or a trial ending within TRIAL_WARNING_DAYS (on `date`).
+ */
+export function billingNotice(
+  subscription: EffectiveSubscription,
+  now: Date = new Date(),
+): { kind: "pastDue" | "paused" | "trialEnding"; date: Date | null } | null {
+  if (subscription.status === "past_due") return { kind: "pastDue", date: subscription.graceEndsAt };
+  if (subscription.status === "paused") return { kind: "paused", date: null };
+  const end = subscription.trialEndsAt;
+  if (subscription.status === "trialing" && end && end.getTime() - now.getTime() <= TRIAL_WARNING_DAYS * 86_400_000) {
+    return { kind: "trialEnding", date: end };
+  }
+  return null;
 }

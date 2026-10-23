@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { buildStoreTheme } from "@/lib/store-theme";
 import { listFavoriteIds } from "@/server/favorites";
-import { getPublicStoreBySlug } from "@/server/public-store";
+import { getClosedStoreBySlug, getPublicStoreBySlug } from "@/server/public-store";
 import { publicUrl } from "@/server/storage";
 import { selectedCurrency } from "@/server/storefront-currency";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -16,6 +16,7 @@ import { CartLink } from "./cart-link";
 import { CartProvider } from "./cart-provider";
 import { CurrencySwitcher } from "./currency-switcher";
 import { FavoritesProvider } from "./favorites-provider";
+import { ClosedStore } from "./closed-store";
 import { StoreFooter } from "./store-footer";
 import { HeaderSearch, MobileSearchRow } from "./store-search";
 
@@ -24,9 +25,9 @@ export async function generateMetadata({
 }: LayoutProps<"/[locale]/stores/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const store = await getPublicStoreBySlug(slug);
-  return store
-    ? { title: store.metaTitle ?? store.name, description: store.metaDescription ?? store.description ?? undefined }
-    : {};
+  if (store) return { title: store.metaTitle ?? store.name, description: store.metaDescription ?? store.description ?? undefined };
+  const closed = await getClosedStoreBySlug(slug);
+  return closed ? { title: closed.name, robots: { index: false } } : {};
 }
 
 /**
@@ -42,19 +43,28 @@ export default async function StoreLayout({
   setRequestLocale(locale);
 
   const store = await getPublicStoreBySlug(slug);
-  if (!store) notFound();
+  if (!store) {
+    // An approved store that is closed for now (subscription paused, or over the plan's store
+    // limit): a branded "temporarily closed" page instead of its pages
+    const closed = await getClosedStoreBySlug(slug);
+    if (!closed) notFound();
+    return <ClosedStore store={closed} />;
+  }
 
   const currency = await selectedCurrency(store.currencies);
   // Host-only cookie: a session here is this store's alone
   const session = await auth.api.getSession({ headers: await headers() });
   const favoriteIds = session ? await listFavoriteIds(store.id, session.user.id) : [];
+  // The theme options are a plan feature: without it the defaults apply (the choices are kept)
   const theme = buildStoreTheme({
     primary: store.primaryColor,
     accent: store.accentColor,
-    radius: store.themeRadius,
-    base: store.themeBase,
-    tinted: store.themeTinted,
+    radius: store.features.theme ? store.themeRadius : null,
+    base: store.features.theme ? store.themeBase : null,
+    tinted: store.features.theme ? store.themeTinted : false,
   });
+  const rootDomain = process.env.ROOT_DOMAIN ?? "localhost";
+  const platformUrl = rootDomain === "localhost" ? (process.env.BETTER_AUTH_URL ?? "http://localhost:3000") : `https://${rootDomain}`;
 
   return (
     <StoreThemeProvider theme={theme}>
@@ -126,6 +136,7 @@ export default async function StoreLayout({
               text={store.footerText}
               groups={store.footerLinks}
               social={store.footerSocial}
+              badgeUrl={store.features.hideBadge ? null : platformUrl}
             />
           </div>
         </FavoritesProvider>

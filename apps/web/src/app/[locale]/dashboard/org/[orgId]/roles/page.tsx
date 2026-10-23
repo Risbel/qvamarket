@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { hasPermissions } from "@/lib/permissions";
 import { MAX_COMPANY_ROLES, grantedResources } from "@/lib/roles";
+import { minimumPlanFor } from "@/lib/plans";
 import { countOwners, ensureCompanyRoles, listCompanyRoles } from "@/server/company-roles";
 import { requireCompanySection } from "@/server/tenant";
 import { RoleRowActions } from "./role-row-actions";
@@ -17,8 +18,9 @@ export default async function RolesPage({ params }: PageProps<"/[locale]/dashboa
   const merchant = await requireCompanySection(locale, orgId, "roles");
   // Companies created before roles existed get the presets the first time
   await ensureCompanyRoles(merchant.tenantId, locale);
-  const [t, roles, owners] = await Promise.all([
+  const [t, tPlans, roles, owners] = await Promise.all([
     getTranslations("Roles"),
+    getTranslations("Plans"),
     listCompanyRoles(merchant.tenantId),
     countOwners(merchant.tenantId),
   ]);
@@ -41,6 +43,13 @@ export default async function RolesPage({ params }: PageProps<"/[locale]/dashboa
               {t("new")}
             </Link>
           ))}
+        {/* the role allows managing roles but the plan does not include custom roles */}
+        {merchant.planLock({ role: ["create"] }) && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <LockKeyhole className="size-4" aria-hidden />
+            {tPlans("featureLocked", { plan: tPlans(`plans.${minimumPlanFor("customRoles")}.name`) })}
+          </p>
+        )}
       </div>
 
       <ul className="flex flex-col divide-y rounded-lg border">

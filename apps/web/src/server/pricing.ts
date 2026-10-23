@@ -2,7 +2,9 @@ import { cache } from "react";
 import { and, db, eq, inArray, isNull, or, priceList, sql, variantPrice } from "@qvashop/db";
 import { pricesIn } from "@/lib/exchange";
 import type { PriceRow } from "@/lib/pricing";
+import { planHas } from "@/lib/plans";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
+import { storePlan } from "./subscriptions";
 
 /** The store's currencies (with base and rates), read once per request. */
 export const storeCurrencies = cache(
@@ -20,7 +22,8 @@ async function fxPair(storeId: string, currencyCode: string) {
 /**
  * Price rows of some variants of ONE store in ONE currency, ready for resolvePrice():
  * regular prices plus the prices of price lists that are active right now (status active and
- * inside their dates). Promotions in draft or outside their dates are left out here.
+ * inside their dates). Promotions in draft or outside their dates are left out here, and all
+ * of them when the company's plan does not include promotions (the rows are kept).
  * Rows the variant has no manual prices for in this currency are converted from the base
  * currency at the store's rate (src/lib/exchange.ts).
  */
@@ -34,6 +37,7 @@ export async function loadPriceRows(
   const fx = await fxPair(storeId, currencyCode);
   if (!fx) return result;
   const codes = fx.target.rate !== null && fx.base.code !== fx.target.code ? [fx.target.code, fx.base.code] : [fx.target.code];
+  const promotions = planHas(await storePlan(storeId), "promotions");
 
   const rows = await db
     .select({
@@ -55,14 +59,16 @@ export async function loadPriceRows(
         eq(variantPrice.storeId, storeId),
         inArray(variantPrice.currencyCode, codes),
         inArray(variantPrice.variantId, variantIds),
-        or(
-          isNull(variantPrice.priceListId),
-          and(
-            eq(priceList.status, "active"),
-            sql`(${priceList.startsAt} is null or ${priceList.startsAt} <= now())`,
-            sql`(${priceList.endsAt} is null or ${priceList.endsAt} > now())`,
-          ),
-        ),
+        promotions
+          ? or(
+              isNull(variantPrice.priceListId),
+              and(
+                eq(priceList.status, "active"),
+                sql`(${priceList.startsAt} is null or ${priceList.startsAt} <= now())`,
+                sql`(${priceList.endsAt} is null or ${priceList.endsAt} > now())`,
+              ),
+            )
+          : isNull(variantPrice.priceListId),
       ),
     );
 

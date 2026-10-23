@@ -2,6 +2,8 @@
 
 import { useStoreId } from "@/components/panel-scope";
 import { usePlanErrorMessage } from "@/components/plans/plan-messages";
+import { PlanBadge } from "@/components/plans/plan-badge";
+import { useHasFeature } from "@/components/plans/plan-provider";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,6 +48,7 @@ export function DeliveryChargesForm({
   const router = useRouter();
   const hydrated = useHydrated();
   const planError = usePlanErrorMessage();
+  const distanceFees = useHasFeature("distanceFees");
   const [formError, setFormError] = useState<string | null>(null);
 
   const schema = useMemo(() => createDeliveryChargesSchema(tv, currencies), [tv, currencies]);
@@ -102,8 +105,10 @@ export function DeliveryChargesForm({
                 </SelectTrigger>
                 <SelectContent>
                   {DELIVERY_FEE_MODES.map((option) => (
-                    <SelectItem key={option} value={option}>
+                    // fees by distance are a plan feature (the server refuses saving it without)
+                    <SelectItem key={option} value={option} disabled={option === "distance" && !distanceFees}>
                       {t(`modes.${option}`)}
+                      {option === "distance" && <PlanBadge feature="distanceFees" className="ml-auto" />}
                     </SelectItem>
                   ))}
                 </SelectContent>

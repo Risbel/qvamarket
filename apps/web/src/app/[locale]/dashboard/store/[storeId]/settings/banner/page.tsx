@@ -5,6 +5,7 @@ import { listBannerImages } from "@/server/store-banner";
 import { publicUrl } from "@/server/storage";
 import { requirePanelSection } from "@/server/tenant";
 import { PermissionFieldset } from "@/components/permissions/permission-fieldset";
+import { PlanFeatureGate } from "@/components/plans/plan-feature-gate";
 import { SectionHeader } from "../section-header";
 import { BannerImages } from "./banner-images";
 import { BannerTabs } from "./banner-tabs";
@@ -61,6 +62,8 @@ export default async function BannerSettingsPage({
         secondary={
           !secondaryLocked && (
             <PermissionFieldset permission={{ store: ["update"] }}>
+              {/* a plan feature: without it the storefront does not show it and it cannot be edited */}
+              <PlanFeatureGate feature="secondaryBanner">
               <div className="flex flex-col gap-10">
                 <div className="flex flex-col gap-4">
                   <p className="text-sm text-muted-foreground">{t("secondary.description")}</p>
@@ -81,6 +84,7 @@ export default async function BannerSettingsPage({
                   />
                 ))}
               </div>
+              </PlanFeatureGate>
             </PermissionFieldset>
           )
         }

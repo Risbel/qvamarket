@@ -22,14 +22,23 @@ export const INCOME_CHART_DAYS = 30;
 export type PaymentDayRow = { day: string; currency: string; method: string; kind: string; amountMinor: number };
 /** Orders of one day and currency (not cancelled). */
 export type SalesDayRow = { day: string; currency: string; orders: number; totalMinor: number };
-/** Goods of the same orders: line totals and costs of the lines with a cost, units without one. */
-export type GoodsDayRow = { day: string; currency: string; costedGoodsMinor: number; costMinor: number; uncostedUnits: number };
+/** Goods of the same orders: units sold, line totals and costs of the lines with a cost, units without one. */
+export type GoodsDayRow = {
+  day: string;
+  currency: string;
+  units?: number;
+  costedGoodsMinor: number;
+  costMinor: number;
+  uncostedUnits: number;
+};
 
 export type MethodTotals = Record<PaymentMethod, number>;
 
 export type PeriodIncome = {
   salesMinor: number;
   orders: number;
+  /** units of goods in those orders (quantities after edits) */
+  units: number;
   /** payments - refunds */
   collectedMinor: number;
   refundsMinor: number;
@@ -77,6 +86,7 @@ const zeroMethods = (): MethodTotals => ({ cash: 0, transfer: 0, other: 0 });
 const emptyPeriod = (): PeriodIncome => ({
   salesMinor: 0,
   orders: 0,
+  units: 0,
   collectedMinor: 0,
   refundsMinor: 0,
   byMethod: zeroMethods(),
@@ -159,6 +169,7 @@ export function summarizeIncome({
     const entry = byCurrency.get(row.currency)!;
     if (row.day > today) continue;
     for (const period of periodsOf(entry, row.day)) {
+      period.units += row.units ?? 0;
       period.costedGoodsMinor += row.costedGoodsMinor;
       period.costMinor += row.costMinor;
       period.uncostedUnits += row.uncostedUnits;

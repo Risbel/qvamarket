@@ -88,7 +88,8 @@ export default async function StoreCatalogPage({
             )}
             {/* The secondary banner (pairs of tiles) only sits under a hero on the same screen size,
                 and only while the merchant has it switched on */}
-            {store.secondaryBannerVisible &&
+            {store.features.secondaryBanner &&
+              store.secondaryBannerVisible &&
               BANNER_DEVICES.map(
                 (device) =>
                   hero[device].length > 0 &&

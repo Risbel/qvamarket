@@ -77,6 +77,17 @@ export async function checkMemberRoom(
   plan: PlanKey,
   invitations: { exceptEmail: string | null } | null,
 ): Promise<PlanLimitError | null> {
+  return belowLimit(plan, "members", await teamSeats(executor, tenantId, invitations))
+    ? null
+    : planLimitError(plan, "members");
+}
+
+/** Seats the plan counts: members who are not owners (+ pending invitations, see checkMemberRoom). */
+export async function teamSeats(
+  executor: typeof db | Tx,
+  tenantId: string,
+  invitations: { exceptEmail: string | null } | null,
+): Promise<number> {
   const [{ members }] = await executor
     .select({ members: count() })
     .from(member)
@@ -96,7 +107,7 @@ export async function checkMemberRoom(
       );
     pending = row.total;
   }
-  return belowLimit(plan, "members", members + pending) ? null : planLimitError(plan, "members");
+  return members + pending;
 }
 
 export type RoleCheck = "roleNotFound" | "escalation" | null;

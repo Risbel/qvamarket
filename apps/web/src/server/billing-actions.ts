@@ -23,6 +23,8 @@ import {
   cancelScheduledChange,
   cancelSubscription,
   changePlan,
+  closeBillingRequest,
+  runBillingJob,
   issueManualInvoice,
   issueNextInvoice,
   pauseSubscription,
@@ -217,4 +219,27 @@ export async function setPlanPriceAction(values: unknown, locale: string): Promi
       actor,
     ),
   );
+}
+
+// ---- renewal job and owner requests
+
+/** "Run now" in the admin: the same job as the daily schedule. */
+export async function runBillingJobAction(): Promise<BillingActionResult | { ok: true; invoices: number; moves: number }> {
+  const actor = await adminActor();
+  if (!actor) return { ok: false, error: "forbidden" };
+  try {
+    const summary = await runBillingJob();
+    return { ok: true, invoices: summary.invoices, moves: Object.values(summary.events).reduce((sum, n) => sum + (n ?? 0), 0) };
+  } catch (error) {
+    console.error("runBillingJob failed", error);
+    return { ok: false, error: "failed" };
+  }
+}
+
+/** Marks the company's open request as handled (`done`) or dismissed. */
+export async function closeBillingRequestAction(tenantId: unknown, status: unknown): Promise<BillingActionResult> {
+  const actor = await adminActor();
+  if (!actor) return { ok: false, error: "forbidden" };
+  if (!isUuid(tenantId) || (status !== "done" && status !== "dismissed")) return { ok: false, error: "notFound" };
+  return run("closeBillingRequest", () => closeBillingRequest(tenantId.toLowerCase(), status, actor));
 }

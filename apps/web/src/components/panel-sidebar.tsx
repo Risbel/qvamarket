@@ -12,6 +12,7 @@ import {
   FolderTree,
   KeyRound,
   LayoutDashboard,
+  Lock,
   LogOut,
   Package,
   ReceiptText,
@@ -29,7 +30,9 @@ import { toast } from "sonner";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/initials";
+import type { PlanKey } from "@/lib/plans";
 import { CompanySwitcher, type PanelCompany } from "@/components/company-switcher";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -103,6 +106,11 @@ export type PanelSidebarProps = {
   activeCompanyId?: string;
   /** Store panel: link back to the company's store list. */
   back?: { href: string; label: string };
+  /**
+   * Sections the role allows but the company's plan does not include, with the plan that has
+   * them: shown with a lock and that plan's name (the page explains how to get it).
+   */
+  locked?: Partial<Record<PanelNavKey, PlanKey>>;
 };
 
 function hrefOf(basePath: string, key: PanelNavKey) {
@@ -144,8 +152,10 @@ export function PanelSidebar({
   companies = [],
   activeCompanyId,
   back,
+  locked,
 }: PanelSidebarProps) {
   const t = useTranslations("Panel");
+  const tPlans = useTranslations("Plans.plans");
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -219,6 +229,7 @@ export function PanelSidebar({
                 <SidebarMenu>
                   {group.items.map((key) => {
                     const { icon: Icon } = ITEMS[key];
+                    const lockedPlan = locked?.[key];
                     const href = hrefOf(basePath, key);
                     const active = isActive(basePath, key, pathname);
                     return (
@@ -236,6 +247,15 @@ export function PanelSidebar({
                         >
                           <Icon />
                           <span>{t(`nav.${key}`)}</span>
+                          {lockedPlan && (
+                            <span className="ml-auto flex items-center gap-1 group-data-[collapsible=icon]:hidden">
+                              <Lock className="size-3.5 text-muted-foreground" aria-hidden />
+                              <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                                {tPlans(`${lockedPlan}.name`)}
+                              </Badge>
+                              <span className="sr-only">{t("lockedHint", { plan: tPlans(`${lockedPlan}.name`) })}</span>
+                            </span>
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );

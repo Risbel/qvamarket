@@ -1559,6 +1559,9 @@ export const SUBSCRIPTION_EVENT_TYPES = [
   // the superadmin corrected the paid-until date or the trial end by hand
   "period_adjusted",
   "trial_adjusted",
+  // the owner asked for a plan change or a pause (billing_request), and the superadmin closed it
+  "change_requested",
+  "request_closed",
 ] as const;
 
 const quoted = (values: readonly string[]) => values.map((v) => `'${v}'`).join(", ");
@@ -1762,6 +1765,47 @@ export const subscriptionEvent = pgTable(
     index("subscription_event_tenantId_idx").on(table.tenantId, table.createdAt),
     check("subscription_event_type", inList("type", SUBSCRIPTION_EVENT_TYPES)),
     check("subscription_event_actor", inList("actor", BILLING_ACTORS)),
+  ],
+);
+
+export const BILLING_REQUEST_KINDS = ["plan", "pause", "other"] as const;
+export const BILLING_REQUEST_STATUSES = ["open", "done", "dismissed"] as const;
+
+/**
+ * What a company owner asks the superadmin from the Billing page (no payment gateway: a paid
+ * plan or a pause needs a person). At most one open request per company: a new one replaces it.
+ */
+export const billingRequest = pgTable(
+  "billing_request",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    planKey: text("plan_key"),
+    cycle: text("cycle"),
+    message: text("message"),
+    status: text("status").default("open").notNull(),
+    createdByUserId: uuid("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    handledByUserId: uuid("handled_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    handledAt: timestamp("handled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_request_open_unique").on(table.tenantId).where(sql`${table.status} = 'open'`),
+    index("billing_request_status_idx").on(table.status, table.createdAt),
+    check("billing_request_kind", inList("kind", BILLING_REQUEST_KINDS)),
+    check("billing_request_status", inList("status", BILLING_REQUEST_STATUSES)),
+    check("billing_request_plan", inListOrNull("plan_key", PLAN_KEYS)),
+    check("billing_request_cycle", inListOrNull("cycle", BILLING_CYCLES)),
+    check("billing_request_handled", sql`(${table.status} = 'open') = (${table.handledAt} is null)`),
   ],
 );
 

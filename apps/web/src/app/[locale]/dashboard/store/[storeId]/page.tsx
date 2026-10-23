@@ -14,7 +14,7 @@ import { countProductsByStatus } from "@/server/products";
 import { getIncomeSummary } from "@/server/income";
 import { IncomeSummary } from "./income-summary";
 import { PANEL_ACCESS } from "@/lib/panel-access";
-import { storePath } from "@/lib/panel-paths";
+import { orgPath, storePath } from "@/lib/panel-paths";
 import { requireMerchant } from "@/server/tenant";
 
 export default async function StoreHomePage({
@@ -52,6 +52,8 @@ export default async function StoreHomePage({
           summary={income}
           showProfit={merchant.can({ inventory: ["read"] })}
           profitLink={merchant.can(PANEL_ACCESS.profit)}
+          advanced={merchant.hasFeature("advancedReports")}
+          upgradeHref={merchant.isOwner ? orgPath(merchant.tenantId, "/billing") : null}
         />
       )}
       <Card>

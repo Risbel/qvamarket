@@ -2,6 +2,7 @@
 
 import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { isPlanError } from "@/lib/plans";
+import { usePlanLimit } from "@/components/plans/plan-provider";
 import { useStoreId } from "@/components/panel-scope";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, ImageUpIcon } from "lucide-react";
@@ -55,7 +56,9 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
   const format = BANNER_FORMATS[device];
   const shape = t(`devices.${device}.shape`);
   const titleId = `banner-${device}-title`;
-  const remaining = MAX_BANNER_IMAGES - images.length;
+  // the plan's limit (a store above it after a downgrade keeps its images, but adds none)
+  const max = usePlanLimit("bannerImages", MAX_BANNER_IMAGES);
+  const remaining = Math.max(0, max - images.length);
   const errorText = (failure: { error: string }) =>
     isPlanError(failure)
       ? planError(failure)
@@ -69,7 +72,11 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
     setLines([]);
     setBusy(true);
     if (files.length > remaining) {
-      setLines([{ name: "", tone: "error", text: t("tooMany", { count: remaining }) }]);
+      const text =
+        max < MAX_BANNER_IMAGES
+          ? planError({ ok: false, error: "planLimit", limit: "bannerImages", max })
+          : t("tooMany", { count: remaining });
+      setLines([{ name: "", tone: "error", text }]);
       setBusy(false);
       return;
     }
@@ -125,7 +132,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
         <h2 id={titleId} className="text-lg font-semibold">
           {t(`devices.${device}.title`)}{" "}
           <span className="text-sm font-normal text-muted-foreground">
-            {t("count", { count: images.length, max: MAX_BANNER_IMAGES })}
+            {t("count", { count: images.length, max })}
           </span>
         </h2>
         <p className="text-sm text-muted-foreground">

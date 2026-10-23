@@ -1,5 +1,7 @@
 "use client";
 
+import { PlanBadge } from "@/components/plans/plan-badge";
+import { useHasFeature } from "@/components/plans/plan-provider";
 import { useStorePath } from "@/components/panel-scope";
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -105,6 +107,8 @@ export function ProductsTable({ rows, currencies }: { rows: ProductRow[]; curren
   const currency = currencies.find((c) => c.code === currencyCode) ?? baseCurrency;
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [bulk, setBulk] = useState<BulkPricesMode | null>(null);
+  // bulk price changes are a plan feature: the toolbar shows, its actions are locked
+  const bulkPrices = useHasFeature("bulkPrices");
 
   const columns = useMemo(() => {
     // Locale-aware, ignores case and accents ("árbol" next to "Arbol"), numbers in order ("Talla 2" < "Talla 10")
@@ -306,15 +310,16 @@ export function ProductsTable({ rows, currencies }: { rows: ProductRow[]; curren
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={currency.rate === null}
+                  disabled={currency.rate === null || !bulkPrices}
                   onClick={() => setBulk("auto")}
                 >
                   {t("bulk.setAuto")}
                 </Button>
               )}
-              <Button type="button" size="sm" variant="outline" onClick={() => setBulk("adjust")}>
+              <Button type="button" size="sm" variant="outline" disabled={!bulkPrices} onClick={() => setBulk("adjust")}>
                 {t("bulk.adjust")}
               </Button>
+              <PlanBadge feature="bulkPrices" />
               <Button type="button" size="sm" variant="ghost" onClick={() => setRowSelection({})}>
                 {t("bulk.clear")}
               </Button>

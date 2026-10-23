@@ -1,8 +1,10 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { SubscriptionBanner } from "@/components/billing/subscription-banner";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { PanelShell } from "@/components/panel-shell";
 import type { PanelNavGroup, PanelNavKey } from "@/components/panel-sidebar";
 import { PermissionsProvider } from "@/components/permissions/permissions-provider";
+import { PlanProvider } from "@/components/plans/plan-provider";
 import { PANEL_ACCESS, type CompanySection } from "@/lib/panel-access";
 import { orgPath } from "@/lib/panel-paths";
 import { requireCompany } from "@/server/tenant";
@@ -22,6 +24,8 @@ export default async function CompanyLayout({ children, params }: LayoutProps<"/
   const groups = ([
     { items: ["stores"] },
     { label: "team", items: allowed("team", "roles") },
+    // the plan and its payments: owners only (like creating stores)
+    { label: "finance", items: company.isOwner ? (["billing"] as PanelNavKey[]) : [] },
   ] satisfies PanelNavGroup[]).filter((group) => group.items.length > 0);
 
   return (
@@ -39,9 +43,16 @@ export default async function CompanyLayout({ children, params }: LayoutProps<"/
       impersonating={impersonating}
       companies={company.companies}
       activeCompanyId={company.tenantId}
-      banners={impersonating && <ImpersonationBanner targetEmail={session.user.email} />}
+      banners={
+        <>
+          {impersonating && <ImpersonationBanner targetEmail={session.user.email} />}
+          {company.isOwner && <SubscriptionBanner tenantId={company.tenantId} subscription={company.subscription} locale={locale} />}
+        </>
+      }
     >
-      <PermissionsProvider permissions={company.effectivePermissions}>{children}</PermissionsProvider>
+      <PermissionsProvider permissions={company.effectivePermissions}>
+        <PlanProvider plan={company.subscription.plan}>{children}</PlanProvider>
+      </PermissionsProvider>
     </PanelShell>
   );
 }

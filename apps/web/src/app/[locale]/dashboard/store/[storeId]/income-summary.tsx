@@ -37,8 +37,23 @@ function formatDay(day: string, locale: string, options: Intl.DateTimeFormatOpti
 /**
  * `showProfit`: the member may also see costs (inventory:read), so gross profit is shown.
  * `profitLink`: they may open the profit report.
+ * `advanced`: the plan includes the full report (collected by method, 30-day chart); without
+ * it each period shows only its sales (orders, units, total). `upgradeHref`: where an owner
+ * can see the plans (shown under the basic cards).
  */
-export function IncomeSummary({ summary, showProfit, profitLink }: { summary: Summary; showProfit: boolean; profitLink: boolean }) {
+export function IncomeSummary({
+  summary,
+  showProfit,
+  profitLink,
+  advanced,
+  upgradeHref,
+}: {
+  summary: Summary;
+  showProfit: boolean;
+  profitLink: boolean;
+  advanced: boolean;
+  upgradeHref: string | null;
+}) {
   const t = useTranslations("Dashboard.income");
   const panelPath = useStorePath();
   const locale = useLocale();
@@ -85,20 +100,64 @@ export function IncomeSummary({ summary, showProfit, profitLink }: { summary: Su
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {periods.map((period) => (
-          <PeriodCard
-            key={period.key}
-            label={period.label}
-            detail={period.detail}
-            income={current[period.key]}
-            currency={current.currency}
-            showProfit={showProfit}
-          />
-        ))}
+        {periods.map((period) =>
+          advanced ? (
+            <PeriodCard
+              key={period.key}
+              label={period.label}
+              detail={period.detail}
+              income={current[period.key]}
+              currency={current.currency}
+              showProfit={showProfit}
+            />
+          ) : (
+            <SalesCard key={period.key} label={period.label} detail={period.detail} income={current[period.key]} currency={current.currency} />
+          ),
+        )}
       </div>
 
-      <DailyChart income={current} />
+      {advanced ? (
+        <DailyChart income={current} />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {t("basicHint")}{" "}
+          {upgradeHref && (
+            <Link href={upgradeHref} className="font-medium underline underline-offset-4">
+              {t("seePlans")}
+            </Link>
+          )}
+        </p>
+      )}
     </section>
+  );
+}
+
+/** The basic plans' card: what was sold in the period (orders not cancelled). */
+function SalesCard({ label, detail, income, currency }: { label: string; detail: string; income: PeriodIncome; currency: string }) {
+  const t = useTranslations("Dashboard.income");
+  const locale = useLocale();
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription>
+          {label} · {detail}
+        </CardDescription>
+        <CardTitle className="text-2xl font-semibold">{formatMoney(income.salesMinor, currency, locale)}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t("soldTotal")}</p>
+      </CardHeader>
+      <CardContent>
+        <dl className="flex flex-col gap-1.5 text-sm">
+          <div className="flex justify-between gap-2">
+            <dt className="text-muted-foreground">{t("ordersLabel")}</dt>
+            <dd className="font-medium tabular-nums">{income.orders}</dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt className="text-muted-foreground">{t("unitsLabel")}</dt>
+            <dd className="font-medium tabular-nums">{income.units}</dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -154,6 +213,10 @@ function PeriodCard({
           <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">{t("sales", { count: income.orders })}</dt>
             <dd className="font-medium tabular-nums">{money(income.salesMinor)}</dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt className="text-muted-foreground">{t("unitsLabel")}</dt>
+            <dd className="font-medium tabular-nums">{income.units}</dd>
           </div>
           {income.refundsMinor > 0 && (
             <div className="flex justify-between gap-2">

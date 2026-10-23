@@ -62,8 +62,12 @@ export type InvoiceView = {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** A company's invoices, newest first, each with its payments; record a payment / refund or void it. */
-export function InvoicesTable({ invoices }: { invoices: InvoiceView[] }) {
+/**
+ * A company's invoices, newest first, each with its payments. The superadmin records payments /
+ * refunds and voids invoices; `readOnly` (the company's own Billing page) shows no actions and
+ * leaves out the internal notes (only a manual invoice's description is shown).
+ */
+export function InvoicesTable({ invoices, readOnly = false }: { invoices: InvoiceView[]; readOnly?: boolean }) {
   const t = useTranslations("Billing.invoices");
   const tp = useTranslations("Plans.plans");
   const tc = useTranslations("Billing.cycles");
@@ -113,7 +117,9 @@ export function InvoicesTable({ invoices }: { invoices: InvoiceView[] }) {
                   <span className="text-xs text-muted-foreground">
                     {invoice.paidAt ? t("paidOn") : t("dueOn")} <LocalDateTime iso={invoice.paidAt ?? invoice.dueAt} locale={locale} />
                   </span>
-                  {invoice.note && <span className="text-sm whitespace-pre-line">{invoice.note}</span>}
+                  {invoice.note && (!readOnly || invoice.kind === "manual") && (
+                    <span className="text-sm whitespace-pre-line">{invoice.note}</span>
+                  )}
                   {invoice.voidReason && (
                     <span className="text-sm text-muted-foreground">
                       {t("voidReason", { reason: invoice.voidReason === "replaced" ? t("replaced") : invoice.voidReason })}
@@ -128,7 +134,7 @@ export function InvoicesTable({ invoices }: { invoices: InvoiceView[] }) {
                   {invoice.totals.refunded > 0 && (
                     <span className="text-xs text-muted-foreground">{t("refunded", { amount: money(invoice.totals.refunded) })}</span>
                   )}
-                  {open && (
+                  {open && !readOnly && (
                     <div className="flex flex-wrap justify-end gap-2">
                       {(invoice.totals.due > 0 || invoice.totals.net > 0) && (
                         <Button size="sm" variant="outline" disabled={!hydrated} onClick={() => setPaying(invoice)}>
@@ -156,8 +162,8 @@ export function InvoicesTable({ invoices }: { invoices: InvoiceView[] }) {
                         {p.reference && ` · ${p.reference}`}
                         <span className="block text-xs text-muted-foreground">
                           <LocalDateTime iso={p.paidAt} locale={locale} />
-                          {p.recordedBy && ` · ${p.recordedBy}`}
-                          {p.note && ` · ${p.note}`}
+                          {!readOnly && p.recordedBy && ` · ${p.recordedBy}`}
+                          {!readOnly && p.note && ` · ${p.note}`}
                         </span>
                       </span>
                       <span className="tabular-nums">
