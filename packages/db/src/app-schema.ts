@@ -1048,6 +1048,8 @@ export const ORDER_STATUSES = [
   "cancelled",
 ] as const;
 export const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"] as const;
+/** Where an order was made: the storefront checkout or the counter (POS, by a team member). */
+export const ORDER_CHANNELS = ["online", "pos"] as const;
 export const FULFILLMENT_TYPES = ["pickup", "delivery"] as const;
 
 /**
@@ -1091,6 +1093,9 @@ export const order = pgTable(
     // The cashier's register shift a counter sale was made in (null = online order). Its
     // sales line counts these orders.
     registerSessionId: uuid("register_session_id"),
+    channel: text("channel").default("online").notNull(),
+    // The team member who made a counter sale (null for online orders)
+    createdByUserId: uuid("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -1139,8 +1144,13 @@ export const order = pgTable(
       "order_out_for_delivery_only_delivery",
       sql`${table.status} <> 'out_for_delivery' or ${table.fulfillmentType} = 'delivery'`,
     ),
-    check("order_customer_name_not_empty", sql`length(trim(${table.customerName})) > 0`),
-    check("order_customer_phone_not_empty", sql`length(trim(${table.customerPhone})) > 0`),
+    check(
+      "order_channel",
+      sql.raw(`channel in (${ORDER_CHANNELS.map((c) => `'${c}'`).join(", ")})`),
+    ),
+    // a counter sale may be to a walk-in customer: empty name / phone ("Mostrador")
+    check("order_customer_name_not_empty", sql`${table.channel} = 'pos' or length(trim(${table.customerName})) > 0`),
+    check("order_customer_phone_not_empty", sql`${table.channel} = 'pos' or length(trim(${table.customerPhone})) > 0`),
     check(
       "order_amounts",
       sql`${table.subtotalMinor} >= 0 and ${table.deliveryFeeMinor} >= 0 and ${table.totalMinor} = ${table.subtotalMinor} + ${table.deliveryFeeMinor}`,
@@ -1370,6 +1380,8 @@ export const orderPayment = pgTable(
     // The register shift of whoever recorded it (their open one at that moment; null = none):
     // that shift's drawer counts it. Frozen once the shift is closed.
     registerSessionId: uuid("register_session_id"),
+    // e.g. the bank's transaction number of a transfer
+    reference: text("reference"),
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -1392,6 +1404,7 @@ export const orderPayment = pgTable(
     check("order_payment_kind", sql`${table.kind} in ('payment', 'refund')`),
     check("order_payment_method", sql`${table.method} in ('cash', 'transfer', 'other')`),
     check("order_payment_amount", sql`${table.amountMinor} > 0`),
+    check("order_payment_reference", sql`${table.reference} is null or length(trim(${table.reference})) between 1 and 100`),
   ],
 );
 

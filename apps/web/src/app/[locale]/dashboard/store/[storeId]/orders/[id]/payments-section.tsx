@@ -51,6 +51,8 @@ export type PaymentRecord = {
   amountMinor: number;
   paidAt: string;
   recordedByName: string | null;
+  /** e.g. a transfer's bank reference (counter sales) */
+  reference: string | null;
   note: string | null;
 };
 
@@ -178,6 +180,7 @@ export function PaymentsSection({
                     <LocalDateTime iso={p.paidAt} locale={locale} />
                     {p.recordedByName && ` · ${p.recordedByName}`}
                   </span>
+                  {p.reference && <span className="text-xs">{t("reference", { reference: p.reference })}</span>}
                   {p.note && <span className="text-xs whitespace-pre-line">{p.note}</span>}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

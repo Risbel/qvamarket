@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getSessionReport } from "@/server/register";
 import { requirePanelSection } from "@/server/tenant";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "@/components/print-button";
 
 /**
  * The Z report of a closed shift: the frozen snapshot written at close (never recomputed, so
@@ -37,7 +37,7 @@ export default async function RegisterReportPage({ params }: PageProps<"/[locale
           <ArrowLeftIcon />
           {t("back")}
         </Link>
-        <PrintButton />
+        <PrintButton label={t("print")} />
       </div>
 
       <div className="flex flex-col gap-1">

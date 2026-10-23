@@ -1,10 +1,9 @@
-import { and, asc, customer, db, eq, gt, inArray, order, orderDelivery, orderItem, orderStatusHistory, productVariant, sql, store } from "@qvashop/db";
+import { and, asc, customer, db, eq, gt, order, orderDelivery, orderItem, sql, store } from "@qvashop/db";
 import type { CartItem } from "@/lib/cart";
 import { deliveryFee, distanceMeters, insideArea } from "@/lib/delivery";
-import { costIn } from "@/lib/inventory";
 import type { LatLng } from "@/lib/map";
 import { priceCart } from "./cart";
-import { recordMovements } from "./inventory-ledger";
+import { customerByPhone, insertOrder, OrderLinesChanged } from "./order-create";
 import { storeCurrencies } from "./pricing";
 import { getPublicDelivery } from "./public-delivery";
 
@@ -116,135 +115,43 @@ export async function placeOrder(input: {
 
       const shipping = await deliveryForOrder(tx, storeId, currencyCode, cart.subtotalMinor, input.fulfillment);
 
-      const [counter] = await tx
-        .update(store)
-        // keep updated_at: taking an order number is not an edit of the store
-        .set({ lastOrderNumber: sql`${store.lastOrderNumber} + 1`, updatedAt: sql`${store.updatedAt}` })
-        .where(and(eq(store.id, storeId), eq(store.tenantId, tenantId)))
-        .returning({ number: store.lastOrderNumber });
-
-      const variants = await tx
-        .select({
-          id: productVariant.id,
-          productId: productVariant.productId,
-          sku: productVariant.sku,
-          stock: productVariant.stock,
-          costMinor: productVariant.costMinor,
-          costCurrencyCode: productVariant.costCurrencyCode,
-        })
-        .from(productVariant)
-        .where(
-          and(
-            eq(productVariant.storeId, storeId),
-            eq(productVariant.tenantId, tenantId),
-            inArray(productVariant.id, cart.lines.map((line) => line.variantId)),
-          ),
-        )
-        // locked in id order, like cancelling an order, so the two cannot deadlock
-        .orderBy(asc(productVariant.id))
-        .for("no key update");
-      const byId = new Map(variants.map((variant) => [variant.id, variant]));
-
-      for (const line of cart.lines) {
-        const variant = byId.get(line.variantId);
-        if (!variant) throw new CheckoutAbort("cartChanged");
-        if (variant.stock === null) continue;
-        if (variant.stock < line.quantity) throw new CheckoutAbort("cartChanged");
-        await tx
-          .update(productVariant)
-          .set({ stock: sql`${productVariant.stock} - ${line.quantity}` })
-          .where(and(eq(productVariant.id, variant.id), eq(productVariant.tenantId, tenantId)));
-      }
-
       const customerId = input.accountUserId
         ? await accountCustomer(tx, tenantId, input.accountUserId, contact)
-        : await guestCustomer(tx, tenantId, contact);
+        : await customerByPhone(tx, tenantId, contact);
 
-      const [created] = await tx
-        .insert(order)
-        .values({
-          tenantId,
-          storeId,
-          number: counter.number,
-          customerId,
-          userId: input.accountUserId,
-          customerName: contact.name,
-          customerPhone: contact.phone,
-          customerEmail: contact.email,
-          customerNote: contact.note,
-          fulfillmentType: input.fulfillment.type,
-          currencyCode,
-          subtotalMinor: cart.subtotalMinor,
-          deliveryFeeMinor: shipping?.feeMinor ?? 0,
-          totalMinor: cart.subtotalMinor + (shipping?.feeMinor ?? 0),
-          idempotencyKey,
-        })
-        .returning({ id: order.id });
-
-      await tx.insert(orderItem).values(
-        cart.lines.map((line, position) => {
-          const variant = byId.get(line.variantId)!;
-          return {
-            tenantId,
-            storeId,
-            orderId: created.id,
-            variantId: variant.id,
-            productId: variant.productId,
-            position,
-            productName: line.name ?? "",
-            variantTitle: line.variantTitle,
-            sku: variant.sku,
-            quantity: line.quantity,
-            unitPriceMinor: line.unitPriceMinor,
-            compareAtMinor: line.compareAtMinor,
-            lineTotalMinor: line.lineTotalMinor,
-            stockDeducted: variant.stock !== null,
-            unitCostMinor: costIn(
-              variant.costMinor === null || variant.costCurrencyCode === null
-                ? null
-                : { minor: variant.costMinor, currencyCode: variant.costCurrencyCode },
-              currencyCode,
-              currencies,
-            ),
-          };
-        }),
-      );
-
-      await recordMovements(
+      const created = await insertOrder(
         tx,
         { tenantId, storeId },
-        cart.lines.flatMap((line) => {
-          const variant = byId.get(line.variantId)!;
-          if (variant.stock === null) return [];
-          return [
-            {
-              variantId: variant.id,
-              reason: "sale" as const,
-              delta: -line.quantity,
-              stockAfter: variant.stock - line.quantity,
-              orderId: created.id,
-            },
-          ];
-        }),
+        {
+          lines: cart.lines.map((line) => ({ ...line, name: line.name ?? "" })),
+          currencyCode,
+          currencies,
+          deliveryFeeMinor: shipping?.feeMinor ?? 0,
+          order: {
+            customerId,
+            userId: input.accountUserId,
+            customerName: contact.name,
+            customerPhone: contact.phone,
+            customerEmail: contact.email,
+            customerNote: contact.note,
+            fulfillmentType: input.fulfillment.type,
+            idempotencyKey,
+          },
+          status: "pending",
+          history: { actor: "customer", actorUserId: null },
+        },
       );
 
       if (shipping) {
         await tx.insert(orderDelivery).values({ orderId: created.id, tenantId, storeId, ...shipping.snapshot });
       }
 
-      await tx.insert(orderStatusHistory).values({
-        tenantId,
-        orderId: created.id,
-        fromStatus: null,
-        toStatus: "pending",
-        actor: "customer",
-      });
-
       return created.id;
     });
     return { ok: true, orderId };
   } catch (error) {
     if (error instanceof CheckoutAbort) return { ok: false, error: error.reason };
+    if (error instanceof OrderLinesChanged) return { ok: false, error: "cartChanged" };
     throw error;
   }
 }
@@ -278,23 +185,6 @@ async function deliveryForOrder(tx: Tx, storeId: string, currencyCode: string, s
       feeMode: delivery.mode,
     },
   };
-}
-
-/**
- * Guest checkout: the customer is found again by phone. Nothing typed here overwrites the
- * existing record: each order keeps its own copy of the contact details.
- */
-async function guestCustomer(tx: Tx, tenantId: string, contact: CheckoutContact): Promise<string> {
-  const [buyer] = await tx
-    .insert(customer)
-    .values({ tenantId, name: contact.name, phone: contact.phone, email: contact.email })
-    .onConflictDoUpdate({
-      target: [customer.tenantId, customer.phone],
-      targetWhere: sql`${customer.phone} is not null`,
-      set: { updatedAt: sql`now()` },
-    })
-    .returning({ id: customer.id });
-  return buyer.id;
 }
 
 /**

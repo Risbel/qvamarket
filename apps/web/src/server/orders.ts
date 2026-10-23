@@ -217,6 +217,7 @@ export async function getOrder(scope: Scope, id: string) {
         amountMinor: orderPayment.amountMinor,
         paidAt: orderPayment.paidAt,
         recordedByName: user.name,
+        reference: orderPayment.reference,
         note: orderPayment.note,
       })
       .from(orderPayment)

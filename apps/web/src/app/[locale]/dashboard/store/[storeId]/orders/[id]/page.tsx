@@ -1,6 +1,6 @@
 import { storePath } from "@/lib/panel-paths";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, ExternalLinkIcon, MailIcon, MapPinIcon, MessageCircleIcon, PhoneIcon } from "lucide-react";
+import { ArrowLeftIcon, ExternalLinkIcon, MailIcon, MapPinIcon, MessageCircleIcon, PhoneIcon, PrinterIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { z } from "zod";
 import { Link } from "@/i18n/navigation";
@@ -89,8 +89,17 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
             </div>
             <p className="text-sm text-muted-foreground">
               <LocalDateTime iso={placed.createdAt.toISOString()} locale={locale} /> ·{" "}
-              {t(`fulfillment.${placed.fulfillmentType as "pickup" | "delivery"}`)}
+              {placed.channel === "pos"
+                ? t("detail.counterSale", { name: placed.history[0]?.actorName ?? "—" })
+                : t(`fulfillment.${placed.fulfillmentType as "pickup" | "delivery"}`)}
             </p>
+            <Link
+              href={storePath(storeId, `/orders/${placed.id}/receipt`)}
+              className={buttonVariants({ variant: "outline", size: "sm", className: "w-fit" })}
+            >
+              <PrinterIcon />
+              {t("detail.receipt")}
+            </Link>
           </div>
           {canChangeStatus && (
             <StatusActions
@@ -253,7 +262,7 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
               <CardTitle>
                 <h2 id="customer-title">{t("detail.customer")}</h2>
               </CardTitle>
-              <CardDescription className="font-medium text-foreground">{placed.customerName}</CardDescription>
+              <CardDescription className="font-medium text-foreground">{placed.customerName || t("walkIn")}</CardDescription>
               {customerHref && (
                 <CardAction>
                   <Link href={customerHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -264,12 +273,14 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <ul className="flex flex-col gap-2">
-                <li className="flex items-center gap-2">
-                  <PhoneIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <a href={`tel:${placed.customerPhone}`} className="tabular-nums underline-offset-4 hover:underline">
-                    {placed.customerPhone}
-                  </a>
-                </li>
+                {placed.customerPhone && (
+                  <li className="flex items-center gap-2">
+                    <PhoneIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <a href={`tel:${placed.customerPhone}`} className="tabular-nums underline-offset-4 hover:underline">
+                      {placed.customerPhone}
+                    </a>
+                  </li>
+                )}
                 {whatsapp && (
                   <li className="flex items-center gap-2">
                     <MessageCircleIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />

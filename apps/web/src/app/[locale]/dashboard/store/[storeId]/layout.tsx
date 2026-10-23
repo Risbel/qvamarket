@@ -37,7 +37,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/[l
       return Boolean(plan);
     });
   const groups = ([
-    { items: ["home", ...allowed("orders", "customers")] },
+    { items: ["home", ...allowed("pos", "orders", "customers")] },
     { label: "catalog", items: allowed("products", "inventory", "categories", "promotions") },
     { label: "finance", items: allowed("register", "expenses", "profit") },
     { label: "store", items: allowed("settings") },

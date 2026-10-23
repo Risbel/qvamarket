@@ -186,7 +186,7 @@ export function OrdersTable({
           sortDescFirst: false,
           cell: ({ row }) => (
             <>
-              <div>{row.original.customerName}</div>
+              <div>{row.original.customerName || t("walkIn")}</div>
               <div className="text-sm text-muted-foreground">{row.original.customerPhone}</div>
             </>
           ),
@@ -426,10 +426,12 @@ function RowActions({ order }: { order: OrderRow }) {
           {t("view")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<a href={`tel:${order.customerPhone}`} />}>
-          <PhoneIcon />
-          {t("call")}
-        </DropdownMenuItem>
+        {order.customerPhone && (
+          <DropdownMenuItem render={<a href={`tel:${order.customerPhone}`} />}>
+            <PhoneIcon />
+            {t("call")}
+          </DropdownMenuItem>
+        )}
         {whatsapp && (
           <DropdownMenuItem render={<a href={whatsapp} target="_blank" rel="noreferrer" />}>
             <MessageCircleIcon />

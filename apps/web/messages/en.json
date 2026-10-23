@@ -421,7 +421,11 @@
     "dateInPast": "Pick a future date.",
     "dateTooFar": "At most {days} days ahead.",
     "dueDaysInvalid": "A number of days between 0 and {max}.",
-    "registerNoteRequired": "The count is off: explain the difference."
+    "registerNoteRequired": "The count is off: explain the difference.",
+    "posNameForPhone": "Type the name to save the customer.",
+    "posPaidTooMuch": "The payments add up to more than the total ({amount}).",
+    "posPaidTooLittle": "The payments do not reach the total: tick \"Charge later\" or complete the payment.",
+    "posReceivedTooLittle": "The cash received is less than the cash payment."
   },
   "Admin": {
     "title": "Admin panel",
@@ -601,7 +605,8 @@
       "team": "Team",
       "billing": "Billing",
       "prices": "Prices",
-      "register": "Register"
+      "register": "Register",
+      "pos": "Sell"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -1781,7 +1786,9 @@
       "editChange": "{from} → {to}",
       "editRestocked": "{count, plural, one {# restocked} other {# restocked}}",
       "editSubtotal": "Subtotal: {from} → {to}",
-      "viewCustomer": "View customer"
+      "viewCustomer": "View customer",
+      "counterSale": "Counter sale · {name}",
+      "receipt": "Receipt"
     },
     "actions": {
       "to": {
@@ -1911,14 +1918,16 @@
       },
       "toRefund": "To refund",
       "toRefundHelp": "You collected more than the order total. Record a refund when you give the money back to the customer.",
-      "noShift": "You have no open register shift: this cash will not be counted in any drawer."
+      "noShift": "You have no open register shift: this cash will not be counted in any drawer.",
+      "reference": "Reference: {reference}"
     },
     "rowActions": {
       "menu": "Actions for order {reference}",
       "view": "View order",
       "call": "Call the customer",
       "whatsapp": "Message on WhatsApp"
-    }
+    },
+    "walkIn": "Walk-in customer"
   },
   "Customers": {
     "title": "Customers",
@@ -2212,6 +2221,13 @@
         "description": "Payments and refunds recorded on orders.",
         "actions": {
           "create": "Record"
+        }
+      },
+      "pos": {
+        "name": "Sell",
+        "description": "Sell at the counter: pick products, charge and print the receipt.",
+        "actions": {
+          "create": "Sell at the counter"
         }
       },
       "customer": {
@@ -3115,5 +3131,100 @@
       "title": "Other open shifts",
       "description": "Shifts of other team members. You can close one on their behalf (for example, if they left without closing)."
     }
+  },
+  "Pos": {
+    "catalog": "Products",
+    "search": "Search products",
+    "searchPlaceholder": "E.g. coffee, or scan the code",
+    "currency": "Currency",
+    "categories": "Categories",
+    "all": "All",
+    "uncategorized": "No category",
+    "noProducts": "There are no active products. Activate them in Products to sell them here.",
+    "noMatches": "No product matches.",
+    "notInCurrency": "Not sold in {currency}",
+    "from": "From {price}",
+    "soldOut": "Sold out",
+    "left": "{count} left",
+    "onlyLeft": "{count, plural, =0 {None left} one {Only # left} other {Only # left}}",
+    "inTicket": "{count} in the ticket",
+    "pickVariant": "Choose one.",
+    "ticket": "Ticket",
+    "ticketCount": "{count, plural, =0 {Empty ticket} one {Ticket · # unit} other {Ticket · # units}}",
+    "emptyTicket": "Tap a product to add it.",
+    "lineUnavailable": "No longer sold (or not in this currency). Remove it.",
+    "each": "{price} each",
+    "less": "One less",
+    "more": "One more",
+    "quantity": "Quantity",
+    "remove": "Remove",
+    "total": "Total",
+    "clear": "Clear",
+    "chargeButton": "Charge {total}",
+    "noShift": {
+      "title": "Open your register to sell",
+      "description": "Sales and cash go to your register shift. Open it with the cash in your drawer.",
+      "askPermission": "Sales go to a register shift and your role cannot open the register. Ask whoever runs the store to give you that permission.",
+      "open": "Open my register"
+    },
+    "charge": {
+      "title": "Charge",
+      "payments": "Payments",
+      "method": "Method",
+      "amount": "Amount",
+      "reference": "Transfer reference",
+      "referencePlaceholder": "E.g. 4F7K2M",
+      "removePayment": "Remove this payment",
+      "addPayment": "Add another method",
+      "received": "Cash received",
+      "exact": "Exact",
+      "change": "Change: {amount}",
+      "payLater": "Charge later: {amount} left to collect",
+      "payLaterHelp": "The sale is recorded and what is left stays owed on the order (for example, a transfer the bank has not confirmed yet). Add the customer to be able to follow it up.",
+      "customer": "Customer (optional)",
+      "customerHelp": "With the phone the customer is found again on later purchases.",
+      "customerName": "Name",
+      "customerNamePlaceholder": "E.g. Ana Pérez",
+      "customerPhone": "Phone",
+      "customerPhonePlaceholder": "E.g. 5 123 4567",
+      "country": "Country",
+      "note": "Note",
+      "notePlaceholder": "E.g. Picks up the box tomorrow",
+      "openRegister": "Open my register",
+      "back": "Back",
+      "submit": "Charge {amount}",
+      "submitLater": "Record sale",
+      "toast": "Sale recorded.",
+      "errors": {
+        "ticketChanged": "A price or the stock of a product changed. Check the ticket and charge again.",
+        "noShift": "You have no open register shift.",
+        "paidTooMuch": "The payments add up to more than the total.",
+        "paidTooLittle": "The payments do not reach the total: tick \"Charge later\".",
+        "forbidden": "You are not allowed to sell at the counter.",
+        "invalid": "Check the data.",
+        "failed": "Could not record the sale. Try again."
+      }
+    },
+    "done": {
+      "title": "Sale recorded",
+      "total": "Total {amount}",
+      "change": "Change to give back",
+      "pending": "{amount} is still owed on the order.",
+      "receipt": "Print receipt",
+      "viewOrder": "View order",
+      "next": "New sale"
+    }
+  },
+  "Receipt": {
+    "back": "Order",
+    "print": "Print",
+    "order": "Order {number}",
+    "seller": "Served by: {name}",
+    "customer": "Customer: {name}",
+    "delivery": "Delivery",
+    "total": "Total",
+    "due": "Due",
+    "unpaid": "To collect",
+    "thanks": "Thank you for your purchase!"
   }
 }

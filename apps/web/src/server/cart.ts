@@ -1,7 +1,7 @@
 import { MAX_LINE_QUANTITY, type CartItem } from "@/lib/cart";
 import { resolvePrice } from "@/lib/pricing";
 import { loadPriceRows } from "./pricing";
-import { getPublicVariants } from "./public-catalog";
+import { getPublicVariants, type PublicCartVariant } from "./public-catalog";
 
 export type PricedLine = {
   variantId: string;
@@ -41,8 +41,21 @@ export type PricedCart = {
  * amounts, and checkout must use it again. Integer minor units throughout (orders: bigint).
  */
 export async function priceCart(storeId: string, currencyCode: string, items: CartItem[]): Promise<PricedCart> {
-  const ids = items.map((item) => item.variantId);
-  const variants = await getPublicVariants(storeId, ids);
+  const variants = await getPublicVariants(storeId, items.map((item) => item.variantId));
+  return priceItems(storeId, currencyCode, items, variants, MAX_LINE_QUANTITY);
+}
+
+/**
+ * Prices items against `variants` (the ones the caller may sell: public ones for the
+ * storefront, the store's active products for the counter); `maxLine` = most units per line.
+ */
+export async function priceItems(
+  storeId: string,
+  currencyCode: string,
+  items: CartItem[],
+  variants: Map<string, PublicCartVariant>,
+  maxLine: number,
+): Promise<PricedCart> {
   const prices = await loadPriceRows(storeId, [...variants.keys()], currencyCode);
 
   const lines = items.map((item): PricedLine => {
@@ -63,7 +76,7 @@ export async function priceCart(storeId: string, currencyCode: string, items: Ca
     };
     if (!variant) return unavailable;
 
-    const maxQuantity = variant.stock === null ? MAX_LINE_QUANTITY : Math.min(variant.stock, MAX_LINE_QUANTITY);
+    const maxQuantity = variant.stock === null ? maxLine : Math.min(variant.stock, maxLine);
     const quantity = Math.min(item.quantity, maxQuantity);
     // The unit price depends on the quantity (volume tiers)
     const price = resolvePrice(prices.get(variant.id) ?? [], Math.max(quantity, 1));

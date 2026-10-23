@@ -20,6 +20,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingBag,
+  ShoppingCart,
   Store,
   Tags,
   UserPlus,
@@ -63,6 +64,7 @@ import {
 const ITEMS = {
   // store panel
   home: { path: "", icon: LayoutDashboard, exact: true },
+  pos: { path: "/pos", icon: ShoppingCart, exact: false },
   orders: { path: "/orders", icon: ShoppingBag, exact: false },
   customers: { path: "/customers", icon: Contact, exact: false },
   products: { path: "/products", icon: Package, exact: false },

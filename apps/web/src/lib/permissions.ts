@@ -22,6 +22,8 @@ export const statement = {
   order: ["read", "update", "cancel", "edit"],
   // manual payments and refunds recorded on an order
   payment: ["read", "create", "delete"],
+  // sell at the counter (point of sale): the sale is an order with its payments
+  pos: ["create"],
   // the company's customers who ordered in the store (contact, orders, amount spent)
   customer: ["read"],
   // business totals: sales and money collected (income summary on the store home)
@@ -130,6 +132,7 @@ export const ROLE_PRESETS = {
     inventory: ["read", "update"],
     order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create", "delete"],
+    pos: ["create"],
     customer: ["read"],
     report: ["read"],
     expense: ["read", "create", "update", "delete"],
@@ -144,6 +147,7 @@ export const ROLE_PRESETS = {
     promotion: ["read"],
     order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create"],
+    pos: ["create"],
     customer: ["read"],
     register: ["read", "create", "update"],
   },

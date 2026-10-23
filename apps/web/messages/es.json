@@ -421,7 +421,11 @@
     "dateInPast": "Elige una fecha futura.",
     "dateTooFar": "Como máximo dentro de {days} días.",
     "dueDaysInvalid": "Un número de días entre 0 y {max}.",
-    "registerNoteRequired": "El conteo no cuadra: explica la diferencia."
+    "registerNoteRequired": "El conteo no cuadra: explica la diferencia.",
+    "posNameForPhone": "Escribe el nombre para guardar al cliente.",
+    "posPaidTooMuch": "Los pagos suman más que el total ({amount}).",
+    "posPaidTooLittle": "Los pagos no llegan al total: marca «Cobrar después» o completa el pago.",
+    "posReceivedTooLittle": "Lo recibido es menos que el pago en efectivo."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -601,7 +605,8 @@
       "team": "Equipo",
       "billing": "Facturación",
       "prices": "Precios",
-      "register": "Caja"
+      "register": "Caja",
+      "pos": "Vender"
     },
     "status": {
       "pending": "Tu tienda está pendiente de aprobación. Puedes preparar tus productos y tu marca; no será visible para el público hasta que la aprobemos.",
@@ -1781,7 +1786,9 @@
       "editChange": "{from} → {to}",
       "editRestocked": "{count, plural, one {# devuelta al inventario} other {# devueltas al inventario}}",
       "editSubtotal": "Subtotal: {from} → {to}",
-      "viewCustomer": "Ver cliente"
+      "viewCustomer": "Ver cliente",
+      "counterSale": "Venta en mostrador · {name}",
+      "receipt": "Ticket"
     },
     "actions": {
       "to": {
@@ -1911,14 +1918,16 @@
       },
       "toRefund": "A devolver",
       "toRefundHelp": "Cobraste más que el total del pedido. Registra un reembolso cuando le devuelvas el dinero al cliente.",
-      "noShift": "No tienes un turno de caja abierto: este efectivo no se contará en ningún cajón."
+      "noShift": "No tienes un turno de caja abierto: este efectivo no se contará en ningún cajón.",
+      "reference": "Referencia: {reference}"
     },
     "rowActions": {
       "menu": "Acciones del pedido {reference}",
       "view": "Ver pedido",
       "call": "Llamar al cliente",
       "whatsapp": "Escribir por WhatsApp"
-    }
+    },
+    "walkIn": "Cliente de mostrador"
   },
   "Customers": {
     "title": "Clientes",
@@ -2212,6 +2221,13 @@
         "description": "Cobros y devoluciones registrados en los pedidos.",
         "actions": {
           "create": "Registrar"
+        }
+      },
+      "pos": {
+        "name": "Vender",
+        "description": "Vender en el mostrador: elegir productos, cobrar e imprimir el ticket.",
+        "actions": {
+          "create": "Vender en el mostrador"
         }
       },
       "customer": {
@@ -3115,5 +3131,100 @@
       "title": "Otros turnos abiertos",
       "description": "Turnos de otras personas del equipo. Puedes cerrar uno en su nombre (por ejemplo, si se fue sin cerrar)."
     }
+  },
+  "Pos": {
+    "catalog": "Productos",
+    "search": "Buscar productos",
+    "searchPlaceholder": "Ej.: café, o escanea el código",
+    "currency": "Moneda",
+    "categories": "Categorías",
+    "all": "Todo",
+    "uncategorized": "Sin categoría",
+    "noProducts": "No hay productos activos. Actívalos en Productos para venderlos aquí.",
+    "noMatches": "Ningún producto coincide.",
+    "notInCurrency": "No se vende en {currency}",
+    "from": "Desde {price}",
+    "soldOut": "Agotado",
+    "left": "{count, plural, one {Queda #} other {Quedan #}}",
+    "onlyLeft": "{count, plural, =0 {No queda ninguno} one {Solo queda #} other {Solo quedan #}}",
+    "inTicket": "{count, plural, one {# en el ticket} other {# en el ticket}}",
+    "pickVariant": "Elige cuál.",
+    "ticket": "Ticket",
+    "ticketCount": "{count, plural, =0 {Ticket vacío} one {Ticket · # unidad} other {Ticket · # unidades}}",
+    "emptyTicket": "Toca un producto para añadirlo.",
+    "lineUnavailable": "Ya no se vende (o no en esta moneda). Quítalo.",
+    "each": "{price} c/u",
+    "less": "Uno menos",
+    "more": "Uno más",
+    "quantity": "Cantidad",
+    "remove": "Quitar",
+    "total": "Total",
+    "clear": "Vaciar",
+    "chargeButton": "Cobrar {total}",
+    "noShift": {
+      "title": "Abre tu caja para vender",
+      "description": "Las ventas y el efectivo quedan en tu turno de caja. Ábrelo con el efectivo de tu cajón.",
+      "askPermission": "Las ventas quedan en un turno de caja y tu rol no puede abrir la caja. Pide a quien administra la tienda que te dé ese permiso.",
+      "open": "Abrir mi caja"
+    },
+    "charge": {
+      "title": "Cobrar",
+      "payments": "Pagos",
+      "method": "Método",
+      "amount": "Importe",
+      "reference": "Referencia de la transferencia",
+      "referencePlaceholder": "Ej.: 4F7K2M",
+      "removePayment": "Quitar este pago",
+      "addPayment": "Añadir otro método",
+      "received": "Efectivo recibido",
+      "exact": "Exacto",
+      "change": "Cambio: {amount}",
+      "payLater": "Cobrar después: quedan {amount} pendientes",
+      "payLaterHelp": "La venta se registra y lo pendiente queda en el pedido (por ejemplo, una transferencia que el banco aún no confirma). Añade el cliente para poder reclamarlo.",
+      "customer": "Cliente (opcional)",
+      "customerHelp": "Con el teléfono se encuentra al cliente otra vez en próximas compras.",
+      "customerName": "Nombre",
+      "customerNamePlaceholder": "Ej.: Ana Pérez",
+      "customerPhone": "Teléfono",
+      "customerPhonePlaceholder": "Ej.: 5 123 4567",
+      "country": "País",
+      "note": "Nota",
+      "notePlaceholder": "Ej.: Pasa a recoger la caja mañana",
+      "openRegister": "Abrir mi caja",
+      "back": "Volver",
+      "submit": "Cobrar {amount}",
+      "submitLater": "Registrar venta",
+      "toast": "Venta registrada.",
+      "errors": {
+        "ticketChanged": "Cambió un precio o el stock de algún producto. Revisa el ticket y cobra otra vez.",
+        "noShift": "No tienes un turno de caja abierto.",
+        "paidTooMuch": "Los pagos suman más que el total.",
+        "paidTooLittle": "Los pagos no llegan al total: marca «Cobrar después».",
+        "forbidden": "No tienes permiso para vender en el mostrador.",
+        "invalid": "Revisa los datos.",
+        "failed": "No se pudo registrar la venta. Inténtalo de nuevo."
+      }
+    },
+    "done": {
+      "title": "Venta registrada",
+      "total": "Total {amount}",
+      "change": "Cambio a devolver",
+      "pending": "Quedan {amount} pendientes en el pedido.",
+      "receipt": "Imprimir ticket",
+      "viewOrder": "Ver pedido",
+      "next": "Nueva venta"
+    }
+  },
+  "Receipt": {
+    "back": "Pedido",
+    "print": "Imprimir",
+    "order": "Pedido {number}",
+    "seller": "Atendió: {name}",
+    "customer": "Cliente: {name}",
+    "delivery": "Envío",
+    "total": "Total",
+    "due": "Pendiente",
+    "unpaid": "Por cobrar",
+    "thanks": "¡Gracias por su compra!"
   }
 }

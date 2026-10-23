@@ -8,6 +8,8 @@ import type { PermissionRequest } from "./permissions";
  */
 export const PANEL_ACCESS = {
   // store sections (/dashboard/store/<storeId>/...)
+  // sell at the counter (point of sale)
+  pos: { pos: ["create"] },
   orders: { order: ["read"] },
   customers: { customer: ["read"] },
   products: { product: ["read"] },
