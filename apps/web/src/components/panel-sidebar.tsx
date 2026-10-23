@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  Banknote,
   BadgePercent,
   Building2,
   ChartNoAxesCombined,
@@ -68,6 +69,7 @@ const ITEMS = {
   inventory: { path: "/inventory", icon: Warehouse, exact: false },
   categories: { path: "/categories", icon: FolderTree, exact: false },
   promotions: { path: "/promotions", icon: BadgePercent, exact: false },
+  register: { path: "/register", icon: Banknote, exact: false },
   expenses: { path: "/expenses", icon: ReceiptText, exact: false },
   profit: { path: "/profit", icon: ChartNoAxesCombined, exact: false },
   settings: { path: "/settings", icon: Settings, exact: false },
@@ -172,7 +174,7 @@ export function PanelSidebar({
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="print:hidden">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

@@ -34,6 +34,8 @@ export const PLAN_FEATURES = [
   "storeAccess",
   // no "Hecho con QvaShop" in the storefront footer
   "hideBadge",
+  // the cash register: opening float, cash in / out, cash count and Z report
+  "dayClose",
 ] as const;
 export type PlanFeature = (typeof PLAN_FEATURES)[number];
 
@@ -75,6 +77,7 @@ export const PLANS = {
       "bulkPrices",
       "customRoles",
       "hideBadge",
+      "dayClose",
     ],
     limits: { stores: 3, activeProducts: 3000, imagesPerProduct: 6, currencies: 5, bannerImages: 5, pages: 20, members: 10 },
   },
@@ -97,6 +100,7 @@ const PLAN_GATES: { [R in Resource]?: { feature: PlanFeature; actions?: readonly
   inventory: { feature: "inventory" },
   expense: { feature: "expenses" },
   role: { feature: "customRoles", actions: ["create", "update", "delete"] },
+  register: { feature: "dayClose" },
 };
 
 export function isPlanKey(value: unknown): value is PlanKey {

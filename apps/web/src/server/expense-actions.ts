@@ -82,7 +82,7 @@ export async function deleteExpenseAction(storeId: unknown, id: unknown): Promis
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) return { ok: false, error: "notFound" };
   try {
-    return (await deleteExpense(scopeOf(merchant), parsedId.data.toLowerCase())) ? { ok: true } : { ok: false, error: "notFound" };
+    return await deleteExpense(scopeOf(merchant), parsedId.data.toLowerCase());
   } catch (e) {
     console.error("deleteExpenseAction failed", e);
     return { ok: false, error: "failed" };

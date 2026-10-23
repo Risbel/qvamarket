@@ -373,7 +373,7 @@ function DeleteExpenseDialog({ expense, onClose }: { expense: ExpenseRow | null;
       router.refresh();
       return;
     }
-    setError(t(result?.error === "forbidden" || result?.error === "notFound" ? `errors.${result.error}` : "errors.failed"));
+    setError(t(result?.error === "forbidden" || result?.error === "notFound" || result?.error === "closedPeriod" ? `errors.${result.error}` : "errors.failed"));
   }
 
   return (

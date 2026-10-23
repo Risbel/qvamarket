@@ -97,7 +97,7 @@ export type PaymentActionResult =
   | { ok: true }
   | {
       ok: false;
-      error: "forbidden" | "notFound" | "invalid" | "cancelled" | "unbalanced" | "failed";
+      error: "forbidden" | "notFound" | "invalid" | "cancelled" | "unbalanced" | "closedPeriod" | "failed";
       fieldErrors?: Record<string, string[]>;
     };
 

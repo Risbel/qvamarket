@@ -1,6 +1,7 @@
 import { and, db, eq, order, orderPayment } from "@qvashop/db";
 import { paymentStatusOf, paymentTotals } from "@/lib/orders";
 import type { PaymentInput } from "@/lib/validation/payment";
+import { inClosedPeriod } from "./register";
 
 // Payments recorded by hand on an order of the merchant's store. Every query matches
 // tenant_id AND store_id (from requireMerchant(), never from client input).
@@ -10,11 +11,11 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export type RecordPaymentResult =
   | { ok: true }
-  | { ok: false; error: "notFound" | "cancelled" }
+  | { ok: false; error: "notFound" | "cancelled" | "closedPeriod" }
   /** the amount is over the limit, which is returned (what is owed, or what was collected) */
   | { ok: false; error: "exceedsDue" | "exceedsPaid"; limitMinor: number };
 
-export type DeletePaymentResult = { ok: true } | { ok: false; error: "notFound" | "unbalanced" };
+export type DeletePaymentResult = { ok: true } | { ok: false; error: "notFound" | "unbalanced" | "closedPeriod" };
 
 /**
  * Locks the order (so two people recording at once cannot both pay what is owed) and
@@ -28,7 +29,7 @@ async function lockOrder(tx: Tx, scope: Scope, orderId: string) {
     .for("no key update");
   if (!row) return null;
   const payments = await tx
-    .select({ id: orderPayment.id, kind: orderPayment.kind, amountMinor: orderPayment.amountMinor })
+    .select({ id: orderPayment.id, kind: orderPayment.kind, amountMinor: orderPayment.amountMinor, paidAt: orderPayment.paidAt })
     .from(orderPayment)
     .where(and(eq(orderPayment.orderId, orderId), eq(orderPayment.tenantId, scope.tenantId)));
   return { ...row, payments };
@@ -65,6 +66,10 @@ export async function recordPayment(
     const { due, net } = paymentTotals(locked.totalMinor, locked.payments);
     if (input.kind === "payment" && input.amountMinor > due) return { ok: false, error: "exceedsDue", limitMinor: due };
     if (input.kind === "refund" && input.amountMinor > net) return { ok: false, error: "exceedsPaid", limitMinor: net };
+    // "now" is taken after the register lock, so it can never land inside a session that was
+    // being closed while this waited; a date in a closed day is refused
+    const paidAt = input.paidAt ?? new Date();
+    if (await inClosedPeriod(tx, scope, [paidAt])) return { ok: false, error: "closedPeriod" };
 
     await tx.insert(orderPayment).values({
       tenantId: scope.tenantId,
@@ -72,7 +77,7 @@ export async function recordPayment(
       kind: input.kind,
       method: input.method,
       amountMinor: input.amountMinor,
-      ...(input.paidAt ? { paidAt: input.paidAt } : {}),
+      paidAt,
       recordedByUserId: input.userId,
       note: input.note || null,
     });
@@ -90,7 +95,10 @@ export async function recordPayment(
 export async function deletePayment(scope: Scope, orderId: string, paymentId: string): Promise<DeletePaymentResult> {
   return db.transaction(async (tx) => {
     const locked = await lockOrder(tx, scope, orderId);
-    if (!locked || !locked.payments.some((p) => p.id === paymentId)) return { ok: false, error: "notFound" };
+    const target = locked?.payments.find((p) => p.id === paymentId);
+    if (!locked || !target) return { ok: false, error: "notFound" };
+    // a record of a closed day is part of its frozen report: correct it with a new record instead
+    if (await inClosedPeriod(tx, scope, [target.paidAt])) return { ok: false, error: "closedPeriod" };
     const remaining = locked.payments.filter((p) => p.id !== paymentId);
     const { net } = paymentTotals(locked.totalMinor, remaining);
     const before = paymentTotals(locked.totalMinor, locked.payments).net;

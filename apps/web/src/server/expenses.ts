@@ -2,6 +2,7 @@ import { and, asc, count, db, desc, eq, expense, inArray, member, or, sql, user 
 import type { ExpenseCategory, ExpenseListParams, ExpenseSort } from "@/lib/expenses";
 import type { ExpenseInput } from "@/lib/validation/expense";
 import { onLocalDays } from "./date-sql";
+import { inClosedPeriod } from "./register";
 
 // Expenses of the merchant's store. Every query matches tenant_id AND store_id (from
 // requireMerchant(), never from client input).
@@ -99,7 +100,7 @@ async function isMember(tenantId: string, userId: string) {
   return Boolean(row);
 }
 
-export type SaveExpenseResult = { ok: true; id: string } | { ok: false; error: "notFound" | "memberNotFound" };
+export type SaveExpenseResult = { ok: true; id: string } | { ok: false; error: "notFound" | "memberNotFound" | "closedPeriod" };
 
 /**
  * A salary keeps the member's current name as payee when none was typed. The member must be
@@ -116,11 +117,15 @@ async function withMember(scope: Scope, input: ExpenseInput, keptMemberId?: stri
 export async function createExpense(scope: Scope, input: ExpenseInput, userId: string): Promise<SaveExpenseResult> {
   const values = await withMember(scope, input);
   if (!values) return { ok: false, error: "memberNotFound" };
-  const [created] = await db
-    .insert(expense)
-    .values({ ...values, tenantId: scope.tenantId, storeId: scope.storeId, recordedByUserId: userId })
-    .returning({ id: expense.id });
-  return { ok: true, id: created.id };
+  return db.transaction(async (tx) => {
+    // an expense dated in a closed day would change its frozen cash count
+    if (await inClosedPeriod(tx, scope, [values.paidAt])) return { ok: false, error: "closedPeriod" } as const;
+    const [created] = await tx
+      .insert(expense)
+      .values({ ...values, tenantId: scope.tenantId, storeId: scope.storeId, recordedByUserId: userId })
+      .returning({ id: expense.id });
+    return { ok: true, id: created.id } as const;
+  });
 }
 
 export async function updateExpense(scope: Scope, id: string, input: ExpenseInput): Promise<SaveExpenseResult> {
@@ -131,19 +136,31 @@ export async function updateExpense(scope: Scope, id: string, input: ExpenseInpu
   if (!current) return { ok: false, error: "notFound" };
   const values = await withMember(scope, input, current.memberUserId);
   if (!values) return { ok: false, error: "memberNotFound" };
-  const rows = await db
-    .update(expense)
-    .set(values)
-    .where(and(inScope(scope), eq(expense.id, id)))
-    .returning({ id: expense.id });
-  return rows.length === 1 ? { ok: true, id } : { ok: false, error: "notFound" };
+  return db.transaction(async (tx) => {
+    const [locked] = await tx
+      .select({ paidAt: expense.paidAt })
+      .from(expense)
+      .where(and(inScope(scope), eq(expense.id, id)))
+      .for("update");
+    if (!locked) return { ok: false, error: "notFound" } as const;
+    // neither the old date nor the new one may be in a closed day
+    if (await inClosedPeriod(tx, scope, [locked.paidAt, values.paidAt])) return { ok: false, error: "closedPeriod" } as const;
+    await tx.update(expense).set(values).where(and(inScope(scope), eq(expense.id, id)));
+    return { ok: true, id } as const;
+  });
 }
 
-/** false when the expense does not exist in this store. */
-export async function deleteExpense(scope: Scope, id: string): Promise<boolean> {
-  const rows = await db
-    .delete(expense)
-    .where(and(inScope(scope), eq(expense.id, id)))
-    .returning({ id: expense.id });
-  return rows.length === 1;
+/** `notFound` when the expense does not exist in this store; `closedPeriod` when it is in a closed day. */
+export async function deleteExpense(scope: Scope, id: string): Promise<{ ok: true } | { ok: false; error: "notFound" | "closedPeriod" }> {
+  return db.transaction(async (tx) => {
+    const [locked] = await tx
+      .select({ paidAt: expense.paidAt })
+      .from(expense)
+      .where(and(inScope(scope), eq(expense.id, id)))
+      .for("update");
+    if (!locked) return { ok: false, error: "notFound" } as const;
+    if (await inClosedPeriod(tx, scope, [locked.paidAt])) return { ok: false, error: "closedPeriod" } as const;
+    await tx.delete(expense).where(and(inScope(scope), eq(expense.id, id)));
+    return { ok: true } as const;
+  });
 }

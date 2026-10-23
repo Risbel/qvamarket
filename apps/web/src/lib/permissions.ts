@@ -28,6 +28,9 @@ export const statement = {
   report: ["read"],
   // money the store paid out: salaries, rent, utilities...
   expense: ["read", "create", "update", "delete"],
+  // the cash register (day close): read = sessions and Z reports; create = open the register and
+  // record cash in / out; update = close it (count the cash)
+  register: ["read", "create", "update"],
   // the company's members (add, change role, reset password, remove)
   team: ["read", "create", "update", "delete"],
   // the company's roles
@@ -128,6 +131,7 @@ export const ROLE_PRESETS = {
     customer: ["read"],
     report: ["read"],
     expense: ["read", "create", "update", "delete"],
+    register: ["read", "create", "update"],
     team: ["read"],
   },
   /** Serves customers: processes and edits orders, takes payments; looks at the catalog. */
@@ -139,6 +143,7 @@ export const ROLE_PRESETS = {
     order: ["read", "update", "cancel", "edit"],
     payment: ["read", "create"],
     customer: ["read"],
+    register: ["read", "create", "update"],
   },
   /** Keeps the catalog up to date: products, categories, promotions and stock. No orders. */
   catalog: {
@@ -165,6 +170,7 @@ export const ROLE_PRESETS = {
     customer: ["read"],
     report: ["read"],
     expense: ["read"],
+    register: ["read"],
   },
 } as const satisfies Record<string, Permissions>;
 

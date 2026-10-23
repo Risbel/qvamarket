@@ -47,7 +47,7 @@ export type EditableExpense = {
   note: string | null;
 };
 
-type ErrorKey = "forbidden" | "notFound" | "memberNotFound" | "failed";
+type ErrorKey = "forbidden" | "notFound" | "memberNotFound" | "closedPeriod" | "failed";
 /** "No team member" in the member select (a Select value cannot be "") */
 const NO_MEMBER = "none";
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -165,7 +165,7 @@ function ExpenseForm({
       form.setError("memberUserId", { message: t("errors.memberNotFound") });
       return;
     }
-    setMessage(result?.error === "forbidden" || result?.error === "notFound" ? result.error : "failed");
+    setMessage(result?.error === "forbidden" || result?.error === "notFound" || result?.error === "closedPeriod" ? result.error : "failed");
   }
 
   return (

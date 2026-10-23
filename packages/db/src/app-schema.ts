@@ -1519,6 +1519,127 @@ export const expense = pgTable(
 );
 
 // ---------------------------------------------------------------------------------------
+// Cash register (day close)
+// ---------------------------------------------------------------------------------------
+
+export const REGISTER_SESSION_STATUSES = ["open", "closed"] as const;
+export const REGISTER_MOVEMENT_KINDS = ["in", "out"] as const;
+
+/**
+ * A cash register session of a store: opened with a float, closed with a cash count. It covers
+ * the time [opened_at, closed_at): cash payments, refunds and expenses paid in it are what the
+ * drawer should hold. At most one open session per store. `number` counts the store's sessions
+ * (the Z report number). `report` = the frozen closing report (src/lib/register.ts), written
+ * once at close and never recomputed.
+ */
+export const registerSession = pgTable(
+  "register_session",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    number: integer("number").notNull(),
+    status: text("status").default("open").notNull(),
+    openedAt: timestamp("opened_at", { withTimezone: true }).defaultNow().notNull(),
+    openedByUserId: uuid("opened_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    openingNote: text("opening_note"),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    closedByUserId: uuid("closed_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    closingNote: text("closing_note"),
+    report: jsonb("report"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("register_session_id_store_tenant_unique").on(table.id, table.storeId, table.tenantId),
+    unique("register_session_store_number_unique").on(table.storeId, table.number),
+    foreignKey({
+      name: "register_session_store_tenant_fk",
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [store.id, store.tenantId],
+    }).onDelete("cascade"),
+    uniqueIndex("register_session_one_open").on(table.storeId).where(sql`${table.status} = 'open'`),
+    index("register_session_store_closedAt_idx").on(table.storeId, table.closedAt),
+    check("register_session_status", sql`${table.status} in ('open', 'closed')`),
+    check("register_session_number", sql`${table.number} >= 1`),
+    check(
+      "register_session_closed",
+      sql`(${table.status} = 'closed') = (${table.closedAt} is not null) and (${table.closedAt} is null or ${table.closedAt} >= ${table.openedAt})`,
+    ),
+    check("register_session_report", sql`(${table.status} = 'closed') = (${table.report} is not null)`),
+  ],
+);
+
+/**
+ * Per session and currency: the opening float and, once closed, what was expected and what
+ * was counted (difference = counted - expected: over > 0, short < 0). Kept as columns, not
+ * only in the report, so history lists and sums need no JSON.
+ */
+export const registerSessionCurrency = pgTable(
+  "register_session_currency",
+  {
+    sessionId: uuid("session_id").notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    openingMinor: bigint("opening_minor", { mode: "number" }).notNull(),
+    expectedMinor: bigint("expected_minor", { mode: "number" }),
+    countedMinor: bigint("counted_minor", { mode: "number" }),
+  },
+  (table) => [
+    primaryKey({ name: "register_session_currency_pk", columns: [table.sessionId, table.currencyCode] }),
+    foreignKey({
+      name: "register_session_currency_session_fk",
+      columns: [table.sessionId, table.storeId, table.tenantId],
+      foreignColumns: [registerSession.id, registerSession.storeId, registerSession.tenantId],
+    }).onDelete("cascade"),
+    check("register_session_currency_opening", sql`${table.openingMinor} >= 0`),
+    check("register_session_currency_counted", sql`${table.countedMinor} is null or ${table.countedMinor} >= 0`),
+    check("register_session_currency_closed", sql`(${table.expectedMinor} is null) = (${table.countedMinor} is null)`),
+  ],
+);
+
+/**
+ * Cash put into (`in`, e.g. more change) or taken out of (`out`, e.g. a bank deposit, the
+ * owner's withdrawal) the drawer during a session, with the reason. Never edited or deleted:
+ * a mistake is corrected with the opposite movement. Purchases with the drawer's cash are
+ * expenses (paid in cash), not movements.
+ */
+export const registerMovement = pgTable(
+  "register_movement",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").notNull(),
+    storeId: uuid("store_id").notNull(),
+    sessionId: uuid("session_id").notNull(),
+    kind: text("kind").notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    note: text("note").notNull(),
+    createdByUserId: uuid("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "register_movement_session_fk",
+      columns: [table.sessionId, table.storeId, table.tenantId],
+      foreignColumns: [registerSession.id, registerSession.storeId, registerSession.tenantId],
+    }).onDelete("cascade"),
+    index("register_movement_sessionId_idx").on(table.sessionId, table.createdAt),
+    check("register_movement_kind", sql`${table.kind} in ('in', 'out')`),
+    check("register_movement_amount", sql`${table.amountMinor} > 0`),
+    check("register_movement_note", sql`length(trim(${table.note})) > 0`),
+  ],
+);
+
+// ---------------------------------------------------------------------------------------
 // Plans and billing (platform data: what a company pays QvaShop)
 // ---------------------------------------------------------------------------------------
 // No payment gateway: the merchant pays outside the platform and the superadmin records it.

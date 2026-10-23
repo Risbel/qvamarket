@@ -420,7 +420,8 @@
     "stockBelowZero": "You cannot remove more than there is ({stock}).",
     "dateInPast": "Pick a future date.",
     "dateTooFar": "At most {days} days ahead.",
-    "dueDaysInvalid": "A number of days between 0 and {max}."
+    "dueDaysInvalid": "A number of days between 0 and {max}.",
+    "registerNoteRequired": "The count is off: explain the difference."
   },
   "Admin": {
     "title": "Admin panel",
@@ -599,7 +600,8 @@
       "roles": "Roles",
       "team": "Team",
       "billing": "Billing",
-      "prices": "Prices"
+      "prices": "Prices",
+      "register": "Register"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -1898,7 +1900,8 @@
         "notFound": "This record no longer exists. Reload the page.",
         "cancelled": "The order is cancelled: it only takes refunds.",
         "unbalanced": "It cannot be removed: the amount collected would go below zero or above the total. Remove the refund or payment that offsets it first.",
-        "failed": "It could not be saved. Try again."
+        "failed": "It could not be saved. Try again.",
+        "closedPeriod": "That date is in a day whose register is already closed: its report does not change. Use a date after the last close."
       },
       "toasts": {
         "paymentRecorded": "Payment recorded.",
@@ -2038,7 +2041,8 @@
         "forbidden": "You do not have permission to do this.",
         "notFound": "The expense no longer exists.",
         "memberNotFound": "That person is no longer a member of the company.",
-        "failed": "Could not save the expense. Try again."
+        "failed": "Could not save the expense. Try again.",
+        "closedPeriod": "That date is in a day whose register is already closed: its report does not change. Use a date after the last close."
       }
     },
     "delete": {
@@ -2051,7 +2055,8 @@
       "errors": {
         "forbidden": "You do not have permission to do this.",
         "notFound": "The expense no longer exists.",
-        "failed": "Could not delete. Try again."
+        "failed": "Could not delete. Try again.",
+        "closedPeriod": "That date is in a day whose register is already closed: its report does not change. Use a date after the last close."
       }
     }
   },
@@ -2226,6 +2231,14 @@
       "role": {
         "name": "Roles",
         "description": "Create, edit and delete roles like this one."
+      },
+      "register": {
+        "name": "Register",
+        "description": "Open and close the register, count the cash and see the closing reports.",
+        "actions": {
+          "create": "Open and record cash in / out",
+          "update": "Close (count)"
+        }
       }
     },
     "toasts": {
@@ -2443,7 +2456,8 @@
         "bulkPrices": "Change many prices at once.",
         "customRoles": "Create and edit the team's roles.",
         "storeAccess": "Choose which stores each member can open.",
-        "hideBadge": "Remove “Made with QvaShop” from the store footer."
+        "hideBadge": "Remove “Made with QvaShop” from the store footer.",
+        "dayClose": "Open and close the register, count the cash and keep a Z report of every day."
       }
     }
   },
@@ -2837,7 +2851,8 @@
       "bulkPrices": "Bulk prices",
       "customRoles": "Custom roles",
       "storeAccess": "Access per store",
-      "hideBadge": "No “Made with QvaShop”"
+      "hideBadge": "No “Made with QvaShop”",
+      "dayClose": "Register and day close"
     },
     "plans": "Plans",
     "cycle": "Billing cycle",
@@ -2930,6 +2945,131 @@
       "paused": "Your subscription is paused: your stores are not public.",
       "trialEnding": "Your free trial ends on",
       "link": "See billing"
+    }
+  },
+  "Register": {
+    "title": "Register",
+    "intro": "Open the register with the starting cash, record cash in and out, and close it by counting the cash. Each close leaves a Z report that never changes.",
+    "note": "Note",
+    "back": "Back",
+    "closed": {
+      "title": "The register is closed",
+      "description": "Open it with the cash in the drawer to start the day."
+    },
+    "open": {
+      "float": "Starting cash ({currency})",
+      "lastCounted": "The last close counted {amount}.",
+      "notePlaceholder": "E.g. Morning shift",
+      "submit": "Open register",
+      "toast": "Register opened.",
+      "notAllowed": "You are not allowed to open the register."
+    },
+    "session": {
+      "title": "Register no. {number}",
+      "open": "Open",
+      "openedAt": "Opened on"
+    },
+    "actions": {
+      "in": "Cash in",
+      "out": "Cash out",
+      "close": "Close register"
+    },
+    "drawer": {
+      "expectedLabel": "should hold",
+      "opening": "Starting cash",
+      "cashPayments": "Cash payments",
+      "cashRefunds": "Cash refunds",
+      "cashIn": "Cash in",
+      "cashOut": "Cash out",
+      "cashExpenses": "Cash expenses",
+      "transfers": "Transfers",
+      "other": "Other methods",
+      "otherExpenses": "Expenses with other methods",
+      "sales": "{count, plural, one {# order} other {# orders}}",
+      "notCounted": "Transfers and other methods are listed, not counted in the drawer."
+    },
+    "movements": {
+      "title": "Cash in and out",
+      "empty": "None yet."
+    },
+    "movement": {
+      "titleIn": "Cash in",
+      "titleOut": "Cash out",
+      "descriptionIn": "Cash put into the drawer (e.g. more change).",
+      "descriptionOut": "Cash taken out of the drawer (a bank deposit, the owner's withdrawal). Purchases paid with the drawer's cash are recorded as expenses.",
+      "currency": "Currency",
+      "amount": "Amount",
+      "inDrawer": "The drawer should hold {amount}.",
+      "reason": "Reason",
+      "reasonHelp": "It goes in the closing report. To fix a mistake, record the opposite movement.",
+      "reasonPlaceholderIn": "E.g. Change brought from the bank",
+      "reasonPlaceholderOut": "E.g. Bank deposit",
+      "submitIn": "Record cash in",
+      "submitOut": "Record cash out",
+      "toastIn": "Cash in recorded.",
+      "toastOut": "Cash out recorded."
+    },
+    "close": {
+      "title": "Close register",
+      "description": "Count the cash in the drawer in each currency and type it.",
+      "counted": "Cash counted ({currency})",
+      "expected": "It should hold {amount}.",
+      "even": "Balanced",
+      "over": "{amount} over",
+      "short": "{amount} short",
+      "notePlaceholder": "E.g. 50 CUP short, wrong change given",
+      "noteHelp": "Required when the count is off.",
+      "frozen": "Closing saves the Z report: payments and expenses of this period can no longer be added, changed or removed.",
+      "submit": "Close and save report",
+      "toast": "Register closed.",
+      "stale": "A payment or expense was recorded while you counted: check the amounts and count again."
+    },
+    "history": {
+      "title": "Closes",
+      "empty": "No closes yet.",
+      "number": "Report",
+      "closedAt": "Closed on",
+      "closedBy": "By",
+      "result": "Result",
+      "z": "Z no. {number}",
+      "even": "{currency}: balanced",
+      "over": "{amount} over",
+      "short": "{amount} short"
+    },
+    "report": {
+      "back": "Register",
+      "print": "Print",
+      "title": "Z report no. {number}",
+      "opened": "Opened on",
+      "closed": "Closed on",
+      "even": "The count was balanced.",
+      "over": "{amount} over.",
+      "short": "{amount} short.",
+      "expected": "Should hold",
+      "counted": "Counted",
+      "difference": "Difference",
+      "records": "Records",
+      "recordsValue": "{payments} payments · {expenses} expenses",
+      "movements": "Cash in and out",
+      "noMovements": "None.",
+      "when": "When",
+      "reason": "Reason",
+      "amount": "Amount",
+      "openingNote": "Opening note:",
+      "closingNote": "Closing note:",
+      "frozen": "This report was saved when the register was closed and does not change if orders or expenses are edited later."
+    },
+    "errors": {
+      "forbidden": "You are not allowed to do this.",
+      "invalid": "Check the data.",
+      "failed": "Could not complete it. Try again.",
+      "alreadyOpen": "The register is already open. Reload the page.",
+      "noSession": "There is no open register. Reload the page.",
+      "invalidCurrency": "That currency is not one of the store's.",
+      "exceedsCash": "You cannot take out more cash than the drawer should hold.",
+      "stale": "The amounts changed. Reload the page and count again.",
+      "noteRequired": "The count is off: write a note.",
+      "missingCount": "A currency's count is missing."
     }
   }
 }

@@ -54,7 +54,7 @@ export type PaymentRecord = {
   note: string | null;
 };
 
-type ErrorKey = "forbidden" | "notFound" | "cancelled" | "unbalanced" | "failed";
+type ErrorKey = "forbidden" | "notFound" | "cancelled" | "unbalanced" | "closedPeriod" | "failed";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
