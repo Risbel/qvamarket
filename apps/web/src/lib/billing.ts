@@ -1,9 +1,12 @@
 import type {
   BILLING_CYCLES as DB_BILLING_CYCLES,
+  BILLING_PAYMENT_METHODS as DB_BILLING_PAYMENT_METHODS,
+  INVOICE_KINDS as DB_INVOICE_KINDS,
   INVOICE_STATUSES as DB_INVOICE_STATUSES,
+  SUBSCRIPTION_EVENT_TYPES as DB_SUBSCRIPTION_EVENT_TYPES,
   SUBSCRIPTION_STATUSES as DB_SUBSCRIPTION_STATUSES,
 } from "@qvashop/db/schema";
-import { FALLBACK_PLAN, isPlanKey, type PlanKey } from "./plans";
+import { FALLBACK_PLAN, isPlanKey, planRank, type PlanKey } from "./plans";
 
 /**
  * Manual, recurring billing (no gateway): pure rules shared by the panel, the superadmin and
@@ -110,17 +113,130 @@ export function effectiveSubscription(row: SubscriptionRow | null, now: Date = n
   return result(FALLBACK_PLAN, "expired");
 }
 
+export const INVOICE_KINDS = ["renewal", "upgrade", "manual"] as const satisfies typeof DB_INVOICE_KINDS;
+export type InvoiceKind = (typeof INVOICE_KINDS)[number];
+
+export const BILLING_PAYMENT_METHODS = ["cash", "transfer", "zelle", "other"] as const satisfies typeof DB_BILLING_PAYMENT_METHODS;
+export type BillingPaymentMethod = (typeof BILLING_PAYMENT_METHODS)[number];
+
+export const SUBSCRIPTION_EVENT_TYPES = [
+  "created",
+  "trial_started",
+  "trial_ended",
+  "plan_upgraded",
+  "downgrade_scheduled",
+  "downgrade_cancelled",
+  "plan_downgraded",
+  "cycle_changed",
+  "paused",
+  "resumed",
+  "cancel_scheduled",
+  "reactivated",
+  "cancelled",
+  "renewed",
+  "invoice_issued",
+  "invoice_voided",
+  "payment_recorded",
+  "refund_recorded",
+  "became_past_due",
+  "expired",
+  "price_changed",
+  "period_adjusted",
+  "trial_adjusted",
+] as const satisfies typeof DB_SUBSCRIPTION_EVENT_TYPES;
+export type SubscriptionEventType = (typeof SUBSCRIPTION_EVENT_TYPES)[number];
+
+/** Days a new invoice gives to pay it (the plan works meanwhile). */
+export const DEFAULT_DUE_DAYS = 3;
+export const MAX_DUE_DAYS = 60;
+/** Longest pause, in days. */
+export const MAX_PAUSE_DAYS = 90;
+
+/** Money of an invoice: net = payments - refunds, due = what is still owed (never below 0). */
+export function invoiceTotals(amountMinor: number, payments: { kind: string; amountMinor: number }[]) {
+  const paid = payments.filter((p) => p.kind !== "refund").reduce((sum, p) => sum + p.amountMinor, 0);
+  const refunded = payments.filter((p) => p.kind === "refund").reduce((sum, p) => sum + p.amountMinor, 0);
+  const net = paid - refunded;
+  return { paid, refunded, net, due: Math.max(0, amountMinor - net) };
+}
+
 /** An invoice's status from its payments (net = payments - refunds); `void` is set by hand. */
 export function invoiceStatusOf(amountMinor: number, payments: { kind: string; amountMinor: number }[]): InvoiceStatus {
-  const net = payments.reduce((sum, p) => sum + (p.kind === "refund" ? -p.amountMinor : p.amountMinor), 0);
+  const { net } = invoiceTotals(amountMinor, payments);
   if (net >= amountMinor) return "paid";
   return net > 0 ? "partial" : "open";
+}
+
+/**
+ * What an upgrade in the middle of a paid period costs: the price difference for the part of
+ * the period that is left, rounded to the minor unit (0 when nothing is left or the new plan
+ * is not dearer).
+ */
+export function prorate(
+  oldAmountMinor: number,
+  newAmountMinor: number,
+  period: { start: Date; end: Date },
+  now: Date = new Date(),
+): number {
+  const total = period.end.getTime() - period.start.getTime();
+  const left = period.end.getTime() - Math.max(now.getTime(), period.start.getTime());
+  if (total <= 0 || left <= 0 || newAmountMinor <= oldAmountMinor) return 0;
+  return Math.round(((newAmountMinor - oldAmountMinor) * left) / total);
 }
 
 /** An unpaid invoice past its due date (shown as overdue; not a stored status). */
 export function isOverdue(invoice: { status: string; dueAt: Date }, now: Date = new Date()): boolean {
   return (invoice.status === "open" || invoice.status === "partial") && invoice.dueAt <= now;
 }
+
+/**
+ * What changing to `target` does (the dialog shows it, `changePlan` applies it):
+ * - `freeNow` / `freeAtPeriodEnd`: to the free plan, now or when the paid time ends;
+ * - `prorated`: up to a dearer plan during a paid period with the same cycle and currency, at
+ *   once, paying the difference for the days left;
+ * - `atPeriodEnd`: a downgrade (or another cycle / currency) scheduled for the end of the period;
+ * - `newPeriod`: a new period starts, with an invoice for its full price;
+ * - `noChange`: the same plan and terms during a paid period.
+ */
+export type PlanChangeOutcome = "freeNow" | "freeAtPeriodEnd" | "prorated" | "atPeriodEnd" | "newPeriod" | "noChange";
+
+export function planChangeOutcome(
+  current: { plan: PlanKey; chosenPlan: PlanKey; status: SubscriptionStatus; cycle: string; currencyCode: string; paidUntil: Date | null },
+  target: { planKey: PlanKey; cycle: string; currencyCode: string; timing: "now" | "periodEnd" },
+  now: Date = new Date(),
+): PlanChangeOutcome {
+  const paidPeriod =
+    current.paidUntil !== null && current.paidUntil > now && (current.status === "active" || current.status === "past_due");
+  if (target.planKey === FALLBACK_PLAN) {
+    if (current.plan === FALLBACK_PLAN && current.chosenPlan === FALLBACK_PLAN) return "noChange";
+    return target.timing === "periodEnd" && paidPeriod ? "freeAtPeriodEnd" : "freeNow";
+  }
+  const up = planRank(target.planKey) > planRank(current.plan);
+  const down = planRank(target.planKey) < planRank(current.plan);
+  const sameTerms = target.cycle === current.cycle && target.currencyCode === current.currencyCode;
+  if (up && paidPeriod && sameTerms && current.chosenPlan === current.plan) return "prorated";
+  if (!up && !down && sameTerms && paidPeriod && current.chosenPlan === target.planKey) return "noChange";
+  if ((down || (!up && !sameTerms)) && paidPeriod && target.timing === "periodEnd") return "atPeriodEnd";
+  return "newPeriod";
+}
+
+/** Badge style of each subscription status (attention for what needs action). */
+export const STATUS_BADGE: Record<SubscriptionStatus, "default" | "secondary" | "outline" | "destructive"> = {
+  trialing: "outline",
+  active: "default",
+  past_due: "destructive",
+  paused: "secondary",
+  cancelled: "secondary",
+  expired: "secondary",
+};
+
+export const INVOICE_BADGE: Record<InvoiceStatus | "overdue", "default" | "secondary" | "outline" | "destructive"> = {
+  open: "outline",
+  partial: "outline",
+  paid: "default",
+  void: "secondary",
+  overdue: "destructive",
+};
 
 /** Invoice number as shown: QS-000123. */
 export function formatInvoiceNumber(number: number): string {

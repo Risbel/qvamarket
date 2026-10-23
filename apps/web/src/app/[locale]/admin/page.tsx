@@ -1,4 +1,5 @@
-import { and, asc, companyRole, db, desc, eq, inArray, member, organization, sql, store, user } from "@qvashop/db";
+import { and, asc, companyRole, db, desc, eq, inArray, member, organization, sql, store, subscription, user } from "@qvashop/db";
+import { STATUS_BADGE, effectiveSubscription } from "@/lib/billing";
 import { isOwner, roleKeys } from "@/lib/permissions";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -25,6 +26,8 @@ export default async function AdminHomePage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Admin");
+  const tb = await getTranslations("Billing");
+  const tp = await getTranslations("Plans.plans");
   const host = (await headers()).get("host");
 
   // Superadmin view across all tenants (the layout already enforced the admin role)
@@ -60,9 +63,9 @@ export default async function AdminHomePage({
 
   // Every member of the listed companies, for "Sign in as" (admin accounts are never targets)
   const tenantIds = [...new Set(rows.map((row) => row.tenantId))];
-  const [members, roles] =
+  const [members, roles, subscriptions] =
     tenantIds.length === 0
-      ? [[], []]
+      ? [[], [], []]
       : await Promise.all([
           db
             .select({ tenantId: member.organizationId, userId: user.id, name: user.name, email: user.email, role: member.role })
@@ -74,7 +77,9 @@ export default async function AdminHomePage({
             .select({ tenantId: companyRole.tenantId, key: companyRole.key, name: companyRole.name })
             .from(companyRole)
             .where(inArray(companyRole.tenantId, tenantIds)),
+          db.select().from(subscription).where(inArray(subscription.tenantId, tenantIds)),
         ]);
+  const planOf = (tenantId: string) => effectiveSubscription(subscriptions.find((row) => row.tenantId === tenantId) ?? null);
   const roleName = (tenantId: string, roleString: string) =>
     isOwner(roleString)
       ? t("impersonate.owner")
@@ -122,7 +127,18 @@ export default async function AdminHomePage({
                     {row.slug}
                   </a>
                 </TableCell>
-                <TableCell>{row.company}</TableCell>
+                <TableCell>
+                  <div>{row.company}</div>
+                  {(() => {
+                    const plan = planOf(row.tenantId);
+                    return (
+                      <Link href={`/admin/billing/${row.tenantId}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:underline">
+                        {tp(`${plan.plan}.name`)}
+                        <Badge variant={STATUS_BADGE[plan.status]}>{tb(`status.${plan.status}`)}</Badge>
+                      </Link>
+                    );
+                  })()}
+                </TableCell>
                 <TableCell>{row.ownerEmail ?? "—"}</TableCell>
                 <TableCell>
                   <Badge

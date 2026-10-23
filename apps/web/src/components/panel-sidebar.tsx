@@ -7,6 +7,7 @@ import {
   ChartNoAxesCombined,
   ChevronsUpDown,
   Contact,
+  CreditCard,
   ExternalLink,
   FolderTree,
   KeyRound,
@@ -18,6 +19,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  Tags,
   UserPlus,
   Users,
   Warehouse,
@@ -73,6 +75,8 @@ const ITEMS = {
   // superadmin panel
   merchants: { path: "", icon: Store, exact: true },
   newMerchant: { path: "/merchants/new", icon: UserPlus, exact: false },
+  billing: { path: "/billing", icon: CreditCard, exact: false },
+  prices: { path: "/prices", icon: Tags, exact: false },
 } as const;
 
 export type PanelNavKey = keyof typeof ITEMS;

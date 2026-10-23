@@ -408,7 +408,10 @@
     "orderEditEmpty": "No puedes quitar todos los productos. Si el cliente ya no quiere nada, cancela el pedido.",
     "quantityInvalid": "Escribe un número entero de unidades.",
     "stockNoChange": "Es el mismo stock que ya hay.",
-    "stockBelowZero": "No puedes quitar más de lo que hay ({stock})."
+    "stockBelowZero": "No puedes quitar más de lo que hay ({stock}).",
+    "dateInPast": "Elige una fecha futura.",
+    "dateTooFar": "Como máximo dentro de {days} días.",
+    "dueDaysInvalid": "Un número de días entre 0 y {max}."
   },
   "Admin": {
     "title": "Panel de administración",
@@ -585,7 +588,9 @@
       "stores": "Tiendas",
       "newMerchant": "Nuevo comercio",
       "roles": "Roles",
-      "team": "Equipo"
+      "team": "Equipo",
+      "billing": "Facturación",
+      "prices": "Precios"
     },
     "status": {
       "pending": "Tu tienda está pendiente de aprobación. Puedes preparar tus productos y tu marca; no será visible para el público hasta que la aprobemos.",
@@ -2408,6 +2413,323 @@
       "bannerImages": "Tu plan permite hasta {max, plural, one {# imagen} other {# imágenes}} por pantalla en el banner. Mejora tu plan para añadir más.",
       "pages": "Tu plan permite hasta {max, plural, one {# página} other {# páginas}} por tienda. Mejora tu plan para crear más.",
       "members": "{max, plural, =0 {Tu plan no incluye miembros del equipo.} one {Tu plan permite # miembro en el equipo (las invitaciones pendientes cuentan).} other {Tu plan permite # miembros en el equipo (las invitaciones pendientes cuentan).}} Mejora tu plan para añadir más."
+    }
+  },
+  "Billing": {
+    "title": "Facturación",
+    "intro": "Plan, estado y lo que debe cada empresa. Los pagos se registran a mano: el comercio paga fuera de la plataforma.",
+    "empty": "Todavía no hay empresas.",
+    "manage": "Gestionar",
+    "back": "Facturación",
+    "chosen": "Eligió {plan}",
+    "columns": {
+      "company": "Empresa",
+      "plan": "Plan",
+      "status": "Estado",
+      "until": "Pagado hasta",
+      "owed": "Debe",
+      "actions": "Acciones"
+    },
+    "status": {
+      "trialing": "En prueba",
+      "active": "Activa",
+      "past_due": "Pago vencido",
+      "paused": "Pausada",
+      "cancelled": "Cancelada",
+      "expired": "Vencida"
+    },
+    "cycles": {
+      "monthly": "Mensual",
+      "quarterly": "Trimestral",
+      "yearly": "Anual"
+    },
+    "actors": {
+      "admin": "Superadmin",
+      "owner": "Dueño",
+      "system": "Sistema"
+    },
+    "subscription": {
+      "title": "Suscripción",
+      "plan": "Plan",
+      "cycle": "Ciclo y moneda",
+      "trialEnds": "Fin de la prueba",
+      "paidUntil": "Pagado hasta",
+      "noEnd": "Sin fecha de fin",
+      "graceEnds": "Pasa a Gratis el",
+      "pausedSince": "Pausada desde",
+      "resumesAt": "Se reanuda el",
+      "scheduled": "Al terminar el periodo cambia a",
+      "cancelling": "Cancelación",
+      "cancellingValue": "Se cancela al terminar el periodo pagado"
+    },
+    "invoices": {
+      "title": "Facturas",
+      "empty": "Todavía no hay facturas.",
+      "status": {
+        "open": "Pendiente",
+        "partial": "Pago parcial",
+        "paid": "Pagada",
+        "void": "Anulada",
+        "overdue": "Vencida"
+      },
+      "kind": {
+        "renewal": "Periodo",
+        "upgrade": "Mejora de plan (prorrateo)",
+        "manual": "Manual"
+      },
+      "paidOn": "Pagada el",
+      "dueOn": "Vence el",
+      "voidReason": "Anulada: {reason}",
+      "replaced": "sustituida por un cambio de plan",
+      "collected": "Cobrado {amount}",
+      "refunded": "Devuelto {amount}",
+      "record": "Registrar pago",
+      "recordRefund": "Registrar devolución",
+      "void": "Anular",
+      "paymentKind": {
+        "payment": "Pago",
+        "refund": "Devolución"
+      },
+      "method": {
+        "cash": "Efectivo",
+        "transfer": "Transferencia",
+        "zelle": "Zelle",
+        "other": "Otro"
+      },
+      "toasts": {
+        "paymentRecorded": "Pago registrado.",
+        "refundRecorded": "Devolución registrada.",
+        "voided": "Factura anulada."
+      }
+    },
+    "history": {
+      "title": "Historial",
+      "empty": "Sin movimientos todavía.",
+      "replaced": "Sustituida por un cambio de plan."
+    },
+    "events": {
+      "created": "Suscripción creada",
+      "trial_started": "Prueba iniciada",
+      "trial_ended": "Prueba terminada",
+      "plan_upgraded": "Plan mejorado",
+      "downgrade_scheduled": "Cambio programado para el fin del periodo",
+      "downgrade_cancelled": "Cambio programado retirado",
+      "plan_downgraded": "Plan bajado",
+      "cycle_changed": "Nuevo periodo con otras condiciones",
+      "paused": "Suscripción pausada",
+      "resumed": "Suscripción reanudada",
+      "cancel_scheduled": "Cancelación programada",
+      "reactivated": "Cancelación retirada",
+      "cancelled": "Suscripción cancelada",
+      "renewed": "Periodo pagado",
+      "invoice_issued": "Factura emitida",
+      "invoice_voided": "Factura anulada",
+      "payment_recorded": "Pago registrado",
+      "refund_recorded": "Devolución registrada",
+      "became_past_due": "Pago vencido",
+      "expired": "Suscripción vencida",
+      "price_changed": "Precio cambiado",
+      "period_adjusted": "Fecha de pago corregida",
+      "trial_adjusted": "Fin de la prueba cambiado"
+    },
+    "actions": {
+      "changePlan": "Cambiar plan",
+      "issueNext": "Emitir factura del próximo periodo",
+      "resume": "Reanudar",
+      "pause": "Pausar",
+      "more": "Más",
+      "manualInvoice": "Factura manual",
+      "paidUntil": "Corregir fecha de pago",
+      "trialEnd": "Cambiar fin de la prueba",
+      "unschedule": "Retirar cambio programado",
+      "reactivate": "Retirar cancelación",
+      "cancelAtEnd": "Cancelar al fin del periodo",
+      "cancelNow": "Cancelar ahora",
+      "toasts": {
+        "invoiceIssued": "Factura emitida.",
+        "planChanged": "Plan actualizado.",
+        "paused": "Suscripción pausada.",
+        "paidUntil": "Fecha de pago corregida.",
+        "trialEnd": "Fin de la prueba actualizado.",
+        "resume": "Suscripción reanudada.",
+        "cancelAtEnd": "Se cancelará al terminar el periodo.",
+        "cancelNow": "Suscripción cancelada.",
+        "reactivate": "Cancelación retirada.",
+        "unschedule": "Cambio programado retirado."
+      },
+      "errors": {
+        "forbidden": "No tienes permiso para hacer esto.",
+        "notFound": "No se encontró.",
+        "invalid": "Revisa los datos.",
+        "failed": "No se pudo completar. Inténtalo de nuevo.",
+        "noPrice": "Ese plan no tiene precio activo para ese ciclo y moneda. Créalo en Precios.",
+        "noChange": "No hay nada que cambiar.",
+        "notPaused": "La suscripción no está pausada.",
+        "alreadyPaused": "La suscripción ya está pausada.",
+        "notActive": "No se puede con la suscripción en este estado.",
+        "noPeriod": "No hay un periodo pagado al que aplicar esto.",
+        "voided": "La factura está anulada.",
+        "exceedsDue": "El pago no puede pasar de lo pendiente ({amount}).",
+        "exceedsPaid": "La devolución no puede pasar de lo cobrado ({amount}).",
+        "hasPayments": "Tiene pagos: regístralos como devolución antes de anularla.",
+        "notTrialing": "La empresa no está en prueba.",
+        "alreadyIssued": "La factura de ese periodo ya existe.",
+        "unknownCurrency": "Esa moneda no existe en la plataforma."
+      },
+      "noteHelp": "Opcional. Queda en el historial.",
+      "noteRequiredHelp": "Queda en el historial.",
+      "datePlaceholder": "Elige una fecha",
+      "time": "Hora",
+      "dateClear": "Quitar",
+      "timeZone": "Hora de tu navegador ({zone}).",
+      "back": "Volver",
+      "note": "Nota",
+      "notePlaceholder": "Ej.: Lo pidió por WhatsApp el 20/10"
+    },
+    "changePlan": {
+      "title": "Cambiar plan",
+      "description": "Lo que pasará se explica abajo antes de confirmar.",
+      "plan": "Plan",
+      "cycle": "Ciclo",
+      "currency": "Moneda y precio",
+      "noPrice": "Sin precio activo para este plan y ciclo.",
+      "when": "¿Cuándo?",
+      "timing": {
+        "periodEnd": "Al terminar lo pagado ({date})",
+        "now": "Ahora"
+      },
+      "timingHelp": {
+        "periodEnd": "Sigue con su plan actual hasta esa fecha.",
+        "now": "Empieza un periodo nuevo hoy. No se devuelve nada."
+      },
+      "startsAt": "Inicio del periodo",
+      "startsAtHelp": "Vacío = ahora. Puedes poner una fecha pasada si ya pagó desde entonces.",
+      "dueDays": "Plazo para pagar",
+      "days": "días",
+      "dueDaysHelp": "El plan funciona mientras tanto; sin pago, pasa a Pago vencido.",
+      "note": "Nota",
+      "notePlaceholder": "Ej.: Pagará por transferencia el viernes",
+      "submit": "Confirmar",
+      "outcome": {
+        "freeNow": "Pasa a Gratis ahora. Las facturas pendientes sin pagos se anulan.",
+        "freeAtPeriodEnd": "Sigue con su plan hasta el {date} y luego pasa a Gratis.",
+        "prorated": "Cambia ahora y se emite una factura de {amount} por los días que quedan del periodo.",
+        "atPeriodEnd": "Sigue igual hasta el {date}; la factura del siguiente periodo usará el nuevo plan.",
+        "newPeriod": "Empieza un periodo nuevo con una factura de {amount}. Al pagarla queda cubierto el periodo completo.",
+        "noChange": "Ya tiene este plan y estas condiciones."
+      }
+    },
+    "manualInvoice": {
+      "title": "Factura manual",
+      "description": "Para cobrar algo fuera de los periodos: ayuda con la configuración, una corrección...",
+      "amount": "Importe",
+      "amountPlaceholder": "Ej.: 15.00",
+      "currency": "Moneda",
+      "dueAt": "Vence el",
+      "dueAtHelp": "Vacío = en 3 días.",
+      "concept": "Concepto",
+      "conceptPlaceholder": "Ej.: Carga inicial de 120 productos",
+      "submit": "Emitir factura"
+    },
+    "pause": {
+      "title": "Pausar suscripción",
+      "description": "Las tiendas dejan de ser públicas y no se factura. Máximo {days} días. Al reanudar, los días pausados se suman a lo pagado.",
+      "resumesAt": "Se reanuda el",
+      "resumesAtHelp": "Vacío = hasta que la reanudes a mano.",
+      "note": "Nota",
+      "notePlaceholder": "Ej.: Cierra por vacaciones",
+      "submit": "Pausar"
+    },
+    "paidUntil": {
+      "title": "Corregir fecha de pago",
+      "description": "Mueve la fecha hasta la que está pagado (por ejemplo, un pago anterior a la plataforma o unos días de cortesía).",
+      "date": "Pagado hasta",
+      "dateHelp": "La empresa tendrá su plan hasta esta fecha.",
+      "note": "Motivo",
+      "notePlaceholder": "Ej.: Pagó enero en efectivo antes de usar el sistema",
+      "submit": "Guardar"
+    },
+    "trialEnd": {
+      "title": "Cambiar fin de la prueba",
+      "description": "Alarga o acorta la prueba gratuita.",
+      "date": "Fin de la prueba",
+      "dateHelp": "Después pasa a Gratis si no eligió un plan de pago.",
+      "note": "Motivo",
+      "notePlaceholder": "Ej.: Una semana más para cargar el catálogo",
+      "submit": "Guardar"
+    },
+    "confirm": {
+      "resume": {
+        "title": "Reanudar suscripción",
+        "description": "Las tiendas vuelven a ser públicas y los días pausados se suman a lo pagado.",
+        "submit": "Reanudar"
+      },
+      "cancelAtEnd": {
+        "title": "Cancelar al fin del periodo",
+        "description": "Mantiene su plan hasta el {date} y luego pasa a Gratis. Se puede retirar antes.",
+        "submit": "Programar cancelación"
+      },
+      "cancelNow": {
+        "title": "Cancelar ahora",
+        "description": "Pasa a Gratis ahora mismo. No se devuelve nada automáticamente: registra la devolución en la factura si corresponde.",
+        "submit": "Cancelar ahora"
+      },
+      "reactivate": {
+        "title": "Retirar la cancelación",
+        "description": "La suscripción seguirá después del {date}.",
+        "submit": "Retirar cancelación"
+      },
+      "unschedule": {
+        "title": "Retirar cambio programado",
+        "description": "Seguirá con su plan y ciclo actuales.",
+        "submit": "Retirar"
+      }
+    },
+    "payment": {
+      "title": "Pago de {number}",
+      "refundTitle": "Devolución de {number}",
+      "summary": "Pendiente: {due} · Cobrado: {collected}",
+      "kind": "Tipo",
+      "amount": "Importe",
+      "method": "Método",
+      "reference": "Referencia",
+      "referencePlaceholder": "Ej.: Transferencia 4521-88",
+      "referenceHelp": "Número de transferencia o confirmación (opcional).",
+      "paidAt": "Fecha del pago",
+      "refundedAt": "Fecha de la devolución",
+      "paidAtHelp": "Vacío = ahora.",
+      "save": "Registrar pago",
+      "saveRefund": "Registrar devolución"
+    },
+    "voidInvoice": {
+      "title": "Anular {number}",
+      "description": "La factura queda en el historial como anulada y deja de contar como deuda.",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ej.: Emitida con el plan equivocado",
+      "submit": "Anular factura"
+    },
+    "prices": {
+      "title": "Precios",
+      "intro": "Lo que cuesta cada plan de pago por ciclo y moneda. Las facturas nuevas usan el precio activo; las ya emitidas conservan el suyo.",
+      "plan": "Plan",
+      "cycle": "Ciclo",
+      "currency": "Moneda",
+      "amount": "Precio",
+      "state": "Estado",
+      "actions": "Acciones",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "edit": "Editar",
+      "new": "Nuevo precio",
+      "editTitle": "Editar precio",
+      "newTitle": "Nuevo precio",
+      "dialogDescription": "Un precio por plan, ciclo y moneda.",
+      "activeLabel": "Activo",
+      "activeHelp": "Solo los precios activos se pueden usar en un cambio de plan.",
+      "save": "Guardar",
+      "toasts": {
+        "saved": "Precio guardado."
+      }
     }
   }
 }

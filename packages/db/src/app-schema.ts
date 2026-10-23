@@ -1556,6 +1556,9 @@ export const SUBSCRIPTION_EVENT_TYPES = [
   "became_past_due",
   "expired",
   "price_changed",
+  // the superadmin corrected the paid-until date or the trial end by hand
+  "period_adjusted",
+  "trial_adjusted",
 ] as const;
 
 const quoted = (values: readonly string[]) => values.map((v) => `'${v}'`).join(", ");

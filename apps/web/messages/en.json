@@ -408,7 +408,10 @@
     "orderEditEmpty": "You cannot remove every item. If the customer wants nothing, cancel the order.",
     "quantityInvalid": "Type a whole number of units.",
     "stockNoChange": "That is the stock there already is.",
-    "stockBelowZero": "You cannot remove more than there is ({stock})."
+    "stockBelowZero": "You cannot remove more than there is ({stock}).",
+    "dateInPast": "Pick a future date.",
+    "dateTooFar": "At most {days} days ahead.",
+    "dueDaysInvalid": "A number of days between 0 and {max}."
   },
   "Admin": {
     "title": "Admin panel",
@@ -585,7 +588,9 @@
       "stores": "Stores",
       "newMerchant": "New merchant",
       "roles": "Roles",
-      "team": "Team"
+      "team": "Team",
+      "billing": "Billing",
+      "prices": "Prices"
     },
     "status": {
       "pending": "Your store is awaiting approval. You can prepare your products and brand; it will not be visible to the public until we approve it.",
@@ -2408,6 +2413,323 @@
       "bannerImages": "Your plan allows up to {max, plural, one {# image} other {# images}} per screen in the banner. Upgrade your plan to add more.",
       "pages": "Your plan allows up to {max, plural, one {# page} other {# pages}} per store. Upgrade your plan to create more.",
       "members": "{max, plural, =0 {Your plan does not include team members.} one {Your plan allows # team member (pending invitations count).} other {Your plan allows # team members (pending invitations count).}} Upgrade your plan to add more."
+    }
+  },
+  "Billing": {
+    "title": "Billing",
+    "intro": "Each company's plan, status and what it owes. Payments are recorded by hand: merchants pay outside the platform.",
+    "empty": "No companies yet.",
+    "manage": "Manage",
+    "back": "Billing",
+    "chosen": "Chose {plan}",
+    "columns": {
+      "company": "Company",
+      "plan": "Plan",
+      "status": "Status",
+      "until": "Paid until",
+      "owed": "Owes",
+      "actions": "Actions"
+    },
+    "status": {
+      "trialing": "Trial",
+      "active": "Active",
+      "past_due": "Past due",
+      "paused": "Paused",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    },
+    "cycles": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "actors": {
+      "admin": "Superadmin",
+      "owner": "Owner",
+      "system": "System"
+    },
+    "subscription": {
+      "title": "Subscription",
+      "plan": "Plan",
+      "cycle": "Cycle and currency",
+      "trialEnds": "Trial ends",
+      "paidUntil": "Paid until",
+      "noEnd": "No end date",
+      "graceEnds": "Falls to Free on",
+      "pausedSince": "Paused since",
+      "resumesAt": "Resumes on",
+      "scheduled": "At the end of the period changes to",
+      "cancelling": "Cancellation",
+      "cancellingValue": "Cancels at the end of the paid period"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "empty": "No invoices yet.",
+      "status": {
+        "open": "Open",
+        "partial": "Partly paid",
+        "paid": "Paid",
+        "void": "Void",
+        "overdue": "Overdue"
+      },
+      "kind": {
+        "renewal": "Period",
+        "upgrade": "Plan upgrade (prorated)",
+        "manual": "Manual"
+      },
+      "paidOn": "Paid on",
+      "dueOn": "Due on",
+      "voidReason": "Voided: {reason}",
+      "replaced": "replaced by a plan change",
+      "collected": "Collected {amount}",
+      "refunded": "Refunded {amount}",
+      "record": "Record payment",
+      "recordRefund": "Record refund",
+      "void": "Void",
+      "paymentKind": {
+        "payment": "Payment",
+        "refund": "Refund"
+      },
+      "method": {
+        "cash": "Cash",
+        "transfer": "Transfer",
+        "zelle": "Zelle",
+        "other": "Other"
+      },
+      "toasts": {
+        "paymentRecorded": "Payment recorded.",
+        "refundRecorded": "Refund recorded.",
+        "voided": "Invoice voided."
+      }
+    },
+    "history": {
+      "title": "History",
+      "empty": "Nothing yet.",
+      "replaced": "Replaced by a plan change."
+    },
+    "events": {
+      "created": "Subscription created",
+      "trial_started": "Trial started",
+      "trial_ended": "Trial ended",
+      "plan_upgraded": "Plan upgraded",
+      "downgrade_scheduled": "Change scheduled for the end of the period",
+      "downgrade_cancelled": "Scheduled change withdrawn",
+      "plan_downgraded": "Plan downgraded",
+      "cycle_changed": "New period with other terms",
+      "paused": "Subscription paused",
+      "resumed": "Subscription resumed",
+      "cancel_scheduled": "Cancellation scheduled",
+      "reactivated": "Cancellation withdrawn",
+      "cancelled": "Subscription cancelled",
+      "renewed": "Period paid",
+      "invoice_issued": "Invoice issued",
+      "invoice_voided": "Invoice voided",
+      "payment_recorded": "Payment recorded",
+      "refund_recorded": "Refund recorded",
+      "became_past_due": "Payment overdue",
+      "expired": "Subscription expired",
+      "price_changed": "Price changed",
+      "period_adjusted": "Paid-until date corrected",
+      "trial_adjusted": "Trial end changed"
+    },
+    "actions": {
+      "changePlan": "Change plan",
+      "issueNext": "Issue next period's invoice",
+      "resume": "Resume",
+      "pause": "Pause",
+      "more": "More",
+      "manualInvoice": "Manual invoice",
+      "paidUntil": "Correct paid-until date",
+      "trialEnd": "Change trial end",
+      "unschedule": "Withdraw scheduled change",
+      "reactivate": "Withdraw cancellation",
+      "cancelAtEnd": "Cancel at period end",
+      "cancelNow": "Cancel now",
+      "toasts": {
+        "invoiceIssued": "Invoice issued.",
+        "planChanged": "Plan updated.",
+        "paused": "Subscription paused.",
+        "paidUntil": "Paid-until date corrected.",
+        "trialEnd": "Trial end updated.",
+        "resume": "Subscription resumed.",
+        "cancelAtEnd": "It will cancel at the end of the period.",
+        "cancelNow": "Subscription cancelled.",
+        "reactivate": "Cancellation withdrawn.",
+        "unschedule": "Scheduled change withdrawn."
+      },
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "notFound": "Not found.",
+        "invalid": "Check the data.",
+        "failed": "Could not complete it. Try again.",
+        "noPrice": "That plan has no active price for that cycle and currency. Create it in Prices.",
+        "noChange": "There is nothing to change.",
+        "notPaused": "The subscription is not paused.",
+        "alreadyPaused": "The subscription is already paused.",
+        "notActive": "Not possible with the subscription in this state.",
+        "noPeriod": "There is no paid period to apply this to.",
+        "voided": "The invoice is void.",
+        "exceedsDue": "The payment cannot exceed what is due ({amount}).",
+        "exceedsPaid": "The refund cannot exceed what was collected ({amount}).",
+        "hasPayments": "It has payments: record them as a refund before voiding it.",
+        "notTrialing": "The company is not on a trial.",
+        "alreadyIssued": "That period's invoice already exists.",
+        "unknownCurrency": "That currency does not exist on the platform."
+      },
+      "noteHelp": "Optional. Kept in the history.",
+      "noteRequiredHelp": "Kept in the history.",
+      "datePlaceholder": "Pick a date",
+      "time": "Time",
+      "dateClear": "Clear",
+      "timeZone": "Your browser's time ({zone}).",
+      "back": "Back",
+      "note": "Note",
+      "notePlaceholder": "E.g. Asked on WhatsApp on 10/20"
+    },
+    "changePlan": {
+      "title": "Change plan",
+      "description": "What will happen is explained below before you confirm.",
+      "plan": "Plan",
+      "cycle": "Cycle",
+      "currency": "Currency and price",
+      "noPrice": "No active price for this plan and cycle.",
+      "when": "When?",
+      "timing": {
+        "periodEnd": "When the paid time ends ({date})",
+        "now": "Now"
+      },
+      "timingHelp": {
+        "periodEnd": "Keeps the current plan until that date.",
+        "now": "A new period starts today. Nothing is refunded."
+      },
+      "startsAt": "Period start",
+      "startsAtHelp": "Empty = now. A past date is fine if they have paid since then.",
+      "dueDays": "Time to pay",
+      "days": "days",
+      "dueDaysHelp": "The plan works meanwhile; unpaid, it becomes Past due.",
+      "note": "Note",
+      "notePlaceholder": "E.g. Will pay by transfer on Friday",
+      "submit": "Confirm",
+      "outcome": {
+        "freeNow": "Moves to Free now. Open invoices without payments are voided.",
+        "freeAtPeriodEnd": "Keeps the plan until {date}, then moves to Free.",
+        "prorated": "Changes now, with an invoice of {amount} for the days left in the period.",
+        "atPeriodEnd": "Stays as it is until {date}; the next period's invoice uses the new plan.",
+        "newPeriod": "A new period starts with an invoice of {amount}. Paying it covers the whole period.",
+        "noChange": "It already has this plan and these terms."
+      }
+    },
+    "manualInvoice": {
+      "title": "Manual invoice",
+      "description": "To bill something outside the periods: setup help, a correction...",
+      "amount": "Amount",
+      "amountPlaceholder": "E.g. 15.00",
+      "currency": "Currency",
+      "dueAt": "Due on",
+      "dueAtHelp": "Empty = in 3 days.",
+      "concept": "Description",
+      "conceptPlaceholder": "E.g. Initial upload of 120 products",
+      "submit": "Issue invoice"
+    },
+    "pause": {
+      "title": "Pause subscription",
+      "description": "The stores stop being public and nothing is billed. At most {days} days. On resume, the paused days are added to the paid time.",
+      "resumesAt": "Resumes on",
+      "resumesAtHelp": "Empty = until you resume it by hand.",
+      "note": "Note",
+      "notePlaceholder": "E.g. Closed for holidays",
+      "submit": "Pause"
+    },
+    "paidUntil": {
+      "title": "Correct paid-until date",
+      "description": "Moves the date it is paid until (e.g. a payment made before the platform, or a few goodwill days).",
+      "date": "Paid until",
+      "dateHelp": "The company keeps its plan until this date.",
+      "note": "Reason",
+      "notePlaceholder": "E.g. Paid January in cash before using the system",
+      "submit": "Save"
+    },
+    "trialEnd": {
+      "title": "Change trial end",
+      "description": "Extends or shortens the free trial.",
+      "date": "Trial ends",
+      "dateHelp": "Then it moves to Free unless a paid plan was chosen.",
+      "note": "Reason",
+      "notePlaceholder": "E.g. One more week to load the catalog",
+      "submit": "Save"
+    },
+    "confirm": {
+      "resume": {
+        "title": "Resume subscription",
+        "description": "The stores are public again and the paused days are added to the paid time.",
+        "submit": "Resume"
+      },
+      "cancelAtEnd": {
+        "title": "Cancel at period end",
+        "description": "Keeps the plan until {date}, then moves to Free. It can be withdrawn before then.",
+        "submit": "Schedule cancellation"
+      },
+      "cancelNow": {
+        "title": "Cancel now",
+        "description": "Moves to Free right away. Nothing is refunded automatically: record the refund on the invoice if needed.",
+        "submit": "Cancel now"
+      },
+      "reactivate": {
+        "title": "Withdraw the cancellation",
+        "description": "The subscription will go on after {date}.",
+        "submit": "Withdraw cancellation"
+      },
+      "unschedule": {
+        "title": "Withdraw scheduled change",
+        "description": "It keeps its current plan and cycle.",
+        "submit": "Withdraw"
+      }
+    },
+    "payment": {
+      "title": "Payment of {number}",
+      "refundTitle": "Refund of {number}",
+      "summary": "Due: {due} · Collected: {collected}",
+      "kind": "Type",
+      "amount": "Amount",
+      "method": "Method",
+      "reference": "Reference",
+      "referencePlaceholder": "E.g. Transfer 4521-88",
+      "referenceHelp": "Transfer number or confirmation (optional).",
+      "paidAt": "Payment date",
+      "refundedAt": "Refund date",
+      "paidAtHelp": "Empty = now.",
+      "save": "Record payment",
+      "saveRefund": "Record refund"
+    },
+    "voidInvoice": {
+      "title": "Void {number}",
+      "description": "The invoice stays in the history as void and no longer counts as owed.",
+      "reason": "Reason",
+      "reasonPlaceholder": "E.g. Issued with the wrong plan",
+      "submit": "Void invoice"
+    },
+    "prices": {
+      "title": "Prices",
+      "intro": "What each paid plan costs per cycle and currency. New invoices use the active price; issued ones keep theirs.",
+      "plan": "Plan",
+      "cycle": "Cycle",
+      "currency": "Currency",
+      "amount": "Price",
+      "state": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "edit": "Edit",
+      "new": "New price",
+      "editTitle": "Edit price",
+      "newTitle": "New price",
+      "dialogDescription": "One price per plan, cycle and currency.",
+      "activeLabel": "Active",
+      "activeHelp": "Only active prices can be used in a plan change.",
+      "save": "Save",
+      "toasts": {
+        "saved": "Price saved."
+      }
     }
   }
 }

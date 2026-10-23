@@ -1,0 +1,2 @@
+ALTER TABLE "subscription_event" DROP CONSTRAINT "subscription_event_type";--> statement-breakpoint
+ALTER TABLE "subscription_event" ADD CONSTRAINT "subscription_event_type" CHECK (type in ('created', 'trial_started', 'trial_ended', 'plan_upgraded', 'downgrade_scheduled', 'downgrade_cancelled', 'plan_downgraded', 'cycle_changed', 'paused', 'resumed', 'cancel_scheduled', 'reactivated', 'cancelled', 'renewed', 'invoice_issued', 'invoice_voided', 'payment_recorded', 'refund_recorded', 'became_past_due', 'expired', 'price_changed', 'period_adjusted', 'trial_adjusted'));
