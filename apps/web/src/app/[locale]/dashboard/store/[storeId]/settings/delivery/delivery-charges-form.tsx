@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +45,7 @@ export function DeliveryChargesForm({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [formError, setFormError] = useState<string | null>(null);
 
   const schema = useMemo(() => createDeliveryChargesSchema(tv, currencies), [tv, currencies]);
@@ -63,6 +65,8 @@ export function DeliveryChargesForm({
         form.setError(field as keyof DeliveryChargesValues, { message: messages[0] });
       }
       setFormError(t("errors.invalid"));
+    } else if (result?.error === "planLimit" || result?.error === "planFeature") {
+      setFormError(planError(result));
     } else {
       const key = result?.error === "forbidden" || result?.error === "deliveryNeedsArea" ? result.error : "failed";
       setFormError(t(`errors.${key}`));

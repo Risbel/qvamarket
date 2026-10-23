@@ -1,7 +1,8 @@
-import { and, asc, companyRole, db, eq, member, sql, user } from "@qvashop/db";
+import { and, asc, companyRole, count, db, eq, gt, invitation, member, ne, sql, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { generateTemporaryPassword } from "@/lib/passwords";
 import { OWNER_ROLE, hasPermissions, isOwner, normalizePermissions, type Permissions } from "@/lib/permissions";
+import { belowLimit, planLimitError, type PlanKey, type PlanLimitError } from "@/lib/plans";
 import { accessWithin, type StoreAccess } from "@/lib/store-access";
 import { toStoreAccess, type TeamMemberValues } from "@/lib/validation/team";
 import { lockCompany, memberPermissions, type Tx } from "./company-roles";
@@ -62,6 +63,42 @@ export async function listTeamMembers(tenantId: string): Promise<TeamMemberRow[]
   return rows.map((row) => ({ ...row, storeAccess: access.get(row.id) ?? { all: true } }));
 }
 
+/** Members who are not owners (owners do not count towards the plan's team size). */
+const notOwner = sql`not ('owner' = any(regexp_split_to_array(trim(${member.role}), 's*,s*')))`;
+
+/**
+ * Room in the plan for one more team member? Counts the members who are not owners and,
+ * with `invitations`, the pending invitations (each may become a member; `exceptEmail`'s own
+ * is left out, since refreshing it adds nobody). Run under the company lock.
+ */
+export async function checkMemberRoom(
+  executor: typeof db | Tx,
+  tenantId: string,
+  plan: PlanKey,
+  invitations: { exceptEmail: string | null } | null,
+): Promise<PlanLimitError | null> {
+  const [{ members }] = await executor
+    .select({ members: count() })
+    .from(member)
+    .where(and(eq(member.organizationId, tenantId), notOwner));
+  let pending = 0;
+  if (invitations) {
+    const [row] = await executor
+      .select({ total: count() })
+      .from(invitation)
+      .where(
+        and(
+          eq(invitation.organizationId, tenantId),
+          eq(invitation.status, "pending"),
+          gt(invitation.expiresAt, new Date()),
+          invitations.exceptEmail ? ne(invitation.email, invitations.exceptEmail) : undefined,
+        ),
+      );
+    pending = row.total;
+  }
+  return belowLimit(plan, "members", members + pending) ? null : planLimitError(plan, "members");
+}
+
 export type RoleCheck = "roleNotFound" | "escalation" | null;
 
 /** Can `actor` give the company role `roleKey`? (it exists, is not owner, grants nothing more) */
@@ -104,6 +141,7 @@ async function findTarget(
 
 export type AddMemberResult =
   | { ok: true; email: string; temporaryPassword: string }
+  | PlanLimitError
   | { ok: false; error: "emailTaken" | "roleNotFound" | "escalation" | "storeNotFound" };
 
 /**
@@ -114,12 +152,19 @@ export type AddMemberResult =
  * The account is created through Better Auth (no session is created, so the actor's own
  * session is untouched) and removed again if adding the member fails.
  */
-export async function addTeamMember(tenantId: string, actor: TeamActor, values: TeamMemberValues): Promise<AddMemberResult> {
+export async function addTeamMember(
+  tenantId: string,
+  actor: TeamActor,
+  plan: PlanKey,
+  values: TeamMemberValues,
+): Promise<AddMemberResult> {
   const access = toStoreAccess(values.access);
   const grantable =
     (await checkGrantable(db, tenantId, actor, values.roleKey)) ??
     (await checkAccessGrantable(db, tenantId, actor.storeAccess, access));
   if (grantable) return { ok: false, error: grantable };
+  const room = await checkMemberRoom(db, tenantId, plan, { exceptEmail: values.email.toLowerCase() });
+  if (room) return room;
   const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.email, values.email)).limit(1);
   if (existing) return { ok: false, error: "emailTaken" };
 
@@ -138,7 +183,8 @@ export async function addTeamMember(tenantId: string, actor: TeamActor, values: 
       // The role (or a store) may have been deleted or changed since the first check
       const check =
         (await checkGrantable(tx, tenantId, actor, values.roleKey)) ??
-        (await checkAccessGrantable(tx, tenantId, actor.storeAccess, access));
+        (await checkAccessGrantable(tx, tenantId, actor.storeAccess, access)) ??
+        (await checkMemberRoom(tx, tenantId, plan, { exceptEmail: values.email.toLowerCase() }));
       if (check) return check;
       const [created] = await tx
         .insert(member)
@@ -149,7 +195,7 @@ export async function addTeamMember(tenantId: string, actor: TeamActor, values: 
     });
     if (refused) {
       await removeUser(userId);
-      return { ok: false, error: refused };
+      return typeof refused === "string" ? { ok: false, error: refused } : refused;
     }
     return { ok: true, email: values.email, temporaryPassword };
   } catch (error) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
+import { isPlanError } from "@/lib/plans";
 import { useStoreId } from "@/components/panel-scope";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, ImageUpIcon } from "lucide-react";
@@ -45,6 +47,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [lines, setLines] = useState<UploadLine[]>([]);
@@ -53,8 +56,13 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
   const shape = t(`devices.${device}.shape`);
   const titleId = `banner-${device}-title`;
   const remaining = MAX_BANNER_IMAGES - images.length;
-  const errorText = (error: Exclude<BannerActionResult, { ok: true }>["error"]) =>
-    t(`errors.${error}`, { count: MAX_BANNER_IMAGES, limit: formatBytes(MAX_IMAGE_BYTES, locale) });
+  const errorText = (failure: { error: string }) =>
+    isPlanError(failure)
+      ? planError(failure)
+      : t(`errors.${failure.error as Exclude<BannerActionResult, { ok: true }>["error"]}`, {
+          count: MAX_BANNER_IMAGES,
+          limit: formatBytes(MAX_IMAGE_BYTES, locale),
+        });
 
   async function onFiles(files: File[]) {
     if (files.length === 0) return;
@@ -77,7 +85,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
             body.append("device", device);
             return uploadBannerImageAction(storeId, body);
           },
-          errorText: (error) => errorText(error as Exclude<BannerActionResult, { ok: true }>["error"]),
+          errorText,
           t,
           locale,
           onStatus: setStatus,
@@ -102,7 +110,7 @@ export function BannerImages({ device, images }: { device: BannerDevice; images:
       if (result.ok) {
         if (success) toast.success(success);
       } else if (result.error !== "notFound") {
-        setLines([{ name: "", tone: "error", text: errorText(result.error) }]);
+        setLines([{ name: "", tone: "error", text: errorText(result) }]);
       }
     } catch {
       setLines([{ name: "", tone: "error", text: t("errors.failed") }]);

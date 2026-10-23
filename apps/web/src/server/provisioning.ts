@@ -1,6 +1,7 @@
 import { db, eq, organization, store, storeCurrency, user } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { ensureCompanyRoles, type Tx } from "./company-roles";
+import { createTrialSubscription } from "./subscriptions";
 
 // Building blocks shared by the two ways a merchant comes to exist: created by the
 // superadmin (createMerchant) or registering themselves (registerMerchant).
@@ -57,6 +58,7 @@ export async function createCompanyAndStore(
 
   try {
     await ensureCompanyRoles(company.id);
+    await createTrialSubscription(db, company.id);
     const storeId = await insertStore(db, company.id, input, status, currencyCode);
     return { tenantId: company.id, storeId };
   } catch (error) {

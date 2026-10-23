@@ -2377,6 +2377,37 @@
     "toasts": {
       "accepted": "Ahora formas parte de {company}.",
       "declined": "Invitación rechazada."
+    },
+    "teamFull": "El equipo de esta empresa está completo por ahora. Avisa a quien te invitó."
+  },
+  "Plans": {
+    "plans": {
+      "free": {
+        "name": "Gratis",
+        "description": "Para empezar a vender con lo esencial."
+      },
+      "basic": {
+        "name": "Básico",
+        "description": "Para una tienda pequeña que ya vende cada día."
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Inventario, gastos, ganancias, promociones y más tiendas."
+      },
+      "business": {
+        "name": "Empresa",
+        "description": "Varias tiendas y equipos grandes, con acceso por tienda."
+      }
+    },
+    "featureLocked": "Tu plan no incluye esta función. Está disponible desde el plan {plan}.",
+    "limits": {
+      "stores": "Tu plan permite hasta {max, plural, one {# tienda} other {# tiendas}}. Mejora tu plan para crear más.",
+      "activeProducts": "Tu plan permite hasta {max} productos activos por tienda. Guárdalo como borrador o mejora tu plan.",
+      "imagesPerProduct": "Tu plan permite hasta {max, plural, one {# imagen} other {# imágenes}} por producto. Mejora tu plan para añadir más.",
+      "currencies": "Tu plan permite hasta {max, plural, one {# moneda} other {# monedas}} por tienda. Mejora tu plan para añadir más.",
+      "bannerImages": "Tu plan permite hasta {max, plural, one {# imagen} other {# imágenes}} por pantalla en el banner. Mejora tu plan para añadir más.",
+      "pages": "Tu plan permite hasta {max, plural, one {# página} other {# páginas}} por tienda. Mejora tu plan para crear más.",
+      "members": "{max, plural, =0 {Tu plan no incluye miembros del equipo.} one {Tu plan permite # miembro en el equipo (las invitaciones pendientes cuentan).} other {Tu plan permite # miembros en el equipo (las invitaciones pendientes cuentan).}} Mejora tu plan para añadir más."
     }
   }
 }

@@ -1,11 +1,13 @@
 import { and, companyRole, count, db, desc, eq, gt, inArray, invitation, invitationAccess, member, organization, store, user } from "@qvashop/db";
 import { INVITATION_DAYS, MAX_PENDING_INVITATIONS } from "@/lib/invitations";
 import { hasPermissions, normalizePermissions } from "@/lib/permissions";
+import type { PlanKey, PlanLimitError } from "@/lib/plans";
 import { ALL_STORES, accessWithin, type StoreAccess } from "@/lib/store-access";
 import { toStoreAccess, type InvitationValues } from "@/lib/validation/team";
 import { lockCompany, memberPermissions } from "./company-roles";
 import { checkAccessGrantable, memberStoreAccess, setMemberStoreAccess } from "./store-access";
-import { checkGrantable, type TeamActor } from "./team";
+import { checkGrantable, checkMemberRoom, type TeamActor } from "./team";
+import { getCompanySubscription } from "./subscriptions";
 
 // Invitations let a company add a person who ALREADY has a QvaShop account, without touching
 // that account: the person opens the link, signs in with their own password and accepts.
@@ -64,6 +66,7 @@ export async function listInvitations(tenantId: string): Promise<InvitationRow[]
 
 export type CreateInvitationResult =
   | { ok: true; id: string }
+  | PlanLimitError
   | { ok: false; error: "noAccount" | "alreadyMember" | "limit" | "roleNotFound" | "escalation" | "storeNotFound" };
 
 /**
@@ -74,6 +77,7 @@ export type CreateInvitationResult =
 export async function createInvitation(
   tenantId: string,
   actor: TeamActor,
+  plan: PlanKey,
   values: InvitationValues,
 ): Promise<CreateInvitationResult> {
   const email = values.email.toLowerCase();
@@ -109,6 +113,8 @@ export async function createInvitation(
       .from(invitation)
       .where(and(pending, gt(invitation.expiresAt, new Date())));
     if (total >= MAX_PENDING_INVITATIONS) return { ok: false, error: "limit" } as const;
+    const room = await checkMemberRoom(tx, tenantId, plan, { exceptEmail: email });
+    if (room) return room;
     const [created] = await tx
       .insert(invitation)
       .values({ organizationId: tenantId, email, role: values.roleKey, status: PENDING, expiresAt, inviterId: actor.userId })
@@ -175,7 +181,9 @@ export async function viewInvitation(id: string, viewer: { id: string; email: st
   return { state: "open", companyName: row.companyName, roleName: row.roleName, inviterName: row.inviterName, expiresAt: row.expiresAt };
 }
 
-export type RespondResult = { ok: true; tenantId: string } | { ok: false; error: "notFound" | "closed" | "alreadyMember" };
+export type RespondResult =
+  | { ok: true; tenantId: string }
+  | { ok: false; error: "notFound" | "closed" | "alreadyMember" | "teamFull" };
 
 /**
  * Accepts (or declines) an invitation as the signed-in `viewer`. Accepting re-checks
@@ -209,6 +217,9 @@ export async function respondToInvitation(
       .from(member)
       .where(and(eq(member.organizationId, tenantId), eq(member.userId, viewer.id)));
     if (already) return { ok: false, error: "alreadyMember" } as const;
+    // The plan may have changed since the invitation was sent
+    const { plan } = await getCompanySubscription(tenantId);
+    if (await checkMemberRoom(tx, tenantId, plan, null)) return { ok: false, error: "teamFull" } as const;
 
     const [role] = await tx
       .select({ permissions: companyRole.permissions })

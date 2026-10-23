@@ -11,16 +11,23 @@ import {
   type SecondaryBannerError,
 } from "./secondary-banner";
 import { getMerchantOrNull } from "./tenant";
+import { planFeatureError, type PlanFeatureError } from "@/lib/plans";
 
 export type SecondaryBannerActionResult =
   | { ok: true }
+  | PlanFeatureError
   | { ok: false; error: SecondaryBannerError | "forbidden" | "failed" | "empty" };
 
 // The banner is store configuration: it needs `store:update` (owner and manager).
 async function authorize(storeId: unknown) {
   const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return null;
-  return { tenantId: merchant.tenantId, storeId: merchant.store.id };
+  return {
+    tenantId: merchant.tenantId,
+    storeId: merchant.store.id,
+    // adding to the secondary banner needs the plan feature; removing, moving or hiding it does not
+    hasFeature: merchant.hasFeature("secondaryBanner"),
+  };
 }
 
 async function guard(name: string, run: () => Promise<SecondaryBannerActionResult>) {
@@ -35,6 +42,7 @@ async function guard(name: string, run: () => Promise<SecondaryBannerActionResul
 export async function createSecondaryPairAction(storeId: unknown, device: unknown): Promise<SecondaryBannerActionResult> {
   const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
+  if (!scope.hasFeature) return planFeatureError("secondaryBanner");
   const parsed = z.enum(BANNER_DEVICES).safeParse(device);
   if (!parsed.success) return { ok: false, error: "failed" };
   return guard("createSecondaryPairAction", async () => {
@@ -47,6 +55,7 @@ export async function createSecondaryPairAction(storeId: unknown, device: unknow
 export async function uploadSecondaryPairImageAction(storeId: unknown, formData: FormData): Promise<SecondaryBannerActionResult> {
   const scope = await authorize(storeId);
   if (!scope) return { ok: false, error: "forbidden" };
+  if (!scope.hasFeature) return planFeatureError("secondaryBanner");
 
   const pairId = z.uuid().safeParse(formData.get("pairId"));
   if (!pairId.success) return { ok: false, error: "notFound" };

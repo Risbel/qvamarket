@@ -1,6 +1,8 @@
 "use client";
 
 import { useOrgId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
+import { isPlanError } from "@/lib/plans";
 import { useState } from "react";
 import { KeyRoundIcon, MoreHorizontalIcon, ShieldCheckIcon, StoreIcon, UserMinusIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -73,6 +75,7 @@ export function MemberRowActions({
 }) {
   const orgId = useOrgId();
   const t = useTranslations("Team");
+  const planError = usePlanErrorMessage();
   const locale = useLocale();
   const router = useRouter();
   const can = useCan();
@@ -110,6 +113,12 @@ export function MemberRowActions({
     setBusy(false);
     router.refresh();
     if (result?.ok) return result;
+    // e.g. limiting a member to some stores on a plan without it
+    const failure = result as { error: string } | null;
+    if (failure && isPlanError(failure)) {
+      setError(planError(failure));
+      return null;
+    }
     setError(t(`errors.${result?.error && KNOWN_ERRORS.includes(result.error) ? result.error : "failed"}`));
     return null;
   }

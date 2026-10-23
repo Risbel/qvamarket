@@ -5,12 +5,15 @@ import { z } from "zod";
 import { asc, db, eq, member, organization, store } from "@qvashop/db";
 import { auth } from "@/lib/auth";
 import { hasPermissions, isOwner, type PermissionRequest, type Permissions } from "@/lib/permissions";
+import { planHas, planPermissions, type PlanFeature } from "@/lib/plans";
+import type { EffectiveSubscription } from "@/lib/billing";
 import { PANEL_ACCESS, type CompanySection, type StoreSection } from "@/lib/panel-access";
 import type { StoreAccess } from "@/lib/store-access";
 import { storeTimeZone } from "@/lib/date-range";
 import { memberPermissions } from "./company-roles";
 import { memberStoreAccess } from "./store-access";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
+import { getCompanySubscription } from "./subscriptions";
 import { requireUser } from "./session";
 
 // The merchant panel's URLs carry the company (/dashboard/org/<tenantId>/...) and the store
@@ -56,8 +59,15 @@ export type CompanyContext = {
   role: string;
   /** the built-in owner role: only owners create stores (not a permission, cannot be granted) */
   isOwner: boolean;
-  /** what the member's role(s) grant; check it with `can`, never the role name */
+  /**
+   * what the member's role(s) grant, whatever the plan: only for team and role management
+   * (no-escalation checks). Feature code uses `can`, which also applies the plan.
+   */
   permissions: Permissions;
+  /** `permissions` minus what the company's plan does not include: what the member can use */
+  effectivePermissions: Permissions;
+  /** the company's subscription right now (plan whose features and limits apply, status) */
+  subscription: EffectiveSubscription;
   /** which stores the member can open (owners: all); `stores` is already filtered by it */
   storeAccess: StoreAccess;
   /** member.id of the signed-in user in this company */
@@ -94,7 +104,7 @@ export const getCompanyContext = cache(
     const membership = memberships.find((m) => m.id === tenantId.toLowerCase());
     if (!membership) return null;
 
-    const [stores, permissions, storeAccess] = await Promise.all([
+    const [stores, permissions, storeAccess, subscription] = await Promise.all([
       db
         .select({
           id: store.id,
@@ -114,6 +124,7 @@ export const getCompanyContext = cache(
         .orderBy(asc(store.createdAt)),
       memberPermissions(membership.id, membership.role),
       memberStoreAccess(db, membership.id, membership.memberId, membership.role),
+      getCompanySubscription(membership.id),
     ]);
     return {
       tenantId: membership.id,
@@ -121,6 +132,8 @@ export const getCompanyContext = cache(
       role: membership.role,
       isOwner: isOwner(membership.role),
       permissions,
+      effectivePermissions: planPermissions(permissions, subscription.plan),
+      subscription,
       memberId: membership.memberId,
       storeAccess,
       // A store outside the member's access does not exist for them (404, not listed).
@@ -188,8 +201,13 @@ async function actionSession() {
 function withCan<T extends CompanyContext>(context: T) {
   return {
     ...context,
-    /** Does the member's role grant ALL of these permissions? e.g. can({ product: ["update"] }) */
-    can: (request: PermissionRequest) => hasPermissions(context.permissions, request),
+    /**
+     * Does the member's role grant ALL of these permissions, and does the company's plan
+     * include them? e.g. can({ product: ["update"] })
+     */
+    can: (request: PermissionRequest) => hasPermissions(context.effectivePermissions, request),
+    /** Does the company's plan include this feature? */
+    hasFeature: (feature: PlanFeature) => planHas(context.subscription.plan, feature),
   };
 }
 

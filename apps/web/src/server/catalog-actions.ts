@@ -32,9 +32,12 @@ import {
 } from "./store-settings";
 import { getMerchantOrNull } from "./tenant";
 import type { PermissionRequest } from "@/lib/permissions";
+import { planFeatureError, type PlanFeatureError, type PlanLimitError } from "@/lib/plans";
 
 export type CatalogActionResult =
   | { ok: true }
+  | PlanLimitError
+  | PlanFeatureError
   | {
       ok: false;
       error: "forbidden" | "notFound" | "failed" | "invalid" | "inUse" | "deliveryNeedsArea" | "baseMissingPrices";
@@ -47,7 +50,7 @@ export type CatalogActionResult =
 async function scopeIf(storeId: unknown, request: PermissionRequest) {
   const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can(request)) return null;
-  return { tenantId: merchant.tenantId, storeId: merchant.store.id };
+  return { tenantId: merchant.tenantId, storeId: merchant.store.id, plan: merchant.subscription.plan };
 }
 
 async function translator(locale: string) {
@@ -179,6 +182,7 @@ export async function saveDeliveryChargesAction(storeId: unknown, values: unknow
   const currencies = merchant.store.currencies;
   const parsed = createDeliveryChargesSchema(await translator(locale), currencies).safeParse(values);
   if (!parsed.success) return invalid(parsed.error);
+  if (parsed.data.mode === "distance" && !merchant.hasFeature("distanceFees")) return planFeatureError("distanceFees");
   return guard(() => saveDeliveryCharges(scope, toDeliveryChargesInput(parsed.data, currencies))) as Promise<CatalogActionResult>;
 }
 
@@ -189,7 +193,7 @@ export async function setStoreCurrenciesAction(storeId: unknown, values: unknown
   if (!parsed.success) return invalidByPath(parsed.error);
   const { currencies, defaultCode, baseCode } = parsed.data;
   return guard(async () => {
-    const result = await setStoreCurrencies(scope, {
+    const result = await setStoreCurrencies(scope, scope.plan, {
       codes: currencies.map((c) => c.code),
       defaultCode,
       baseCode,

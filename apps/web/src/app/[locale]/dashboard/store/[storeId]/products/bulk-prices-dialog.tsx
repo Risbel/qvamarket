@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ export function BulkPricesDialog({
   const storeId = useStoreId();
   const t = useTranslations("Products.bulk");
   const router = useRouter();
+  const planError = usePlanErrorMessage();
   const [percent, setPercent] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +79,10 @@ export function BulkPricesDialog({
       onOpenChange(false);
       onDone();
       router.refresh();
+      return;
+    }
+    if (result.error === "planFeature") {
+      setError(planError(result));
       return;
     }
     const known = ["forbidden", "noRate", "isBase", "tooHigh"] as const;

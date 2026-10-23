@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,6 +47,7 @@ export function CurrenciesForm({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [adding, setAdding] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const schema = useMemo(() => createCurrenciesSchema(tv), [tv]);
@@ -91,6 +93,10 @@ export function CurrenciesForm({
         return;
       case "baseMissingPrices":
         setFormError(t("baseMissingPrices", { count: result.count ?? 0, currency: values.baseCode }));
+        return;
+      case "planLimit":
+      case "planFeature":
+        setFormError(planError(result));
         return;
       default:
         setFormError(t(`errors.${result.error === "forbidden" ? "forbidden" : "failed"}`));

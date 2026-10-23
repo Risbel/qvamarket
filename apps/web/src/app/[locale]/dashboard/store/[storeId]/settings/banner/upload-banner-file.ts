@@ -50,7 +50,8 @@ export async function uploadBannerFile({
   /** the format's shape in words, e.g. "panorámico" */
   shape: string;
   upload: (body: FormData) => Promise<UploadResult>;
-  errorText: (error: string) => string;
+  /** text for a refused upload (the whole answer: plan errors carry their limit) */
+  errorText: (failure: { error: string }) => string;
   t: Translate;
   locale: string;
   onStatus: (text: string) => void;
@@ -80,7 +81,7 @@ export async function uploadBannerFile({
     const body = new FormData();
     body.append("file", compressed.file, compressed.file.type === "image/jpeg" ? "banner.jpg" : "banner.webp");
     const result = await upload(body);
-    if (!result.ok) return { name, tone: "error", text: errorText(result.error) };
+    if (!result.ok) return { name, tone: "error", text: errorText(result) };
   } catch {
     // e.g. the request was rejected before reaching the action (body too large)
     return { name, tone: "error", text: t("errors.failed") };

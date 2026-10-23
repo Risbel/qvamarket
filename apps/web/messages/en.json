@@ -2377,6 +2377,37 @@
     "toasts": {
       "accepted": "You are now part of {company}.",
       "declined": "Invitation declined."
+    },
+    "teamFull": "This company’s team is full for now. Let whoever invited you know."
+  },
+  "Plans": {
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "To start selling with the essentials."
+      },
+      "basic": {
+        "name": "Basic",
+        "description": "For a small store that already sells every day."
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Inventory, expenses, profit, promotions and more stores."
+      },
+      "business": {
+        "name": "Business",
+        "description": "Several stores and large teams, with access per store."
+      }
+    },
+    "featureLocked": "Your plan does not include this feature. It is available from the {plan} plan.",
+    "limits": {
+      "stores": "Your plan allows up to {max, plural, one {# store} other {# stores}}. Upgrade your plan to create more.",
+      "activeProducts": "Your plan allows up to {max} active products per store. Save it as a draft or upgrade your plan.",
+      "imagesPerProduct": "Your plan allows up to {max, plural, one {# image} other {# images}} per product. Upgrade your plan to add more.",
+      "currencies": "Your plan allows up to {max, plural, one {# currency} other {# currencies}} per store. Upgrade your plan to add more.",
+      "bannerImages": "Your plan allows up to {max, plural, one {# image} other {# images}} per screen in the banner. Upgrade your plan to add more.",
+      "pages": "Your plan allows up to {max, plural, one {# page} other {# pages}} per store. Upgrade your plan to create more.",
+      "members": "{max, plural, =0 {Your plan does not include team members.} one {Your plan allows # team member (pending invitations count).} other {Your plan allows # team members (pending invitations count).}} Upgrade your plan to add more."
     }
   }
 }

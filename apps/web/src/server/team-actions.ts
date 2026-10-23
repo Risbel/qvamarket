@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import type { PermissionRequest } from "@/lib/permissions";
+import { planFeatureError, type PlanFeatureError, type PlanLimitError } from "@/lib/plans";
 import { createMemberRoleSchema, createMemberStoresSchema, createTeamMemberSchema, toStoreAccess } from "@/lib/validation/team";
 import { addTeamMember, changeMemberRole, changeMemberStores, removeTeamMember, resetMemberPassword } from "./team";
 import { getCompanyOrNull } from "./tenant";
@@ -28,8 +29,12 @@ type Failure = {
     | "failed";
   fieldErrors?: Record<string, string[]>;
 };
-export type TeamActionResult = { ok: true } | Failure;
-export type TeamCredentialsResult = { ok: true; email: string; temporaryPassword: string } | Failure;
+export type TeamActionResult = { ok: true } | Failure | PlanFeatureError;
+export type TeamCredentialsResult =
+  | { ok: true; email: string; temporaryPassword: string }
+  | Failure
+  | PlanLimitError
+  | PlanFeatureError;
 
 async function actorWith(orgId: unknown, request: PermissionRequest) {
   const merchant = await getCompanyOrNull(orgId);
@@ -37,6 +42,9 @@ async function actorWith(orgId: unknown, request: PermissionRequest) {
   return {
     tenantId: merchant.tenantId,
     actor: { userId: merchant.session.user.id, permissions: merchant.permissions, storeAccess: merchant.storeAccess },
+    plan: merchant.subscription.plan,
+    // limiting a member to some stores is a plan feature ("all stores" is always allowed)
+    storeAccessFeature: merchant.hasFeature("storeAccess"),
   };
 }
 
@@ -59,7 +67,8 @@ export async function addTeamMemberAction(orgId: unknown, values: unknown, local
   if (!parsed.success) {
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
-  return guard("addTeamMember", () => addTeamMember(scope.tenantId, scope.actor, parsed.data));
+  if (!parsed.data.access.all && !scope.storeAccessFeature) return planFeatureError("storeAccess");
+  return guard("addTeamMember", () => addTeamMember(scope.tenantId, scope.actor, scope.plan, parsed.data));
 }
 
 export async function changeMemberRoleAction(orgId: unknown, memberId: unknown, values: unknown, locale: string): Promise<TeamActionResult> {
@@ -84,6 +93,7 @@ export async function changeMemberStoresAction(orgId: unknown, memberId: unknown
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
   const access = toStoreAccess(parsed.data.access);
+  if (!access.all && !scope.storeAccessFeature) return planFeatureError("storeAccess");
   return guard("changeMemberStores", () => changeMemberStores(scope.tenantId, scope.actor, id.data.toLowerCase(), access));
 }
 

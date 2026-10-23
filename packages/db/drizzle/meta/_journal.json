@@ -267,6 +267,13 @@
       "when": 1792600924160,
       "tag": "0037_tidy_captain_flint",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1792715943051,
+      "tag": "0038_regular_zombie",
+      "breakpoints": true
     }
   ]
 }

@@ -51,7 +51,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/[l
         </>
       }
     >
-      <PermissionsProvider permissions={merchant.permissions}>{children}</PermissionsProvider>
+      <PermissionsProvider permissions={merchant.effectivePermissions}>{children}</PermissionsProvider>
     </PanelShell>
   );
 }

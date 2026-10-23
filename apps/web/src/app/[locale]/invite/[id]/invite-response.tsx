@@ -23,7 +23,18 @@ export function InviteResponse({ id, companyName }: { id: string; companyName: s
     const result = await respondToInvitationAction(id, accept).catch(() => null);
     setBusy(false);
     if (!result?.ok) {
-      setError(t(result?.error === "closed" || result?.error === "notFound" ? "closed" : result?.error === "alreadyMember" ? "alreadyMemberShort" : "failed"));
+      const error = result?.error;
+      setError(
+        t(
+          error === "closed" || error === "notFound"
+            ? "closed"
+            : error === "alreadyMember"
+              ? "alreadyMemberShort"
+              : error === "teamFull"
+                ? "teamFull"
+                : "failed",
+        ),
+      );
       router.refresh();
       return;
     }

@@ -11,16 +11,17 @@ type Scope = { tenantId: string; storeId: string };
 const owns = ({ tenantId, storeId }: Scope) =>
   and(eq(store.id, storeId), eq(store.tenantId, tenantId));
 
-/** false when the store is not in this tenant (nothing is updated). */
-export async function updateBranding(scope: Scope, values: BrandingValues) {
+/**
+ * false when the store is not in this tenant (nothing is updated). `theme` = the plan includes
+ * the theme options (base gray, radius, tints); otherwise they are left as they are.
+ */
+export async function updateBranding(scope: Scope, values: BrandingValues, theme: boolean) {
   const rows = await db
     .update(store)
     .set({
       primaryColor: values.primaryColor,
       accentColor: values.accentColor,
-      themeRadius: values.radius,
-      themeBase: values.base,
-      themeTinted: values.tinted,
+      ...(theme ? { themeRadius: values.radius, themeBase: values.base, themeTinted: values.tinted } : {}),
     })
     .where(owns(scope))
     .returning({ id: store.id });

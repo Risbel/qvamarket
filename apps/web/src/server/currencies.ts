@@ -14,6 +14,7 @@ import {
   storeCurrency,
   variantPrice,
 } from "@qvashop/db";
+import { belowLimit, planLimitError, type PlanKey, type PlanLimitError } from "@/lib/plans";
 import { normalizeRate, roundingSteps } from "@/lib/exchange";
 
 export type StoreCurrency = {
@@ -82,6 +83,7 @@ export type CurrencySettings = {
 
 export type SetCurrenciesResult =
   | { ok: true }
+  | PlanLimitError
   | { ok: false; error: "invalid" }
   | { ok: false; error: "inUse"; codes: string[] }
   | { ok: false; error: "baseMissingPrices"; count: number };
@@ -93,7 +95,11 @@ export type SetCurrenciesResult =
  * FK fail). Changing the base is refused while some product has a regular price in the old
  * base but none in the new one (it would lose its prices everywhere): `count` products.
  */
-export async function setStoreCurrencies(scope: Scope, settings: CurrencySettings): Promise<SetCurrenciesResult> {
+export async function setStoreCurrencies(
+  scope: Scope,
+  plan: PlanKey,
+  settings: CurrencySettings,
+): Promise<SetCurrenciesResult> {
   const unique = [...new Set(settings.codes)];
   if (unique.length === 0 || !unique.includes(settings.defaultCode) || !unique.includes(settings.baseCode)) {
     return { ok: false, error: "invalid" };
@@ -123,6 +129,10 @@ export async function setStoreCurrencies(scope: Scope, settings: CurrencySetting
       .from(storeCurrency)
       .where(and(eq(storeCurrency.storeId, scope.storeId), eq(storeCurrency.tenantId, scope.tenantId)));
     const removed = current.map((c) => c.code).filter((code) => !unique.includes(code));
+    // Past the plan's limit only removing is allowed (a store above it after a downgrade keeps its currencies)
+    if (unique.length > current.length && !belowLimit(plan, "currencies", unique.length - 1)) {
+      return planLimitError(plan, "currencies");
+    }
 
     if (removed.length > 0) {
       const inUse = await tx

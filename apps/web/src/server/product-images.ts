@@ -148,13 +148,16 @@ export async function applyProductImages(
   { tenantId, storeId }: Scope,
   productId: string,
   refs: ImageRef[],
-): Promise<{ ok: true; removedKeys: string[] } | { ok: false; error: "stale" | "limit" }> {
+  /** the plan's images per product: more are refused, but a product already above it keeps them */
+  planMax: number = MAX_IMAGES_PER_PRODUCT,
+): Promise<{ ok: true; removedKeys: string[] } | { ok: false; error: "stale" | "limit" | "planLimit" }> {
   if (refs.length > MAX_IMAGES_PER_PRODUCT) return { ok: false, error: "limit" };
 
   const current = await tx
     .select({ id: productImage.id, storageKey: productImage.storageKey })
     .from(productImage)
     .where(and(eq(productImage.tenantId, tenantId), eq(productImage.productId, productId)));
+  if (refs.length > planMax && refs.length > current.length) return { ok: false, error: "planLimit" };
   const uploadIds = refs.filter((ref) => ref.kind === "upload").map((ref) => ref.id);
   const uploads =
     uploadIds.length === 0

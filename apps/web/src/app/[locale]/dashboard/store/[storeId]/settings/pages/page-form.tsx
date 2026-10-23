@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreId, useStorePath } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ export function PageForm({ pageId, initialValues }: { pageId?: string; initialVa
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [formError, setFormError] = useState<string | null>(null);
 
   const schema = useMemo(() => createStorePageSchema(tv), [tv]);
@@ -59,6 +61,9 @@ export function PageForm({ pageId, initialValues }: { pageId?: string; initialVa
         return;
       case "slugTaken":
         form.setError("slug", { message: tv("pageSlugTaken") });
+        return;
+      case "planLimit":
+        setFormError(planError(result));
         return;
       default:
         setFormError(t(`errors.${result.error}`));

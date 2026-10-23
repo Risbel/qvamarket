@@ -1518,6 +1518,250 @@ export const expense = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------------------
+// Plans and billing (platform data: what a company pays QvaShop)
+// ---------------------------------------------------------------------------------------
+// No payment gateway: the merchant pays outside the platform and the superadmin records it.
+// Features and limits of each plan are defined in the app (src/lib/plans.ts); only prices,
+// subscriptions and their money live here. Invoices, payments and events are never deleted
+// (mistakes are voided or refunded) and survive the company (tenant_id SET NULL + snapshot).
+
+export const PLAN_KEYS = ["free", "basic", "pro", "business"] as const;
+export const BILLING_CYCLES = ["monthly", "quarterly", "yearly"] as const;
+export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "paused", "cancelled", "expired"] as const;
+/** `overdue` is not stored: an open or partial invoice past `due_at` (derived on read). */
+export const INVOICE_STATUSES = ["open", "partial", "paid", "void"] as const;
+export const INVOICE_KINDS = ["renewal", "upgrade", "manual"] as const;
+export const BILLING_PAYMENT_METHODS = ["cash", "transfer", "zelle", "other"] as const;
+export const BILLING_ACTORS = ["admin", "owner", "system"] as const;
+export const SUBSCRIPTION_EVENT_TYPES = [
+  "created",
+  "trial_started",
+  "trial_ended",
+  "plan_upgraded",
+  "downgrade_scheduled",
+  "downgrade_cancelled",
+  "plan_downgraded",
+  "cycle_changed",
+  "paused",
+  "resumed",
+  "cancel_scheduled",
+  "reactivated",
+  "cancelled",
+  "renewed",
+  "invoice_issued",
+  "invoice_voided",
+  "payment_recorded",
+  "refund_recorded",
+  "became_past_due",
+  "expired",
+  "price_changed",
+] as const;
+
+const quoted = (values: readonly string[]) => values.map((v) => `'${v}'`).join(", ");
+const inList = (column: string, values: readonly string[]) => sql.raw(`${column} in (${quoted(values)})`);
+const inListOrNull = (column: string, values: readonly string[]) =>
+  sql.raw(`${column} is null or ${column} in (${quoted(values)})`);
+
+/** Price of a paid plan per billing cycle and currency (edited by the superadmin). */
+export const planPrice = pgTable(
+  "plan_price",
+  {
+    planKey: text("plan_key").notNull(),
+    cycle: text("cycle").notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "plan_price_pk", columns: [table.planKey, table.cycle, table.currencyCode] }),
+    check("plan_price_plan", inList("plan_key", PLAN_KEYS)),
+    check("plan_price_cycle", inList("cycle", BILLING_CYCLES)),
+    check("plan_price_amount", sql`${table.amountMinor} >= 0`),
+  ],
+);
+
+/**
+ * A company's subscription (exactly one per company). `plan_key` is the plan it has chosen;
+ * the plan it actually gets is derived from `status` and the dates (`effectiveSubscription`
+ * in src/lib/billing.ts), so a missed renewal job never grants or removes features.
+ * `current_period_*` null = no end (free plan, or a pilot given a plan without billing).
+ * `scheduled_*` = a downgrade or cycle change applied at the end of the period.
+ */
+export const subscription = pgTable(
+  "subscription",
+  {
+    tenantId: uuid("tenant_id")
+      .primaryKey()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    planKey: text("plan_key").notNull(),
+    status: text("status").notNull(),
+    cycle: text("cycle").default("monthly").notNull(),
+    currencyCode: text("currency_code")
+      .default("USD")
+      .notNull()
+      .references(() => currency.code),
+    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+    pausedAt: timestamp("paused_at", { withTimezone: true }),
+    pauseResumesAt: timestamp("pause_resumes_at", { withTimezone: true }),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+    scheduledPlanKey: text("scheduled_plan_key"),
+    scheduledCycle: text("scheduled_cycle"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check("subscription_plan", inList("plan_key", PLAN_KEYS)),
+    check("subscription_status", inList("status", SUBSCRIPTION_STATUSES)),
+    check("subscription_cycle", inList("cycle", BILLING_CYCLES)),
+    check("subscription_scheduled_plan", inListOrNull("scheduled_plan_key", PLAN_KEYS)),
+    check("subscription_scheduled_cycle", inListOrNull("scheduled_cycle", BILLING_CYCLES)),
+    check(
+      "subscription_period",
+      sql`(${table.currentPeriodStart} is null) = (${table.currentPeriodEnd} is null) and (${table.currentPeriodEnd} is null or ${table.currentPeriodEnd} > ${table.currentPeriodStart})`,
+    ),
+    check("subscription_trial", sql`${table.status} <> 'trialing' or ${table.trialEndsAt} is not null`),
+    check("subscription_paused", sql`(${table.status} = 'paused') = (${table.pausedAt} is not null)`),
+  ],
+);
+
+/**
+ * What a company owes for a period (renewal), a plan change (upgrade: the prorated
+ * difference) or anything else the superadmin bills by hand. Amount, plan and period are a
+ * snapshot. `status` is a cache of its payments, recomputed in the same transaction.
+ */
+export const subscriptionInvoice = pgTable(
+  "subscription_invoice",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    // platform-wide invoice number, shown as QS-000123
+    number: integer("number").generatedAlwaysAsIdentity().notNull(),
+    tenantId: uuid("tenant_id").references(() => organization.id, { onDelete: "set null" }),
+    companyName: text("company_name").notNull(),
+    kind: text("kind").notNull(),
+    planKey: text("plan_key"),
+    cycle: text("cycle"),
+    periodStart: timestamp("period_start", { withTimezone: true }),
+    periodEnd: timestamp("period_end", { withTimezone: true }),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    status: text("status").default("open").notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
+    note: text("note"),
+    createdByUserId: uuid("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("subscription_invoice_number_unique").on(table.number),
+    index("subscription_invoice_tenantId_idx").on(table.tenantId, table.createdAt),
+    index("subscription_invoice_status_idx").on(table.status, table.dueAt),
+    // the renewal job issues one invoice per period, even when run twice
+    uniqueIndex("subscription_invoice_renewal_unique")
+      .on(table.tenantId, table.periodStart)
+      .where(sql`${table.kind} = 'renewal' and ${table.status} <> 'void'`),
+    check("subscription_invoice_kind", inList("kind", INVOICE_KINDS)),
+    check("subscription_invoice_status", inList("status", INVOICE_STATUSES)),
+    check("subscription_invoice_plan", inListOrNull("plan_key", PLAN_KEYS)),
+    check("subscription_invoice_cycle", inListOrNull("cycle", BILLING_CYCLES)),
+    check("subscription_invoice_amount", sql`${table.amountMinor} >= 0`),
+    check(
+      "subscription_invoice_period",
+      sql`(${table.periodStart} is null) = (${table.periodEnd} is null) and (${table.periodEnd} is null or ${table.periodEnd} > ${table.periodStart})`,
+    ),
+    check(
+      "subscription_invoice_void",
+      sql`(${table.status} = 'void') = (${table.voidedAt} is not null)`,
+    ),
+  ],
+);
+
+/**
+ * Money a company paid (or got back) for an invoice, recorded by the superadmin. Always in
+ * the invoice's currency, positive; `kind` says the direction. Never deleted: a mistake is
+ * corrected with a refund.
+ */
+export const subscriptionPayment = pgTable(
+  "subscription_payment",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => subscriptionInvoice.id, { onDelete: "restrict" }),
+    tenantId: uuid("tenant_id").references(() => organization.id, { onDelete: "set null" }),
+    kind: text("kind").default("payment").notNull(),
+    method: text("method").notNull(),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    currencyCode: text("currency_code")
+      .notNull()
+      .references(() => currency.code),
+    // transfer number, Zelle confirmation...
+    reference: text("reference"),
+    paidAt: timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
+    recordedByUserId: uuid("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("subscription_payment_invoiceId_idx").on(table.invoiceId),
+    index("subscription_payment_paidAt_idx").on(table.paidAt),
+    check("subscription_payment_kind", sql`${table.kind} in ('payment', 'refund')`),
+    check("subscription_payment_method", inList("method", BILLING_PAYMENT_METHODS)),
+    check("subscription_payment_amount", sql`${table.amountMinor} > 0`),
+  ],
+);
+
+/**
+ * Append-only history of every billing operation: plan changes, pauses, invoices, payments,
+ * status moves by the renewal job. `before` / `after` = the subscription fields that changed.
+ */
+export const subscriptionEvent = pgTable(
+  "subscription_event",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    tenantId: uuid("tenant_id").references(() => organization.id, { onDelete: "set null" }),
+    type: text("type").notNull(),
+    actor: text("actor").notNull(),
+    actorUserId: uuid("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    invoiceId: uuid("invoice_id").references(() => subscriptionInvoice.id, { onDelete: "restrict" }),
+    paymentId: uuid("payment_id").references(() => subscriptionPayment.id, { onDelete: "restrict" }),
+    before: jsonb("before"),
+    after: jsonb("after"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("subscription_event_tenantId_idx").on(table.tenantId, table.createdAt),
+    check("subscription_event_type", inList("type", SUBSCRIPTION_EVENT_TYPES)),
+    check("subscription_event_actor", inList("actor", BILLING_ACTORS)),
+  ],
+);
+
 // Platform-level audit trail (not tenant data): every superadmin impersonation.
 // Emails are snapshotted and the user/tenant FKs are SET NULL so the trail
 // survives deleting an account.

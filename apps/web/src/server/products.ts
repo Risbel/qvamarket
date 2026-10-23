@@ -11,9 +11,11 @@ import {
   productImage,
   productVariant,
   sql,
+  store,
   variantPrice,
 } from "@qvashop/db";
 import { formStockChange } from "@/lib/inventory";
+import { belowLimit, planLimit, planLimitError, type PlanKey, type PlanLimitError } from "@/lib/plans";
 import type { ProductInput } from "@/lib/validation/product";
 import { recordMovements } from "./inventory-ledger";
 import { loadRegularPrices } from "./pricing";
@@ -174,6 +176,7 @@ export async function productHasOptions(scope: Scope, id: string): Promise<boole
 
 export type SaveProductResult =
   | { ok: true; id: string }
+  | PlanLimitError
   | {
       ok: false;
       error:
@@ -195,10 +198,38 @@ class SaveRefused extends Error {
 }
 
 /** Sets the product's images inside its save transaction; refuses (rolls back) on stale ids. */
-async function saveImages(tx: Tx, scope: Scope, productId: string, input: ProductInput) {
-  const images = await applyProductImages(tx, scope, productId, input.images);
-  if (!images.ok) throw new SaveRefused({ ok: false, error: images.error === "stale" ? "imagesStale" : "imagesLimit" });
-  return images.removedKeys;
+async function saveImages(tx: Tx, scope: Scope, plan: PlanKey, productId: string, input: ProductInput) {
+  const images = await applyProductImages(tx, scope, productId, input.images, planLimit(plan, "imagesPerProduct") ?? undefined);
+  if (images.ok) return images.removedKeys;
+  if (images.error === "planLimit") throw new SaveRefused(planLimitError(plan, "imagesPerProduct"));
+  throw new SaveRefused({ ok: false, error: images.error === "stale" ? "imagesStale" : "imagesLimit" });
+}
+
+/**
+ * Refuses (rolls back) making one more product active past the plan's limit of active
+ * products per store. A product that is already active keeps its place, so a store above the
+ * limit after a downgrade can still edit its products. The store row is locked so two saves
+ * cannot both take the last place.
+ */
+async function checkActiveProductRoom(tx: Tx, scope: Scope, plan: PlanKey, input: ProductInput, productId: string | null) {
+  if (input.product.status !== "active" || planLimit(plan, "activeProducts") === null) return;
+  await tx
+    .select({ id: store.id })
+    .from(store)
+    .where(and(eq(store.id, scope.storeId), eq(store.tenantId, scope.tenantId)))
+    .for("no key update");
+  if (productId) {
+    const [current] = await tx
+      .select({ status: product.status })
+      .from(product)
+      .where(and(inScope(scope), eq(product.id, productId)));
+    if (current?.status === "active") return;
+  }
+  const [{ total }] = await tx
+    .select({ total: count() })
+    .from(product)
+    .where(and(inScope(scope), eq(product.status, "active")));
+  if (!belowLimit(plan, "activeProducts", total)) throw new SaveRefused(planLimitError(plan, "activeProducts"));
 }
 
 /** Postgres unique violation on a given constraint/index */
@@ -229,12 +260,18 @@ function mapSaveError(error: unknown): SaveProductResult | null {
  * Creates a simple product: product + default variant + its regular prices. A first stock
  * count is its `initial` movement.
  */
-export async function createProduct(scope: Scope, input: ProductInput, actorUserId: string): Promise<SaveProductResult> {
+export async function createProduct(
+  scope: Scope,
+  plan: PlanKey,
+  input: ProductInput,
+  actorUserId: string,
+): Promise<SaveProductResult> {
   if (!(await categoryInStore(scope, input.product.categoryId))) {
     return { ok: false, error: "categoryNotFound" };
   }
   try {
     const { result, removedKeys } = await db.transaction(async (tx) => {
+      await checkActiveProductRoom(tx, scope, plan, input, null);
       const [created] = await tx
         .insert(product)
         .values({ tenantId: scope.tenantId, storeId: scope.storeId, ...input.product })
@@ -260,7 +297,7 @@ export async function createProduct(scope: Scope, input: ProductInput, actorUser
           input.prices.map((price) => ({ tenantId: scope.tenantId, storeId: scope.storeId, variantId: variant.id, ...price })),
         );
       }
-      const removedKeys = await saveImages(tx, scope, created.id, input);
+      const removedKeys = await saveImages(tx, scope, plan, created.id, input);
       return { result: { ok: true as const, id: created.id }, removedKeys };
     });
     await deleteRemovedImageFiles(removedKeys);
@@ -281,6 +318,7 @@ export async function createProduct(scope: Scope, input: ProductInput, actorUser
  */
 export async function updateProduct(
   scope: Scope,
+  plan: PlanKey,
   id: string,
   input: ProductInput,
   actorUserId: string,
@@ -290,6 +328,7 @@ export async function updateProduct(
   }
   try {
     const { result, removedKeys } = await db.transaction(async (tx) => {
+      await checkActiveProductRoom(tx, scope, plan, input, id);
       // The update locks the product row, so concurrent saves of its images are serialized
       const rows = await tx
         .update(product)
@@ -297,7 +336,7 @@ export async function updateProduct(
         .where(and(inScope(scope), eq(product.id, id)))
         .returning({ id: product.id });
       if (rows.length !== 1) throw new SaveRefused({ ok: false, error: "notFound" });
-      const removedKeys = await saveImages(tx, scope, id, input);
+      const removedKeys = await saveImages(tx, scope, plan, id, input);
       const done = { result: { ok: true as const, id }, removedKeys };
 
       // Locked like checkout locks it, so a sale cannot slip between reading and writing the stock

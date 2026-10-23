@@ -1,5 +1,7 @@
 "use client";
 
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
+import { isPlanError } from "@/lib/plans";
 import { useStoreId } from "@/components/panel-scope";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, ImageIcon, PlusIcon } from "lucide-react";
@@ -57,6 +59,7 @@ export function SecondaryBannerPairs({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [lines, setLines] = useState<UploadLine[]>([]);
@@ -65,10 +68,13 @@ export function SecondaryBannerPairs({
   const titleId = `secondary-${device}-title`;
   const disabled = !hydrated || busy;
 
-  const errorText = (error: string) =>
-    error === "limit" || error === "needsHero"
+  const errorText = (failure: { error: string }) => {
+    const { error } = failure;
+    if (isPlanError(failure)) return planError(failure);
+    return error === "limit" || error === "needsHero"
       ? t(`errors.${error}`, { count: MAX_SECONDARY_BANNER_PAIRS })
       : tb(`errors.${error}`, { limit: formatBytes(MAX_IMAGE_BYTES, locale) });
+  };
 
   /** `success`: the toast shown when it worked (none for adding or reordering, which show themselves) */
   async function run(action: () => Promise<SecondaryBannerActionResult>, success?: string) {
@@ -79,7 +85,7 @@ export function SecondaryBannerPairs({
       if (result.ok) {
         if (success) toast.success(success);
       } else if (result.error !== "notFound") {
-        setLines([{ name: "", tone: "error", text: errorText(result.error) }]);
+        setLines([{ name: "", tone: "error", text: errorText(result) }]);
       }
     } catch {
       setLines([{ name: "", tone: "error", text: tb("errors.failed") }]);

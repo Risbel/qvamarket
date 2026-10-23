@@ -1,6 +1,8 @@
 "use client";
 
 import { useOrgId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
+import { isPlanError } from "@/lib/plans";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,6 +55,7 @@ export function AddMemberDialog({
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [open, setOpen] = useState(false);
   const [created, setCreated] = useState<{ email: string; temporaryPassword: string } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -96,6 +99,10 @@ export function AddMemberDialog({
       router.refresh();
       return;
     }
+    if (result && !result.ok && isPlanError(result)) {
+      setFormError(planError(result));
+      return;
+    }
     const error = result && !result.ok ? result.error : "failed";
     setFormError(t(`invitationErrors.${INVITATION_ERRORS.includes(error) ? error : "failed"}`));
   }
@@ -128,6 +135,10 @@ export function AddMemberDialog({
         return;
       case "forbidden":
         setFormError(t("errors.forbidden"));
+        return;
+      case "planLimit":
+      case "planFeature":
+        setFormError(planError(result));
         return;
       default:
         setFormError(t("errors.failed"));

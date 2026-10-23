@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db, eq, session as sessionTable } from "@qvashop/db";
 import { routing } from "@/i18n/routing";
 import { auth } from "@/lib/auth";
+import { planFeatureError, type PlanFeatureError, type PlanLimitError } from "@/lib/plans";
 import { createInvitationSchema } from "@/lib/validation/team";
 import { cancelInvitation, createInvitation, respondToInvitation } from "./invitations";
 import { getCompanyOrNull } from "./tenant";
@@ -16,6 +17,8 @@ import { getCompanyOrNull } from "./tenant";
 
 export type InvitationActionResult =
   | { ok: true; id?: string }
+  | PlanLimitError
+  | PlanFeatureError
   | {
       ok: false;
       error:
@@ -29,6 +32,7 @@ export type InvitationActionResult =
         | "escalation"
         | "storeNotFound"
         | "closed"
+        | "teamFull"
         | "failed";
       fieldErrors?: Record<string, string[]>;
     };
@@ -50,8 +54,9 @@ export async function createInvitationAction(orgId: unknown, values: unknown, lo
   if (!parsed.success) {
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
+  if (!parsed.data.access.all && !merchant.hasFeature("storeAccess")) return planFeatureError("storeAccess");
   const actor = { userId: merchant.session.user.id, permissions: merchant.permissions, storeAccess: merchant.storeAccess };
-  return guard("createInvitation", () => createInvitation(merchant.tenantId, actor, parsed.data));
+  return guard("createInvitation", () => createInvitation(merchant.tenantId, actor, merchant.subscription.plan, parsed.data));
 }
 
 export async function cancelInvitationAction(orgId: unknown, id: unknown): Promise<InvitationActionResult> {

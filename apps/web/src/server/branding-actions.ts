@@ -21,7 +21,7 @@ export type BrandingActionResult =
 async function authorize(storeId: unknown) {
   const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ store: ["update"] })) return null;
-  return { tenantId: merchant.tenantId, storeId: merchant.store.id };
+  return { tenantId: merchant.tenantId, storeId: merchant.store.id, theme: merchant.hasFeature("theme") };
 }
 
 export async function updateBrandingAction(
@@ -46,7 +46,7 @@ export async function updateBrandingAction(
   }
 
   try {
-    return (await updateBranding(scope, parsed.data)) ? { ok: true } : { ok: false, error: "notFound" };
+    return (await updateBranding(scope, parsed.data, scope.theme)) ? { ok: true } : { ok: false, error: "notFound" };
   } catch (error) {
     console.error("updateBrandingAction failed", error);
     return { ok: false, error: "failed" };

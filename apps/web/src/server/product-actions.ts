@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { parsePercent } from "@/lib/money";
+import { planFeatureError, type PlanFeatureError, type PlanLimitError } from "@/lib/plans";
 import {
   createProductSchema,
   toProductInput,
@@ -21,6 +22,7 @@ import { getMerchantOrNull } from "./tenant";
 
 export type ProductActionResult =
   | { ok: true; id: string }
+  | PlanLimitError
   | {
       ok: false;
       error:
@@ -28,7 +30,7 @@ export type ProductActionResult =
         | "notFound"
         | "failed"
         | "invalid"
-        | Extract<SaveProductResult, { ok: false }>["error"];
+        | Exclude<Extract<SaveProductResult, { ok: false }>, PlanLimitError>["error"];
       fieldErrors?: Record<string, string[]>;
     };
 
@@ -73,7 +75,7 @@ export async function createProductAction(
   if (error) return error;
 
   try {
-    return await createProduct(scopeOf(merchant), data, merchant.session.user.id);
+    return await createProduct(scopeOf(merchant), merchant.subscription.plan, data, merchant.session.user.id);
   } catch (e) {
     console.error("createProductAction failed", e);
     return { ok: false, error: "failed" };
@@ -100,7 +102,7 @@ export async function updateProductAction(
   if (error) return error;
 
   try {
-    return await updateProduct(scope, parsedId.data, data, merchant.session.user.id);
+    return await updateProduct(scope, merchant.subscription.plan, parsedId.data, data, merchant.session.user.id);
   } catch (e) {
     console.error("updateProductAction failed", e);
     return { ok: false, error: "failed" };
@@ -128,6 +130,7 @@ export async function deleteProductAction(storeId: unknown, id: unknown): Promis
 
 export type BulkPricesActionResult =
   | { ok: true; changed: number }
+  | PlanFeatureError
   | { ok: false; error: "forbidden" | "invalid" | "failed" | Extract<BulkPricesResult, { ok: false }>["error"] };
 
 const bulkSchema = z.object({
@@ -142,6 +145,7 @@ async function bulk(
 ): Promise<BulkPricesActionResult> {
   const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ product: ["update"] })) return { ok: false, error: "forbidden" };
+  if (!merchant.hasFeature("bulkPrices")) return planFeatureError("bulkPrices");
   const parsed = bulkSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "invalid" };
   try {

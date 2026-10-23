@@ -1,5 +1,6 @@
 import { and, asc, count, db, eq, store, storePage } from "@qvashop/db";
 import { MAX_STORE_PAGES } from "@/lib/store-pages";
+import { belowLimit, planLimitError, type PlanKey, type PlanLimitError } from "@/lib/plans";
 import type { StorePageValues } from "@/lib/validation/store-page";
 
 // Custom store pages. Every function matches tenant_id AND store_id from requireMerchant().
@@ -40,7 +41,8 @@ export async function getStorePage(scope: Scope, id: string) {
 
 export type SaveStorePageResult =
   | { ok: true; id: string }
-  | { ok: false; error: "notFound" | "slugTaken" | "limit" };
+  | { ok: false; error: "notFound" | "slugTaken" | "limit" }
+  | PlanLimitError;
 
 function toRow(values: StorePageValues) {
   const orNull = (text: string) => (text === "" ? null : text);
@@ -64,7 +66,7 @@ function slugTaken(error: unknown) {
  * Creates a page. The store row is locked (NO KEY UPDATE: inserts can still reference it) so
  * two simultaneous creations cannot both pass the per-store limit.
  */
-export async function createStorePage(scope: Scope, values: StorePageValues): Promise<SaveStorePageResult> {
+export async function createStorePage(scope: Scope, plan: PlanKey, values: StorePageValues): Promise<SaveStorePageResult> {
   try {
     return await db.transaction(async (tx) => {
       await tx
@@ -74,6 +76,7 @@ export async function createStorePage(scope: Scope, values: StorePageValues): Pr
         .for("no key update");
       const [{ total }] = await tx.select({ total: count() }).from(storePage).where(inScope(scope));
       if (total >= MAX_STORE_PAGES) return { ok: false, error: "limit" } as const;
+      if (!belowLimit(plan, "pages", total)) return planLimitError(plan, "pages");
       const [row] = await tx
         .insert(storePage)
         .values({ ...scope, ...toRow(values) })

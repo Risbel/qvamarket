@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreId, useStorePath } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,6 +57,7 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [formError, setFormError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
@@ -105,6 +107,10 @@ export function ProductForm({ productId, initialValues, currencies, categories, 
         return;
       case "stockStale":
         form.setError("stock", { message: t("errors.stockStale") });
+        return;
+      case "planLimit":
+        if (result.limit === "imagesPerProduct") form.setError("images", { message: planError(result) });
+        else setFormError(planError(result));
         return;
       case "imagesStale":
       case "imagesLimit":

@@ -7,11 +7,13 @@ import { routing } from "@/i18n/routing";
 import { createStorePageSchema } from "@/lib/validation/store-page";
 import { createStorePage, deleteStorePage, updateStorePage } from "./store-pages";
 import { getMerchantOrNull } from "./tenant";
+import type { PlanLimitError } from "@/lib/plans";
 
 // Custom store pages (Settings > Pages): store:update, like every other settings section.
 
 export type StorePageActionResult =
   | { ok: true; id: string }
+  | PlanLimitError
   | {
       ok: false;
       error: "forbidden" | "notFound" | "failed" | "invalid" | "slugTaken" | "limit";
@@ -42,13 +44,15 @@ async function guard(fn: () => Promise<StorePageActionResult>): Promise<StorePag
 }
 
 export async function createStorePageAction(storeId: unknown, values: unknown, locale: string): Promise<StorePageActionResult> {
-  const scope = await scopeOrNull(storeId);
-  if (!scope) return { ok: false, error: "forbidden" };
+  const merchant = await getMerchantOrNull(storeId);
+  if (!merchant || !merchant.can({ store: ["update"] })) return { ok: false, error: "forbidden" };
+  const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
+  const plan = merchant.subscription.plan;
   const parsed = await parse(values, locale);
   if (!parsed.success) {
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
-  return guard(() => createStorePage(scope, parsed.data));
+  return guard(() => createStorePage(scope, plan, parsed.data));
 }
 
 export async function updateStorePageAction(storeId: unknown, id: unknown, values: unknown, locale: string): Promise<StorePageActionResult> {

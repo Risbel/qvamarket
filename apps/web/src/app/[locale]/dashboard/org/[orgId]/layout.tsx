@@ -41,7 +41,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps<"/
       activeCompanyId={company.tenantId}
       banners={impersonating && <ImpersonationBanner targetEmail={session.user.email} />}
     >
-      <PermissionsProvider permissions={company.permissions}>{children}</PermissionsProvider>
+      <PermissionsProvider permissions={company.effectivePermissions}>{children}</PermissionsProvider>
     </PanelShell>
   );
 }

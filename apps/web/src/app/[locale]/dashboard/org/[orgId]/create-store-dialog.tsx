@@ -7,6 +7,7 @@ import { PlusIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useOrgId } from "@/components/panel-scope";
+import { usePlanErrorMessage } from "@/components/plans/plan-messages";
 import { useRouter } from "@/i18n/navigation";
 import { storePath } from "@/lib/panel-paths";
 import { slugify } from "@/lib/slug";
@@ -39,6 +40,7 @@ export function CreateStoreDialog({ url }: { url: [string, string] }) {
   const locale = useLocale();
   const router = useRouter();
   const hydrated = useHydrated();
+  const planError = usePlanErrorMessage();
   const [open, setOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -78,6 +80,9 @@ export function CreateStoreDialog({ url }: { url: [string, string] }) {
         return;
       case "slugTaken":
         form.setError("storeSlug", { message: tv("slugTaken") });
+        return;
+      case "planLimit":
+        setFormError(planError(result));
         return;
       case "limit":
       case "forbidden":

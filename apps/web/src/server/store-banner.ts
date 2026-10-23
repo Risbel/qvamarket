@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, db, eq, sql, store, storeBannerImage } from "@qvashop/db";
 import { checkImageBytes, extensionFor, MAX_BANNER_IMAGES, type BannerDevice, type ImageCheck } from "@/lib/images";
+import { belowLimit, planLimitError, type PlanKey, type PlanLimitError } from "@/lib/plans";
 import { deleteObject, putObject, tenantKey } from "./storage";
 
 // Hero banner images: rows in `store_banner_image` + files in object storage under
@@ -72,15 +73,17 @@ async function lockStore(tx: Tx, { tenantId, storeId }: Scope) {
  */
 export async function addBannerImage(
   scope: Scope,
+  plan: PlanKey,
   device: BannerDevice,
   bytes: Uint8Array,
-): Promise<{ ok: true; id: string } | { ok: false; error: BannerError }> {
+): Promise<{ ok: true; id: string } | { ok: false; error: BannerError } | PlanLimitError> {
   const check = checkImageBytes(bytes);
   if (!check.ok) return check;
 
   // Cheap early exit; the authoritative check runs again under the store lock below
   const [existing] = await db.select({ total: count() }).from(storeBannerImage).where(onDevice(scope, device));
   if (existing.total >= MAX_BANNER_IMAGES) return { ok: false, error: "limit" };
+  if (!belowLimit(plan, "bannerImages", existing.total)) return planLimitError(plan, "bannerImages");
 
   const key = tenantKey(
     scope.tenantId,
@@ -103,6 +106,7 @@ export async function addBannerImage(
         .from(storeBannerImage)
         .where(onDevice(scope, device));
       if (stats.total >= MAX_BANNER_IMAGES) return { ok: false, error: "limit" } as const;
+      if (!belowLimit(plan, "bannerImages", stats.total)) return planLimitError(plan, "bannerImages");
 
       const [row] = await tx
         .insert(storeBannerImage)
