@@ -6,14 +6,15 @@ import { LocalDateTime } from "@/components/local-date-time";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getOpenRegister, lastCounted, listClosedSessions } from "@/server/register";
+import { getOpenShifts, lastCounted, listClosedSessions } from "@/server/register";
 import { requirePanelSection } from "@/server/tenant";
 import { OpenRegister, type OpenSessionView } from "./open-register";
 import { OpenRegisterForm } from "./open-register-form";
 
 /**
- * The store's cash register: the open session (live drawer per currency, cash in / out,
- * close), or the form to open one, and the closed sessions with their Z reports.
+ * The store's cash register, one shift per cashier: the viewer's open shift (cash in / out,
+ * close) or the form to open one; for supervisors, the other cashiers' open shifts; and the
+ * closed shifts with their Z reports (only the viewer's own unless they supervise).
  */
 export default async function RegisterPage({ params }: PageProps<"/[locale]/dashboard/store/[storeId]/register">) {
   const { locale, storeId } = await params;
@@ -21,28 +22,31 @@ export default async function RegisterPage({ params }: PageProps<"/[locale]/dash
   const merchant = await requirePanelSection(locale, storeId, "register");
   const t = await getTranslations("Register");
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
-  const [open, history] = await Promise.all([getOpenRegister(scope), listClosedSessions(scope)]);
-  const suggested = open ? {} : await lastCounted(scope);
+  const viewer = { userId: merchant.session.user.id, supervise: merchant.can({ register: ["supervise"] }) };
+  const [shifts, history] = await Promise.all([getOpenShifts(scope, viewer), listClosedSessions(scope, viewer)]);
+  const own = shifts.find((s) => s.own);
+  const others = shifts.filter((s) => !s.own);
+  const suggested = own ? {} : await lastCounted(scope, viewer.userId);
   const currencies = merchant.store.currencies.map((c) => ({ code: c.code, digits: c.digits }));
 
-  const session: OpenSessionView | null = open
-    ? {
-        number: open.number,
-        openedAt: open.openedAt.toISOString(),
-        openedBy: open.openedBy,
-        openingNote: open.openingNote,
-        drawers: open.drawers,
-        movements: open.movements.map((m) => ({
-          id: m.id,
-          kind: m.kind as "in" | "out",
-          currency: m.currency,
-          amountMinor: m.amountMinor,
-          note: m.note,
-          createdAt: m.createdAt.toISOString(),
-          by: m.by,
-        })),
-      }
-    : null;
+  const view = (shift: (typeof shifts)[number]): OpenSessionView => ({
+    id: shift.id,
+    number: shift.number,
+    openedAt: shift.openedAt.toISOString(),
+    cashier: shift.cashier,
+    own: shift.own,
+    openingNote: shift.openingNote,
+    drawers: shift.drawers,
+    movements: shift.movements.map((m) => ({
+      id: m.id,
+      kind: m.kind as "in" | "out",
+      currency: m.currency,
+      amountMinor: m.amountMinor,
+      note: m.note,
+      createdAt: m.createdAt.toISOString(),
+      by: m.by,
+    })),
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
@@ -51,8 +55,8 @@ export default async function RegisterPage({ params }: PageProps<"/[locale]/dash
         <p className="text-muted-foreground">{t("intro")}</p>
       </div>
 
-      {session ? (
-        <OpenRegister session={session} currencies={currencies} />
+      {own ? (
+        <OpenRegister session={view(own)} currencies={currencies} supervise={viewer.supervise} />
       ) : (
         <Card>
           <CardHeader>
@@ -65,6 +69,20 @@ export default async function RegisterPage({ params }: PageProps<"/[locale]/dash
             <OpenRegisterForm currencies={currencies} suggested={suggested} />
           </CardContent>
         </Card>
+      )}
+
+      {others.length > 0 && (
+        <section aria-labelledby="other-shifts" className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 id="other-shifts" className="text-lg font-semibold">
+              {t("others.title")}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t("others.description")}</p>
+          </div>
+          {others.map((shift) => (
+            <OpenRegister key={shift.id} session={view(shift)} currencies={currencies} supervise={viewer.supervise} />
+          ))}
+        </section>
       )}
 
       <Card>
@@ -81,8 +99,8 @@ export default async function RegisterPage({ params }: PageProps<"/[locale]/dash
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("history.number")}</TableHead>
+                  <TableHead>{t("history.cashier")}</TableHead>
                   <TableHead>{t("history.closedAt")}</TableHead>
-                  <TableHead>{t("history.closedBy")}</TableHead>
                   <TableHead>{t("history.result")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -94,8 +112,13 @@ export default async function RegisterPage({ params }: PageProps<"/[locale]/dash
                         {t("history.z", { number: h.number })}
                       </Link>
                     </TableCell>
+                    <TableCell className="text-sm">
+                      {h.cashier ?? "—"}
+                      {h.closedByUserId !== h.cashierUserId && h.closedBy && (
+                        <span className="block text-xs text-muted-foreground">{t("history.closedByOther", { name: h.closedBy })}</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm">{h.closedAt && <LocalDateTime iso={h.closedAt.toISOString()} locale={locale} />}</TableCell>
-                    <TableCell className="text-sm">{h.closedBy ?? "—"}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {h.currencies.map((c) => (

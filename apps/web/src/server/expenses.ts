@@ -2,7 +2,7 @@ import { and, asc, count, db, desc, eq, expense, inArray, member, or, sql, user 
 import type { ExpenseCategory, ExpenseListParams, ExpenseSort } from "@/lib/expenses";
 import type { ExpenseInput } from "@/lib/validation/expense";
 import { onLocalDays } from "./date-sql";
-import { inClosedPeriod } from "./register";
+import { inClosedShift, openShiftOf } from "./register";
 
 // Expenses of the merchant's store. Every query matches tenant_id AND store_id (from
 // requireMerchant(), never from client input).
@@ -118,11 +118,11 @@ export async function createExpense(scope: Scope, input: ExpenseInput, userId: s
   const values = await withMember(scope, input);
   if (!values) return { ok: false, error: "memberNotFound" };
   return db.transaction(async (tx) => {
-    // an expense dated in a closed day would change its frozen cash count
-    if (await inClosedPeriod(tx, scope, [values.paidAt])) return { ok: false, error: "closedPeriod" } as const;
+    // goes to the recorder's open register shift, if any (a cash expense leaves that drawer)
+    const registerSessionId = await openShiftOf(tx, scope, userId);
     const [created] = await tx
       .insert(expense)
-      .values({ ...values, tenantId: scope.tenantId, storeId: scope.storeId, recordedByUserId: userId })
+      .values({ ...values, tenantId: scope.tenantId, storeId: scope.storeId, recordedByUserId: userId, registerSessionId })
       .returning({ id: expense.id });
     return { ok: true, id: created.id } as const;
   });
@@ -138,28 +138,28 @@ export async function updateExpense(scope: Scope, id: string, input: ExpenseInpu
   if (!values) return { ok: false, error: "memberNotFound" };
   return db.transaction(async (tx) => {
     const [locked] = await tx
-      .select({ paidAt: expense.paidAt })
+      .select({ registerSessionId: expense.registerSessionId })
       .from(expense)
       .where(and(inScope(scope), eq(expense.id, id)))
       .for("update");
     if (!locked) return { ok: false, error: "notFound" } as const;
-    // neither the old date nor the new one may be in a closed day
-    if (await inClosedPeriod(tx, scope, [locked.paidAt, values.paidAt])) return { ok: false, error: "closedPeriod" } as const;
+    // an expense of a closed shift is part of its frozen cash count
+    if (await inClosedShift(tx, scope, locked.registerSessionId)) return { ok: false, error: "closedPeriod" } as const;
     await tx.update(expense).set(values).where(and(inScope(scope), eq(expense.id, id)));
     return { ok: true, id } as const;
   });
 }
 
-/** `notFound` when the expense does not exist in this store; `closedPeriod` when it is in a closed day. */
+/** `notFound` when the expense does not exist in this store; `closedPeriod` when its register shift is closed. */
 export async function deleteExpense(scope: Scope, id: string): Promise<{ ok: true } | { ok: false; error: "notFound" | "closedPeriod" }> {
   return db.transaction(async (tx) => {
     const [locked] = await tx
-      .select({ paidAt: expense.paidAt })
+      .select({ registerSessionId: expense.registerSessionId })
       .from(expense)
       .where(and(inScope(scope), eq(expense.id, id)))
       .for("update");
     if (!locked) return { ok: false, error: "notFound" } as const;
-    if (await inClosedPeriod(tx, scope, [locked.paidAt])) return { ok: false, error: "closedPeriod" } as const;
+    if (await inClosedShift(tx, scope, locked.registerSessionId)) return { ok: false, error: "closedPeriod" } as const;
     await tx.delete(expense).where(and(inScope(scope), eq(expense.id, id)));
     return { ok: true } as const;
   });

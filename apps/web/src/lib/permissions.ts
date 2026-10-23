@@ -28,9 +28,11 @@ export const statement = {
   report: ["read"],
   // money the store paid out: salaries, rent, utilities...
   expense: ["read", "create", "update", "delete"],
-  // the cash register (day close): read = sessions and Z reports; create = open the register and
-  // record cash in / out; update = close it (count the cash)
-  register: ["read", "create", "update"],
+  // the cash register (day close), one shift per cashier: read = your shifts and their Z reports;
+  // create = open your shift and record cash in / out; update = close it (count the cash);
+  // supervise = every cashier's shifts and reports, the cash each drawer should hold, and closing
+  // a shift on its cashier's behalf
+  register: ["read", "create", "update", "supervise"],
   // the company's members (add, change role, reset password, remove)
   team: ["read", "create", "update", "delete"],
   // the company's roles
@@ -47,7 +49,7 @@ export type PermissionRequest = Permissions;
 
 export const RESOURCES = Object.keys(statement) as Resource[];
 /** Every action of any resource, in display order (the role editor's columns). */
-export const ACTIONS = ["read", "create", "update", "delete", "cancel", "edit"] as const satisfies readonly Action[];
+export const ACTIONS = ["read", "create", "update", "delete", "cancel", "edit", "supervise"] as const satisfies readonly Action[];
 
 /** The built-in role with every permission; never stored as a company_role. */
 export const OWNER_ROLE = "owner";
@@ -131,7 +133,7 @@ export const ROLE_PRESETS = {
     customer: ["read"],
     report: ["read"],
     expense: ["read", "create", "update", "delete"],
-    register: ["read", "create", "update"],
+    register: ["read", "create", "update", "supervise"],
     team: ["read"],
   },
   /** Serves customers: processes and edits orders, takes payments; looks at the catalog. */

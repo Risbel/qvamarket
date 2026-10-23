@@ -81,12 +81,15 @@ export function PaymentsSection({
   totalMinor,
   cancelled,
   payments,
+  noShift,
 }: {
   orderId: string;
   currency: string;
   totalMinor: number;
   cancelled: boolean;
   payments: PaymentRecord[];
+  /** the viewer runs a register but has no open shift (cash would go to no drawer) */
+  noShift: boolean;
 }) {
   const storeId = useStoreId();
   const t = useTranslations("Orders.payments");
@@ -215,6 +218,7 @@ export function PaymentsSection({
               dueMinor={canPay ? due : 0}
               netMinor={net}
               overpaidMinor={toRefund}
+              noShift={noShift}
               onDone={() => {
                 setRecording(false);
                 setError(null);
@@ -254,6 +258,7 @@ function PaymentForm({
   dueMinor,
   netMinor,
   overpaidMinor,
+  noShift,
   onDone,
   onCancel,
 }: {
@@ -264,6 +269,7 @@ function PaymentForm({
   netMinor: number;
   /** collected above the total (an edit lowered it): what a refund starts with */
   overpaidMinor: number;
+  noShift: boolean;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -288,6 +294,7 @@ function PaymentForm({
   });
   const kind = useWatch({ control: form.control, name: "kind" });
   const refund = kind === "refund";
+  const method = useWatch({ control: form.control, name: "method" });
 
   /** Switching between payment and refund suggests the matching amount (what is due / was collected). */
   function chooseKind(next: PaymentKind) {
@@ -365,6 +372,7 @@ function PaymentForm({
                     ))}
                   </SelectContent>
                 </Select>
+                {noShift && method === "cash" && <FieldDescription>{t("noShift")}</FieldDescription>}
               </Field>
             )}
           />

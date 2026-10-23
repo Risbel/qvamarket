@@ -33,9 +33,13 @@ import { Textarea } from "@/components/ui/textarea";
 type Currency = { code: string; digits: number };
 
 export type OpenSessionView = {
+  id: string;
   number: number;
   openedAt: string;
-  openedBy: string | null;
+  /** the person responsible for the shift */
+  cashier: string | null;
+  /** the viewer's own shift */
+  own: boolean;
   openingNote: string | null;
   drawers: DrawerCurrency[];
   movements: { id: string; kind: RegisterMovementKind; currency: string; amountMinor: number; note: string; createdAt: string; by: string | null }[];
@@ -43,8 +47,12 @@ export type OpenSessionView = {
 
 const digitsOf = (currencies: Currency[], code: string) => currencies.find((c) => c.code === code)?.digits ?? 2;
 
-/** The open session: what each drawer should hold right now, the cash in / out, and the close. */
-export function OpenRegister({ session, currencies }: { session: OpenSessionView; currencies: Currency[] }) {
+/**
+ * An open shift: the drawers, the cash in / out (own shift only) and the close (own shift, or
+ * anyone's for a supervisor). Only a supervisor sees what each drawer should hold; a cashier
+ * counts blind.
+ */
+export function OpenRegister({ session, currencies, supervise }: { session: OpenSessionView; currencies: Currency[]; supervise: boolean }) {
   const t = useTranslations("Register");
   const locale = useLocale();
   const hydrated = useHydrated();
@@ -56,17 +64,18 @@ export function OpenRegister({ session, currencies }: { session: OpenSessionView
       <CardHeader>
         <CardTitle>
           <h2 className="flex flex-wrap items-center gap-2">
-            {t("session.title", { number: session.number })}
+            {session.own ? t("session.yours") : t("session.title", { number: session.number })}
             <Badge>{t("session.open")}</Badge>
           </h2>
         </CardTitle>
         <CardDescription>
+          {session.own && `${t("session.title", { number: session.number })} · `}
           {t("session.openedAt")} <LocalDateTime iso={session.openedAt} locale={locale} />
-          {session.openedBy && ` · ${session.openedBy}`}
+          {session.cashier && <span className="block">{t("session.cashier", { name: session.cashier })}</span>}
           {session.openingNote && <span className="block whitespace-pre-line">{session.openingNote}</span>}
         </CardDescription>
         <CardAction className="flex flex-wrap gap-2">
-          {can({ register: ["create"] }) && (
+          {session.own && can({ register: ["create"] }) && (
             <>
               <Button size="sm" variant="outline" disabled={!hydrated} onClick={() => setDialog("in")}>
                 <ArrowDownToLineIcon />
@@ -78,7 +87,7 @@ export function OpenRegister({ session, currencies }: { session: OpenSessionView
               </Button>
             </>
           )}
-          {can({ register: ["update"] }) && (
+          {(session.own || supervise) && can({ register: ["update"] }) && (
             <Button size="sm" disabled={!hydrated} onClick={() => setDialog("close")}>
               <LockIcon />
               {t("actions.close")}
@@ -89,7 +98,7 @@ export function OpenRegister({ session, currencies }: { session: OpenSessionView
       <CardContent className="flex flex-col gap-6">
         <div className="grid gap-4 md:grid-cols-2">
           {session.drawers.map((drawer) => (
-            <DrawerCard key={drawer.currency} drawer={drawer} />
+            <DrawerCard key={drawer.currency} drawer={drawer} blind={!supervise} />
           ))}
         </div>
 
@@ -124,17 +133,28 @@ export function OpenRegister({ session, currencies }: { session: OpenSessionView
       <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
         <DialogContent>
           {(dialog === "in" || dialog === "out") && (
-            <MovementForm kind={dialog} currencies={currencies} drawers={session.drawers} onDone={() => setDialog(null)} onCancel={() => setDialog(null)} />
+            <MovementForm
+              kind={dialog}
+              currencies={currencies}
+              drawers={supervise ? session.drawers : null}
+              onDone={() => setDialog(null)}
+              onCancel={() => setDialog(null)}
+            />
           )}
-          {dialog === "close" && <CloseForm drawers={session.drawers} currencies={currencies} onCancel={() => setDialog(null)} />}
+          {dialog === "close" && (
+            <CloseForm session={session} blind={!supervise} currencies={currencies} onCancel={() => setDialog(null)} />
+          )}
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
 
-/** One currency's drawer: how the expected cash adds up, then what is listed but not counted. */
-function DrawerCard({ drawer: d }: { drawer: DrawerCurrency }) {
+/**
+ * One currency's drawer: how the expected cash adds up, then what is listed but not counted.
+ * `blind` (a cashier) shows only the float, the cash in / out and how many records there are.
+ */
+function DrawerCard({ drawer: d, blind }: { drawer: DrawerCurrency; blind: boolean }) {
   const t = useTranslations("Register.drawer");
   const locale = useLocale();
   const money = (minor: number) => formatMoney(minor, d.currency, locale);
@@ -147,6 +167,22 @@ function DrawerCard({ drawer: d }: { drawer: DrawerCurrency }) {
       </dd>
     </div>
   );
+  if (blind) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border p-4">
+        <span className="font-semibold">{d.currency}</span>
+        <dl className="flex flex-col gap-1 text-sm">
+          {line(t("opening"), d.openingMinor, "")}
+          {line(t("cashIn"), d.cashInMinor, "+")}
+          {line(t("cashOut"), d.cashOutMinor, "−")}
+          <div className="flex justify-between gap-2">
+            <dt className="text-muted-foreground">{t("records", { payments: d.payments, expenses: d.expenses })}</dt>
+          </div>
+        </dl>
+        <p className="text-xs text-muted-foreground">{t("blind")}</p>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-4">
       <div className="flex items-baseline justify-between gap-2">
@@ -190,7 +226,8 @@ function MovementForm({
 }: {
   kind: RegisterMovementKind;
   currencies: Currency[];
-  drawers: DrawerCurrency[];
+  /** null = the person does not see what the drawer holds (a cashier) */
+  drawers: DrawerCurrency[] | null;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -207,7 +244,7 @@ function MovementForm({
     defaultValues: { kind, currencyCode: currencies[0]?.code ?? "", amount: "", note: "" },
   });
   const currencyCode = useWatch({ control: form.control, name: "currencyCode" });
-  const inDrawer = drawers.find((d) => d.currency === currencyCode)?.expectedMinor ?? 0;
+  const inDrawer = drawers ? (drawers.find((d) => d.currency === currencyCode)?.expectedMinor ?? 0) : null;
 
   async function onSubmit(values: MovementValues) {
     setMessage(null);
@@ -260,7 +297,7 @@ function MovementForm({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="movement-amount">{t("amount")}</FieldLabel>
                 <Input {...field} id="movement-amount" placeholder={minorToInput(digitsOf(currencies, currencyCode) === 0 ? 1000 : 2000, digitsOf(currencies, currencyCode))} invalid={fieldState.invalid} currency={currencyCode} />
-                {kind === "out" && <FieldDescription>{t("inDrawer", { amount: formatMoney(inDrawer, currencyCode, locale) })}</FieldDescription>}
+                {kind === "out" && inDrawer !== null && <FieldDescription>{t("inDrawer", { amount: formatMoney(inDrawer, currencyCode, locale) })}</FieldDescription>}
                 <FieldError errors={[fieldState.error]} />
               </Field>
             )}
@@ -313,10 +350,22 @@ function Input({
 }
 
 /**
- * The close: the cash counted per currency against what the drawer should hold (difference
- * live: over / short), a note (required when they differ), then the frozen report.
+ * The close: the cash counted per currency, a note (required when a count does not match),
+ * then the frozen report. A supervisor sees what is expected and the difference live; a
+ * cashier counts blind: when the count does not match and there is no note, the server says
+ * in which currencies (the attempt stays in the report) and they count again or explain it.
  */
-function CloseForm({ drawers, currencies, onCancel }: { drawers: DrawerCurrency[]; currencies: Currency[]; onCancel: () => void }) {
+function CloseForm({
+  session,
+  blind,
+  currencies,
+  onCancel,
+}: {
+  session: OpenSessionView;
+  blind: boolean;
+  currencies: Currency[];
+  onCancel: () => void;
+}) {
   const storeId = useStoreId();
   const storePathOf = useStorePath();
   const t = useTranslations("Register.close");
@@ -326,8 +375,9 @@ function CloseForm({ drawers, currencies, onCancel }: { drawers: DrawerCurrency[
   const router = useRouter();
   const hydrated = useHydrated();
   const [message, setMessage] = useState<string | null>(null);
+  const drawers = session.drawers;
   const drawerCurrencies = drawers.map((d) => ({ code: d.currency, digits: digitsOf(currencies, d.currency) }));
-  const expected = Object.fromEntries(drawers.map((d) => [d.currency, d.expectedMinor]));
+  const expected = blind ? undefined : Object.fromEntries(drawers.map((d) => [d.currency, d.expectedMinor]));
   const form = useForm<CloseRegisterValues>({
     resolver: zodResolver(createCloseRegisterSchema(tv, drawerCurrencies, expected)),
     defaultValues: { counted: Object.fromEntries(drawers.map((d) => [d.currency, ""])), shown: expected, note: "" },
@@ -336,7 +386,7 @@ function CloseForm({ drawers, currencies, onCancel }: { drawers: DrawerCurrency[
 
   async function onSubmit(values: CloseRegisterValues) {
     setMessage(null);
-    const result = await closeRegisterAction(storeId, values, locale).catch(() => null);
+    const result = await closeRegisterAction(storeId, session.id, values, locale).catch(() => null);
     if (result?.ok) {
       toast.success(t("toast"));
       router.push(storePathOf(result.id ? `/register/${result.id}` : "/register"));
@@ -344,6 +394,12 @@ function CloseForm({ drawers, currencies, onCancel }: { drawers: DrawerCurrency[
     }
     if (result?.error === "invalid" && "fieldErrors" in result && result.fieldErrors) {
       for (const [field, messages] of Object.entries(result.fieldErrors)) form.setError(field as `counted.${string}`, { message: messages[0] });
+      return;
+    }
+    if (result?.error === "noteRequired" && "currencies" in result) {
+      for (const code of result.currencies) form.setError(`counted.${code}`, { message: t("mismatchField") });
+      setMessage(t("mismatch", { currencies: result.currencies.join(", ") }));
+      form.setFocus("note");
       return;
     }
     if (result?.error === "stale") {
@@ -360,7 +416,11 @@ function CloseForm({ drawers, currencies, onCancel }: { drawers: DrawerCurrency[
     <form onSubmit={form.handleSubmit(onSubmit)} method="post" noValidate className="flex flex-col gap-4">
       <DialogHeader>
         <DialogTitle>{t("title")}</DialogTitle>
-        <DialogDescription>{t("description")}</DialogDescription>
+        <DialogDescription>
+          {!session.own && session.cashier
+            ? t("descriptionOther", { name: session.cashier })
+            : t(blind ? "descriptionBlind" : "description")}
+        </DialogDescription>
       </DialogHeader>
       <FieldGroup>
         {drawers.map((d) => {
@@ -376,17 +436,25 @@ function CloseForm({ drawers, currencies, onCancel }: { drawers: DrawerCurrency[
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={`counted-${d.currency}`}>{t("counted", { currency: d.currency })}</FieldLabel>
-                  <Input {...field} id={`counted-${d.currency}`} placeholder={minorToInput(d.expectedMinor, digits)} invalid={fieldState.invalid} currency={d.currency} />
-                  <FieldDescription>
-                    {t("expected", { amount: formatMoney(d.expectedMinor, d.currency, locale) })}
-                    {difference !== null && (
-                      <span className={difference === 0 ? "ml-2 font-medium" : "ml-2 font-medium text-destructive"}>
-                        {difference === 0
-                          ? t("even")
-                          : t(difference > 0 ? "over" : "short", { amount: formatMoney(Math.abs(difference), d.currency, locale) })}
-                      </span>
-                    )}
-                  </FieldDescription>
+                  <Input
+                    {...field}
+                    id={`counted-${d.currency}`}
+                    placeholder={minorToInput(blind ? (digits === 0 ? 5000 : 50000) : d.expectedMinor, digits)}
+                    invalid={fieldState.invalid}
+                    currency={d.currency}
+                  />
+                  {!blind && (
+                    <FieldDescription>
+                      {t("expected", { amount: formatMoney(d.expectedMinor, d.currency, locale) })}
+                      {difference !== null && (
+                        <span className={difference === 0 ? "ml-2 font-medium" : "ml-2 font-medium text-destructive"}>
+                          {difference === 0
+                            ? t("even")
+                            : t(difference > 0 ? "over" : "short", { amount: formatMoney(Math.abs(difference), d.currency, locale) })}
+                        </span>
+                      )}
+                    </FieldDescription>
+                  )}
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               )}

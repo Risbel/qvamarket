@@ -1901,7 +1901,7 @@
         "cancelled": "The order is cancelled: it only takes refunds.",
         "unbalanced": "It cannot be removed: the amount collected would go below zero or above the total. Remove the refund or payment that offsets it first.",
         "failed": "It could not be saved. Try again.",
-        "closedPeriod": "That date is in a day whose register is already closed: its report does not change. Use a date after the last close."
+        "closedPeriod": "It belongs to a register shift that is already closed: its Z report does not change. Correct it with a new record."
       },
       "toasts": {
         "paymentRecorded": "Payment recorded.",
@@ -1910,7 +1910,8 @@
         "refundRemoved": "Refund removed."
       },
       "toRefund": "To refund",
-      "toRefundHelp": "You collected more than the order total. Record a refund when you give the money back to the customer."
+      "toRefundHelp": "You collected more than the order total. Record a refund when you give the money back to the customer.",
+      "noShift": "You have no open register shift: this cash will not be counted in any drawer."
     },
     "rowActions": {
       "menu": "Actions for order {reference}",
@@ -2042,7 +2043,7 @@
         "notFound": "The expense no longer exists.",
         "memberNotFound": "That person is no longer a member of the company.",
         "failed": "Could not save the expense. Try again.",
-        "closedPeriod": "That date is in a day whose register is already closed: its report does not change. Use a date after the last close."
+        "closedPeriod": "It belongs to a register shift that is already closed: its Z report does not change. Correct it with a new record."
       }
     },
     "delete": {
@@ -2056,7 +2057,7 @@
         "forbidden": "You do not have permission to do this.",
         "notFound": "The expense no longer exists.",
         "failed": "Could not delete. Try again.",
-        "closedPeriod": "That date is in a day whose register is already closed: its report does not change. Use a date after the last close."
+        "closedPeriod": "It belongs to a register shift that is already closed: its Z report does not change. Correct it with a new record."
       }
     }
   },
@@ -2171,7 +2172,8 @@
       "update": "Edit",
       "delete": "Delete",
       "cancel": "Cancel",
-      "edit": "Modify"
+      "edit": "Modify",
+      "supervise": "Supervise"
     },
     "resources": {
       "store": {
@@ -2234,10 +2236,11 @@
       },
       "register": {
         "name": "Register",
-        "description": "Open and close the register, count the cash and see the closing reports.",
+        "description": "Open and close a register shift, count the cash and see the closing reports.",
         "actions": {
           "create": "Open and record cash in / out",
-          "update": "Close (count)"
+          "update": "Close (count)",
+          "supervise": "Supervise (every shift, expected cash, close for others)"
         }
       }
     },
@@ -2974,25 +2977,27 @@
   },
   "Register": {
     "title": "Register",
-    "intro": "Open the register with the starting cash, record cash in and out, and close it by counting the cash. Each close leaves a Z report that never changes.",
+    "intro": "Each cashier opens their own shift with the cash in their drawer. Payments, refunds and expenses they record while it is open go to their shift, and they close it by counting the cash under their responsibility. Each close leaves a Z report that never changes.",
     "note": "Note",
     "back": "Back",
     "closed": {
-      "title": "The register is closed",
-      "description": "Open it with the cash in the drawer to start the day."
+      "title": "Your register is closed",
+      "description": "Open it with the cash in your drawer to start your shift."
     },
     "open": {
       "float": "Starting cash ({currency})",
-      "lastCounted": "The last close counted {amount}.",
+      "lastCounted": "Your last close counted {amount}.",
       "notePlaceholder": "E.g. Morning shift",
       "submit": "Open register",
       "toast": "Register opened.",
       "notAllowed": "You are not allowed to open the register."
     },
     "session": {
-      "title": "Register no. {number}",
+      "title": "Shift no. {number}",
       "open": "Open",
-      "openedAt": "Opened on"
+      "openedAt": "Opened on",
+      "cashier": "Cashier: {name}",
+      "yours": "Your shift"
     },
     "actions": {
       "in": "Cash in",
@@ -3011,7 +3016,9 @@
       "other": "Other methods",
       "otherExpenses": "Expenses with other methods",
       "sales": "{count, plural, one {# order} other {# orders}}",
-      "notCounted": "Transfers and other methods are listed, not counted in the drawer."
+      "notCounted": "Transfers and other methods are listed, not counted in the drawer.",
+      "blind": "You will see what the drawer should hold when you close your shift.",
+      "records": "{payments, plural, one {# payment} other {# payments}} · {expenses, plural, one {# expense} other {# expenses}}"
     },
     "movements": {
       "title": "Cash in and out",
@@ -3035,7 +3042,7 @@
       "toastOut": "Cash out recorded."
     },
     "close": {
-      "title": "Close register",
+      "title": "Close shift",
       "description": "Count the cash in the drawer in each currency and type it.",
       "counted": "Cash counted ({currency})",
       "expected": "It should hold {amount}.",
@@ -3044,22 +3051,27 @@
       "short": "{amount} short",
       "notePlaceholder": "E.g. 50 CUP short, wrong change given",
       "noteHelp": "Required when the count is off.",
-      "frozen": "Closing saves the Z report: payments and expenses of this period can no longer be added, changed or removed.",
+      "frozen": "Closing saves the Z report: payments and expenses of this shift can no longer be changed or removed.",
       "submit": "Close and save report",
-      "toast": "Register closed.",
-      "stale": "A payment or expense was recorded while you counted: check the amounts and count again."
+      "toast": "Shift closed.",
+      "stale": "A payment or expense was recorded while you counted: check the amounts and count again.",
+      "descriptionBlind": "Count the cash in the drawer in each currency and type it. You will see whether it balances after closing.",
+      "descriptionOther": "You are closing {name}'s shift: count the cash in their drawer.",
+      "mismatch": "The count does not balance in {currencies}. Count again or explain the difference in the note. Counts that do not balance are kept in the report.",
+      "mismatchField": "Does not balance."
     },
     "history": {
       "title": "Closes",
       "empty": "No closes yet.",
       "number": "Report",
       "closedAt": "Closed on",
-      "closedBy": "By",
       "result": "Result",
       "z": "Z no. {number}",
       "even": "{currency}: balanced",
       "over": "{amount} over",
-      "short": "{amount} short"
+      "short": "{amount} short",
+      "cashier": "Cashier",
+      "closedByOther": "Closed by {name}"
     },
     "report": {
       "back": "Register",
@@ -3082,19 +3094,26 @@
       "amount": "Amount",
       "openingNote": "Opening note:",
       "closingNote": "Closing note:",
-      "frozen": "This report was saved when the register was closed and does not change if orders or expenses are edited later."
+      "frozen": "This report was saved when the register was closed and does not change if orders or expenses are edited later.",
+      "cashier": "Cashier: {name}",
+      "recounts": "Counts that did not balance",
+      "recountsHelp": "Counts sent without a note before the final one."
     },
     "errors": {
       "forbidden": "You are not allowed to do this.",
       "invalid": "Check the data.",
       "failed": "Could not complete it. Try again.",
-      "alreadyOpen": "The register is already open. Reload the page.",
-      "noSession": "There is no open register. Reload the page.",
+      "alreadyOpen": "You already have an open shift. Reload the page.",
+      "noSession": "That shift is no longer open. Reload the page.",
       "invalidCurrency": "That currency is not one of the store's.",
       "exceedsCash": "You cannot take out more cash than the drawer should hold.",
       "stale": "The amounts changed. Reload the page and count again.",
-      "noteRequired": "The count is off: write a note.",
+      "noteRequired": "The count does not balance: count again or write a note.",
       "missingCount": "A currency's count is missing."
+    },
+    "others": {
+      "title": "Other open shifts",
+      "description": "Shifts of other team members. You can close one on their behalf (for example, if they left without closing)."
     }
   }
 }

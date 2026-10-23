@@ -56,16 +56,17 @@ export function createMovementSchema(t: Translator, currencies: Currency[]) {
 export type MovementValues = z.infer<ReturnType<typeof createMovementSchema>>;
 
 /**
- * Close: the cash counted per currency of the session (`currencies` = the session's drawers),
- * the expected amounts the person saw (the server refuses if they changed), and a note,
- * required when a count differs from what was expected.
+ * Close: the cash counted per currency of the shift (`currencies` = the shift's drawers), the
+ * expected amounts a supervisor saw (`shown`; the server refuses if they changed; a cashier
+ * counts blind and sends none), and a note, required when a count differs from what was
+ * expected (checked here only when `expected` is known; the server always checks).
  */
 export function createCloseRegisterSchema(t: Translator, currencies: Currency[], expected?: Record<string, number>) {
   return z
     .object({
       // a count is always typed: an empty field is not "0 in the drawer"
       counted: perCurrency(t, currencies, true),
-      shown: z.record(z.string(), z.number().int()),
+      shown: z.record(z.string(), z.number().int()).optional(),
       note: note(t),
     })
     .superRefine((values, ctx) => {

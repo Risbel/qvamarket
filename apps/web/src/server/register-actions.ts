@@ -11,11 +11,12 @@ import {
   createOpenRegisterSchema,
   toMinorPerCurrency,
 } from "@/lib/validation/register";
-import { addRegisterMovement, closeRegister, getOpenRegister, openRegister, type RegisterResult } from "./register";
+import { addRegisterMovement, closeRegister, getClosableShift, openRegister, type RegisterResult, type RegisterViewer } from "./register";
 import { getMerchantOrNull } from "./tenant";
 
-// The store's cash register: register:create opens it and records cash in / out,
-// register:update closes it. The plan's `dayClose` feature is part of `can` (permissions).
+// The store's cash register, one shift per cashier: register:create opens your shift and
+// records cash in / out, register:update closes it, register:supervise closes anyone's. The
+// plan's `dayClose` feature is part of `can` (permissions).
 
 export type RegisterActionResult =
   | RegisterResult
@@ -30,6 +31,13 @@ function invalid(error: z.ZodError): RegisterActionResult {
   for (const issue of error.issues) (fieldErrors[issue.path.join(".")] ??= []).push(issue.message);
   return { ok: false, error: "invalid", fieldErrors };
 }
+
+type Merchant = NonNullable<Awaited<ReturnType<typeof getMerchantOrNull>>>;
+
+const viewerOf = (merchant: Merchant): RegisterViewer => ({
+  userId: merchant.session.user.id,
+  supervise: merchant.can({ register: ["supervise"] }),
+});
 
 async function guard(name: string, fn: () => Promise<RegisterActionResult>): Promise<RegisterActionResult> {
   try {
@@ -71,17 +79,20 @@ export async function addRegisterMovementAction(storeId: unknown, values: unknow
       scope,
       { kind, currencyCode, amountMinor: parsePriceToMinor(amount, digits, Number.MAX_SAFE_INTEGER)!, note },
       currencies.map((c) => c.code),
-      merchant.session.user.id,
+      viewerOf(merchant),
     ),
   );
 }
 
-export async function closeRegisterAction(storeId: unknown, values: unknown, locale: string): Promise<RegisterActionResult> {
+export async function closeRegisterAction(storeId: unknown, sessionId: unknown, values: unknown, locale: string): Promise<RegisterActionResult> {
   const merchant = await getMerchantOrNull(storeId);
   if (!merchant || !merchant.can({ register: ["update"] })) return { ok: false, error: "forbidden" };
+  const id = z.uuid().safeParse(sessionId);
+  if (!id.success) return { ok: false, error: "noSession" };
   const scope = { tenantId: merchant.tenantId, storeId: merchant.store.id };
-  // Counted in the session's currencies (the store's, plus any other that had cash in it)
-  const open = await getOpenRegister(scope);
+  const viewer = viewerOf(merchant);
+  // Counted in the shift's currencies (the store's, plus any other that had cash in it)
+  const open = await getClosableShift(scope, id.data.toLowerCase(), viewer);
   if (!open) return { ok: false, error: "noSession" };
   const currencies = open.drawers.map((d) => ({
     code: d.currency,
@@ -92,8 +103,14 @@ export async function closeRegisterAction(storeId: unknown, values: unknown, loc
   return guard("closeRegister", () =>
     closeRegister(
       scope,
-      { counted: toMinorPerCurrency(parsed.data.counted, currencies), shown: parsed.data.shown, note: parsed.data.note },
-      merchant.session.user.id,
+      open.id,
+      {
+        counted: toMinorPerCurrency(parsed.data.counted, currencies),
+        // only a supervisor is shown the expected cash; a cashier counts blind
+        shown: viewer.supervise ? (parsed.data.shown ?? null) : null,
+        note: parsed.data.note,
+      },
+      viewer,
     ),
   );
 }

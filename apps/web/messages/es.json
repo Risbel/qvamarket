@@ -1901,7 +1901,7 @@
         "cancelled": "El pedido está cancelado: solo admite reembolsos.",
         "unbalanced": "No se puede quitar: lo cobrado quedaría por debajo de cero o por encima del total. Quita antes el reembolso o el pago que lo compensa.",
         "failed": "No se pudo guardar. Inténtalo de nuevo.",
-        "closedPeriod": "Esa fecha está en un día con la caja ya cerrada: su informe no cambia. Usa una fecha posterior al último cierre."
+        "closedPeriod": "Pertenece a un turno de caja ya cerrado: su informe Z no cambia. Corrige con un registro nuevo."
       },
       "toasts": {
         "paymentRecorded": "Pago registrado.",
@@ -1910,7 +1910,8 @@
         "refundRemoved": "Reembolso quitado."
       },
       "toRefund": "A devolver",
-      "toRefundHelp": "Cobraste más que el total del pedido. Registra un reembolso cuando le devuelvas el dinero al cliente."
+      "toRefundHelp": "Cobraste más que el total del pedido. Registra un reembolso cuando le devuelvas el dinero al cliente.",
+      "noShift": "No tienes un turno de caja abierto: este efectivo no se contará en ningún cajón."
     },
     "rowActions": {
       "menu": "Acciones del pedido {reference}",
@@ -2042,7 +2043,7 @@
         "notFound": "El gasto ya no existe.",
         "memberNotFound": "Esa persona ya no es miembro de la empresa.",
         "failed": "No se pudo guardar el gasto. Inténtalo de nuevo.",
-        "closedPeriod": "Esa fecha está en un día con la caja ya cerrada: su informe no cambia. Usa una fecha posterior al último cierre."
+        "closedPeriod": "Pertenece a un turno de caja ya cerrado: su informe Z no cambia. Corrige con un registro nuevo."
       }
     },
     "delete": {
@@ -2056,7 +2057,7 @@
         "forbidden": "No tienes permiso para hacer esto.",
         "notFound": "El gasto ya no existe.",
         "failed": "No se pudo eliminar. Inténtalo de nuevo.",
-        "closedPeriod": "Esa fecha está en un día con la caja ya cerrada: su informe no cambia. Usa una fecha posterior al último cierre."
+        "closedPeriod": "Pertenece a un turno de caja ya cerrado: su informe Z no cambia. Corrige con un registro nuevo."
       }
     }
   },
@@ -2171,7 +2172,8 @@
       "update": "Editar",
       "delete": "Eliminar",
       "cancel": "Cancelar",
-      "edit": "Modificar"
+      "edit": "Modificar",
+      "supervise": "Supervisar"
     },
     "resources": {
       "store": {
@@ -2234,10 +2236,11 @@
       },
       "register": {
         "name": "Caja",
-        "description": "Abrir y cerrar la caja, contar el efectivo y ver los informes de cierre.",
+        "description": "Abrir y cerrar el turno de caja, contar el efectivo y ver los informes de cierre.",
         "actions": {
           "create": "Abrir y registrar entradas / salidas",
-          "update": "Cerrar (contar)"
+          "update": "Cerrar (contar)",
+          "supervise": "Supervisar (todos los turnos, efectivo esperado, cerrar por otro)"
         }
       }
     },
@@ -2974,25 +2977,27 @@
   },
   "Register": {
     "title": "Caja",
-    "intro": "Abre la caja con el efectivo inicial, anota entradas y salidas, y ciérrala contando el efectivo. Cada cierre deja un informe Z que ya no cambia.",
+    "intro": "Cada persona de caja abre su propio turno con el efectivo de su cajón. Los cobros, reembolsos y gastos que registra mientras está abierto quedan en su turno, y al cerrarlo cuenta el efectivo bajo su responsabilidad. Cada cierre deja un informe Z que ya no cambia.",
     "note": "Nota",
     "back": "Volver",
     "closed": {
-      "title": "La caja está cerrada",
-      "description": "Ábrela con el efectivo que hay en el cajón para empezar el día."
+      "title": "Tu caja está cerrada",
+      "description": "Ábrela con el efectivo de tu cajón para empezar tu turno."
     },
     "open": {
       "float": "Efectivo inicial ({currency})",
-      "lastCounted": "El último cierre contó {amount}.",
+      "lastCounted": "Tu último cierre contó {amount}.",
       "notePlaceholder": "Ej.: Turno de mañana",
       "submit": "Abrir caja",
       "toast": "Caja abierta.",
       "notAllowed": "No tienes permiso para abrir la caja."
     },
     "session": {
-      "title": "Caja n.º {number}",
+      "title": "Turno n.º {number}",
       "open": "Abierta",
-      "openedAt": "Abierta el"
+      "openedAt": "Abierta el",
+      "cashier": "Responsable: {name}",
+      "yours": "Tu turno"
     },
     "actions": {
       "in": "Entrada",
@@ -3011,7 +3016,9 @@
       "other": "Otros métodos",
       "otherExpenses": "Gastos con otros métodos",
       "sales": "{count, plural, one {# pedido} other {# pedidos}}",
-      "notCounted": "Las transferencias y otros métodos se listan, no se cuentan en el cajón."
+      "notCounted": "Las transferencias y otros métodos se listan, no se cuentan en el cajón.",
+      "blind": "Verás cuánto debería haber al cerrar tu turno.",
+      "records": "{payments, plural, one {# cobro} other {# cobros}} · {expenses, plural, one {# gasto} other {# gastos}}"
     },
     "movements": {
       "title": "Entradas y salidas",
@@ -3035,7 +3042,7 @@
       "toastOut": "Salida registrada."
     },
     "close": {
-      "title": "Cerrar caja",
+      "title": "Cerrar turno",
       "description": "Cuenta el efectivo del cajón en cada moneda y escríbelo.",
       "counted": "Efectivo contado ({currency})",
       "expected": "Debería haber {amount}.",
@@ -3044,22 +3051,27 @@
       "short": "Faltan {amount}",
       "notePlaceholder": "Ej.: Faltan 50 CUP, un cambio mal dado",
       "noteHelp": "Obligatoria si el conteo no cuadra.",
-      "frozen": "Al cerrar se guarda el informe Z: los pagos y gastos de este periodo ya no se podrán añadir, cambiar ni quitar.",
+      "frozen": "Al cerrar se guarda el informe Z: los pagos y gastos de este turno ya no se podrán cambiar ni quitar.",
       "submit": "Cerrar y guardar informe",
-      "toast": "Caja cerrada.",
-      "stale": "Se registró un pago o gasto mientras contabas: revisa los importes y cuenta otra vez."
+      "toast": "Turno cerrado.",
+      "stale": "Se registró un pago o gasto mientras contabas: revisa los importes y cuenta otra vez.",
+      "descriptionBlind": "Cuenta el efectivo del cajón en cada moneda y escríbelo. Al cerrar verás si cuadra.",
+      "descriptionOther": "Cierras el turno de {name}: cuenta el efectivo de su cajón.",
+      "mismatch": "El conteo no cuadra en {currencies}. Cuenta otra vez o explica la diferencia en la nota. Los conteos que no cuadran quedan en el informe.",
+      "mismatchField": "No cuadra."
     },
     "history": {
       "title": "Cierres",
       "empty": "Todavía no hay cierres.",
       "number": "Informe",
       "closedAt": "Cerrada el",
-      "closedBy": "Por",
       "result": "Resultado",
       "z": "Z n.º {number}",
       "even": "{currency}: cuadra",
       "over": "Sobran {amount}",
-      "short": "Faltan {amount}"
+      "short": "Faltan {amount}",
+      "cashier": "Responsable",
+      "closedByOther": "Cerró {name}"
     },
     "report": {
       "back": "Caja",
@@ -3082,19 +3094,26 @@
       "amount": "Importe",
       "openingNote": "Nota de apertura:",
       "closingNote": "Nota de cierre:",
-      "frozen": "Este informe se guardó al cerrar la caja y no cambia aunque se editen pedidos o gastos después."
+      "frozen": "Este informe se guardó al cerrar la caja y no cambia aunque se editen pedidos o gastos después.",
+      "cashier": "Responsable: {name}",
+      "recounts": "Conteos que no cuadraron",
+      "recountsHelp": "Conteos enviados sin nota antes del conteo final."
     },
     "errors": {
       "forbidden": "No tienes permiso para hacer esto.",
       "invalid": "Revisa los datos.",
       "failed": "No se pudo completar. Inténtalo de nuevo.",
-      "alreadyOpen": "La caja ya está abierta. Recarga la página.",
-      "noSession": "No hay una caja abierta. Recarga la página.",
+      "alreadyOpen": "Ya tienes un turno abierto. Recarga la página.",
+      "noSession": "Ese turno ya no está abierto. Recarga la página.",
       "invalidCurrency": "Esa moneda no es de la tienda.",
       "exceedsCash": "No puedes sacar más efectivo del que debería haber en el cajón.",
       "stale": "Los importes cambiaron. Recarga la página y cuenta otra vez.",
-      "noteRequired": "El conteo no cuadra: escribe una nota.",
+      "noteRequired": "El conteo no cuadra: cuenta otra vez o escribe una nota.",
       "missingCount": "Falta el conteo de alguna moneda."
+    },
+    "others": {
+      "title": "Otros turnos abiertos",
+      "description": "Turnos de otras personas del equipo. Puedes cerrar uno en su nombre (por ejemplo, si se fue sin cerrar)."
     }
   }
 }

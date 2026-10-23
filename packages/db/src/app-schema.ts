@@ -1088,6 +1088,9 @@ export const order = pgTable(
     // Sent by the browser once per checkout attempt, so a retried submit cannot create a
     // second order
     idempotencyKey: text("idempotency_key"),
+    // The cashier's register shift a counter sale was made in (null = online order). Its
+    // sales line counts these orders.
+    registerSessionId: uuid("register_session_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -1106,6 +1109,12 @@ export const order = pgTable(
       columns: [table.customerId, table.tenantId],
       foreignColumns: [customer.id, customer.tenantId],
     }).onDelete("set null"),
+    // ON DELETE SET NULL ("register_session_id") only: hand-edited in the migration SQL
+    foreignKey({
+      name: "order_register_session_fk",
+      columns: [table.registerSessionId, table.storeId, table.tenantId],
+      foreignColumns: [registerSession.id, registerSession.storeId, registerSession.tenantId],
+    }).onDelete("set null"),
     // Targets of the composite foreign keys of items, history and payments
     unique("order_id_tenant_id_unique").on(table.id, table.tenantId),
     unique("order_id_store_id_tenant_id_unique").on(table.id, table.storeId, table.tenantId),
@@ -1115,6 +1124,7 @@ export const order = pgTable(
     index("order_storeId_status_idx").on(table.storeId, table.status),
     index("order_customerId_idx").on(table.customerId),
     index("order_storeId_userId_idx").on(table.storeId, table.userId, table.createdAt),
+    index("order_registerSessionId_idx").on(table.registerSessionId),
     check("order_number_positive", sql`${table.number} > 0`),
     check(
       "order_status",
@@ -1357,6 +1367,9 @@ export const orderPayment = pgTable(
     amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
     recordedByUserId: uuid("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    // The register shift of whoever recorded it (their open one at that moment; null = none):
+    // that shift's drawer counts it. Frozen once the shift is closed.
+    registerSessionId: uuid("register_session_id"),
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -1366,7 +1379,14 @@ export const orderPayment = pgTable(
       columns: [table.orderId, table.tenantId],
       foreignColumns: [order.id, order.tenantId],
     }).onDelete("cascade"),
+    // ON DELETE SET NULL ("register_session_id") only: hand-edited in the migration SQL
+    foreignKey({
+      name: "order_payment_register_session_fk",
+      columns: [table.registerSessionId, table.tenantId],
+      foreignColumns: [registerSession.id, registerSession.tenantId],
+    }).onDelete("set null"),
     index("order_payment_orderId_idx").on(table.orderId),
+    index("order_payment_registerSessionId_idx").on(table.registerSessionId),
     // income summaries filter by the payment date
     index("order_payment_tenantId_paidAt_idx").on(table.tenantId, table.paidAt),
     check("order_payment_kind", sql`${table.kind} in ('payment', 'refund')`),
@@ -1495,6 +1515,8 @@ export const expense = pgTable(
     memberUserId: uuid("member_user_id").references(() => user.id, { onDelete: "set null" }),
     note: text("note"),
     recordedByUserId: uuid("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    // The register shift of whoever recorded it (see order_payment); a cash expense leaves its drawer
+    registerSessionId: uuid("register_session_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -1507,7 +1529,14 @@ export const expense = pgTable(
       columns: [table.storeId, table.tenantId],
       foreignColumns: [store.id, store.tenantId],
     }).onDelete("cascade"),
+    // ON DELETE SET NULL ("register_session_id") only: hand-edited in the migration SQL
+    foreignKey({
+      name: "expense_register_session_fk",
+      columns: [table.registerSessionId, table.storeId, table.tenantId],
+      foreignColumns: [registerSession.id, registerSession.storeId, registerSession.tenantId],
+    }).onDelete("set null"),
     index("expense_storeId_paidAt_idx").on(table.storeId, table.paidAt),
+    index("expense_registerSessionId_idx").on(table.registerSessionId),
     check(
       "expense_category",
       sql.raw(`category in (${EXPENSE_CATEGORIES.map((c) => `'${c}'`).join(", ")})`),
@@ -1526,11 +1555,14 @@ export const REGISTER_SESSION_STATUSES = ["open", "closed"] as const;
 export const REGISTER_MOVEMENT_KINDS = ["in", "out"] as const;
 
 /**
- * A cash register session of a store: opened with a float, closed with a cash count. It covers
- * the time [opened_at, closed_at): cash payments, refunds and expenses paid in it are what the
- * drawer should hold. At most one open session per store. `number` counts the store's sessions
- * (the Z report number). `report` = the frozen closing report (src/lib/register.ts), written
- * once at close and never recomputed.
+ * A cashier's register shift in a store: opened with a float, closed with a cash count, under
+ * the responsibility of whoever opened it (`opened_by_user_id`, the cashier). Payments,
+ * refunds, expenses and counter sales recorded by the cashier while it is open are linked to
+ * it (`register_session_id` on those rows), and its cash ones are what the drawer should hold.
+ * At most one open shift per cashier and store; several cashiers may each run one. `number`
+ * counts the store's shifts (the Z report number). `recounts` = earlier blind counts that did
+ * not match (kept in the report). `report` = the frozen closing report (src/lib/register.ts),
+ * written once at close and never recomputed.
  */
 export const registerSession = pgTable(
   "register_session",
@@ -1548,18 +1580,23 @@ export const registerSession = pgTable(
     closedAt: timestamp("closed_at", { withTimezone: true }),
     closedByUserId: uuid("closed_by_user_id").references(() => user.id, { onDelete: "set null" }),
     closingNote: text("closing_note"),
+    recounts: jsonb("recounts").default(sql`'[]'::jsonb`).notNull(),
     report: jsonb("report"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     unique("register_session_id_store_tenant_unique").on(table.id, table.storeId, table.tenantId),
+    // target of order_payment's link (it has no store_id)
+    unique("register_session_id_tenant_unique").on(table.id, table.tenantId),
     unique("register_session_store_number_unique").on(table.storeId, table.number),
     foreignKey({
       name: "register_session_store_tenant_fk",
       columns: [table.storeId, table.tenantId],
       foreignColumns: [store.id, store.tenantId],
     }).onDelete("cascade"),
-    uniqueIndex("register_session_one_open").on(table.storeId).where(sql`${table.status} = 'open'`),
+    uniqueIndex("register_session_one_open_per_cashier")
+      .on(table.storeId, table.openedByUserId)
+      .where(sql`${table.status} = 'open'`),
     index("register_session_store_closedAt_idx").on(table.storeId, table.closedAt),
     check("register_session_status", sql`${table.status} in ('open', 'closed')`),
     check("register_session_number", sql`${table.number} >= 1`),

@@ -27,6 +27,7 @@ import { requireMerchantPermission } from "@/server/tenant";
 import { EditItemsDialog } from "./edit-items-dialog";
 import { OrderLocationMap } from "./order-location-map";
 import { PaymentsSection } from "./payments-section";
+import { hasOpenShift } from "@/server/register";
 import { StatusActions } from "./status-actions";
 
 export default async function OrderPage({ params }: PageProps<"/[locale]/dashboard/store/[storeId]/orders/[id]">) {
@@ -41,6 +42,10 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
   const t = await getTranslations("Orders");
   const canChangeStatus = merchant.can({ order: ["update"] }) || merchant.can({ order: ["cancel"] });
   const canSeePayments = merchant.can({ payment: ["read"] });
+  // someone who runs a register but has no open shift: the cash they record goes to no drawer
+  const noShift =
+    merchant.can({ payment: ["create"], register: ["create"] }) &&
+    !(await hasOpenShift({ tenantId: merchant.tenantId, storeId: merchant.store.id }, merchant.session.user.id));
   // the customer record the order is grouped under (null if that record was deleted)
   const customerHref =
     placed.customerId && merchant.can(PANEL_ACCESS.customers) ? storePath(storeId, `/customers/${placed.customerId}`) : null;
@@ -298,6 +303,7 @@ export default async function OrderPage({ params }: PageProps<"/[locale]/dashboa
               totalMinor={placed.totalMinor}
               cancelled={placed.status === "cancelled"}
               payments={placed.payments.map((p) => ({ ...p, paidAt: p.paidAt.toISOString() }))}
+              noShift={noShift}
             />
           )}
 

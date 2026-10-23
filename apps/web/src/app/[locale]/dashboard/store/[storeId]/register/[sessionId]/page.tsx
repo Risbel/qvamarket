@@ -14,15 +14,18 @@ import { requirePanelSection } from "@/server/tenant";
 import { PrintButton } from "./print-button";
 
 /**
- * The Z report of a closed session: the frozen snapshot written at close (never recomputed,
- * so later changes elsewhere cannot alter it). Printable.
+ * The Z report of a closed shift: the frozen snapshot written at close (never recomputed, so
+ * later changes elsewhere cannot alter it). Printable. A cashier sees only their own shifts.
  */
 export default async function RegisterReportPage({ params }: PageProps<"/[locale]/dashboard/store/[storeId]/register/[sessionId]">) {
   const { locale, storeId, sessionId } = await params;
   setRequestLocale(locale);
   const merchant = await requirePanelSection(locale, storeId, "register");
   if (!z.uuid().safeParse(sessionId).success) notFound();
-  const report = await getSessionReport({ tenantId: merchant.tenantId, storeId: merchant.store.id }, sessionId.toLowerCase());
+  const report = await getSessionReport({ tenantId: merchant.tenantId, storeId: merchant.store.id }, sessionId.toLowerCase(), {
+    userId: merchant.session.user.id,
+    supervise: merchant.can({ register: ["supervise"] }),
+  });
   if (!report) notFound();
   const t = await getTranslations("Register.report");
   const td = await getTranslations("Register.drawer");
@@ -40,9 +43,9 @@ export default async function RegisterReportPage({ params }: PageProps<"/[locale
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">{t("title", { number: report.number })}</h1>
         <p className="text-sm text-muted-foreground">{merchant.store.name}</p>
+        {report.openedBy && <p className="text-sm font-medium">{t("cashier", { name: report.openedBy })}</p>}
         <p className="text-sm">
           {t("opened")} <LocalDateTime iso={report.openedAt} locale={locale} />
-          {report.openedBy && ` · ${report.openedBy}`}
         </p>
         <p className="text-sm">
           {t("closed")} <LocalDateTime iso={report.closedAt} locale={locale} />
@@ -163,6 +166,34 @@ export default async function RegisterReportPage({ params }: PageProps<"/[locale
           )}
         </CardContent>
       </Card>
+
+      {report.recounts && report.recounts.length > 0 && (
+        <Card className="break-inside-avoid">
+          <CardHeader>
+            <CardTitle>
+              <h2>{t("recounts")}</h2>
+            </CardTitle>
+            <CardDescription>{t("recountsHelp")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col gap-1 text-sm">
+              {report.recounts.map((r, i) => (
+                <li key={i} className="flex flex-wrap justify-between gap-2">
+                  <span>
+                    <LocalDateTime iso={r.at} locale={locale} />
+                    {r.by && <span className="text-muted-foreground"> · {r.by}</span>}
+                  </span>
+                  <span className="tabular-nums">
+                    {Object.entries(r.counted)
+                      .map(([currency, minor]) => formatMoney(minor, currency, locale))
+                      .join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {(report.openingNote || report.closingNote) && (
         <Card className="break-inside-avoid">

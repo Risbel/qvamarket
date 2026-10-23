@@ -4,12 +4,12 @@ import type {
 } from "@qvashop/db/schema";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/orders";
 
-// Cash register (day close) of a store: pure and client-safe. The server
-// (src/server/register.ts) groups the session's rows in SQL and this adds them up; the same
-// function gives the live view of an open session and the frozen report of a closed one.
+// Cash register (day close) of a store, one shift per cashier: pure and client-safe. The
+// server (src/server/register.ts) groups the shift's rows in SQL and this adds them up; the
+// same function gives the live view of an open shift and the frozen report of a closed one.
 //
-// A session covers [opened_at, closed_at): what was PAID in that time counts (payments and
-// refunds by `paid_at`, expenses by `paid_at`), whoever recorded it. Only cash is counted:
+// A shift holds what is linked to it: payments, refunds and expenses the cashier recorded
+// while it was open, and their counter sales. Only cash is counted:
 // expected = opening float + cash payments - cash refunds + cash in - cash out - cash expenses,
 // per currency (never added across currencies). Transfers and "other" are listed, not counted.
 
@@ -138,6 +138,8 @@ export type RegisterReport = {
   closedBy: string | null;
   currencies: (DrawerCurrency & { countedMinor: number; differenceMinor: number })[];
   movements: { kind: RegisterMovementKind; currency: string; amountMinor: number; note: string; at: string; by: string | null }[];
+  /** blind counts that did not match before the final one (absent in reports from before 0043) */
+  recounts?: { at: string; by: string | null; counted: Record<string, number> }[];
   openingNote: string | null;
   closingNote: string | null;
 };
@@ -147,4 +149,16 @@ export function parseRegisterReport(value: unknown): RegisterReport | null {
   if (!value || typeof value !== "object") return null;
   const report = value as Partial<RegisterReport>;
   return report.version === 1 && Array.isArray(report.currencies) && Array.isArray(report.movements) ? (report as RegisterReport) : null;
+}
+
+/** A blind count that did not match and had no note (`register_session.recounts`). */
+export type RegisterRecount = { at: string; byUserId: string; counted: Record<string, number> };
+
+/** Reads the stored recounts back, dropping anything malformed. */
+export function parseRecounts(value: unknown): RegisterRecount[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (r): r is RegisterRecount =>
+      Boolean(r) && typeof r.at === "string" && typeof r.byUserId === "string" && Boolean(r.counted) && typeof r.counted === "object",
+  );
 }
