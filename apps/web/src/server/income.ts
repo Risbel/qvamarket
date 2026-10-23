@@ -1,6 +1,6 @@
-import { and, count, db, eq, ne, order, orderItem, orderPayment, sql } from "@qvashop/db";
-import { todayIn } from "@/lib/date-range";
-import { incomeRange, summarizeIncome, type IncomeSummary } from "@/lib/income";
+import { and, count, db, eq, ne, order, orderItem, orderPayment, sql, user } from "@qvashop/db";
+import { startOfMonth, todayIn } from "@/lib/date-range";
+import { incomeRange, summarizeIncome, summarizeSellerSales, type IncomeSummary, type SellerSales } from "@/lib/income";
 import { localDay, onLocalDays } from "./date-sql";
 
 // Income summary of the merchant's store (store home). Every query matches tenant_id AND
@@ -74,4 +74,34 @@ export async function getIncomeSummary(scope: Scope, timeZone: string, currencie
   ]);
 
   return summarizeIncome({ today, timeZone, currencies, payments, sales, goods });
+}
+
+/**
+ * Sales of today and this month (the store's days) per seller: the online store, and each
+ * team member who made counter sales. Orders not cancelled, `total_minor`, per currency.
+ */
+export async function getSalesBySeller(scope: Scope, timeZone: string): Promise<SellerSales[]> {
+  const today = todayIn(timeZone);
+  const rows = await db
+    .select({
+      isToday: sql<boolean>`(${order.createdAt} at time zone ${timeZone})::date = ${today}::date`,
+      channel: order.channel,
+      sellerId: order.createdByUserId,
+      name: user.name,
+      currency: order.currencyCode,
+      orders: count(),
+      totalMinor: sumMinor(order.totalMinor),
+    })
+    .from(order)
+    .leftJoin(user, eq(user.id, order.createdByUserId))
+    .where(
+      and(
+        eq(order.tenantId, scope.tenantId),
+        eq(order.storeId, scope.storeId),
+        ne(order.status, "cancelled"),
+        onLocalDays(order.createdAt, { from: startOfMonth(today), to: today, timeZone }),
+      ),
+    )
+    .groupBy(byFirstColumn, order.channel, order.createdByUserId, user.name, order.currencyCode);
+  return summarizeSellerSales(rows);
 }

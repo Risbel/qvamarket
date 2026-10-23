@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { countProductsByStatus } from "@/server/products";
-import { getIncomeSummary } from "@/server/income";
+import { getIncomeSummary, getSalesBySeller } from "@/server/income";
 import { IncomeSummary } from "./income-summary";
 import { PANEL_ACCESS } from "@/lib/panel-access";
 import { orgPath, storePath } from "@/lib/panel-paths";
@@ -40,6 +40,10 @@ export default async function StoreHomePage({
         merchant.store.currencies.map((c) => c.code),
       )
     : null;
+  const advanced = merchant.hasFeature("advancedReports");
+  const sellers = income && advanced
+    ? await getSalesBySeller({ tenantId: merchant.tenantId, storeId: merchant.store.id }, merchant.store.timeZone)
+    : null;
   const storeUrl = buildStoreUrl(merchant.store.slug, (await headers()).get("host"));
 
   return (
@@ -52,7 +56,8 @@ export default async function StoreHomePage({
           summary={income}
           showProfit={merchant.can({ inventory: ["read"] })}
           profitLink={merchant.can(PANEL_ACCESS.profit)}
-          advanced={merchant.hasFeature("advancedReports")}
+          advanced={advanced}
+          sellers={sellers}
           upgradeHref={merchant.isOwner ? orgPath(merchant.tenantId, "/billing") : null}
         />
       )}

@@ -6,6 +6,7 @@ import {
   desc,
   eq,
   inArray,
+  isNotNull,
   or,
   order,
   orderDelivery,
@@ -43,11 +44,13 @@ function searchCondition(query: string) {
 }
 
 /** The list's filters (each optional); `except` leaves one out, for that filter's own counts. */
-function listCondition(scope: Scope, params: OrderListParams, except?: "status" | "payment") {
+function listCondition(scope: Scope, params: OrderListParams, except?: "status" | "payment" | "channel" | "seller") {
   return and(
     inScope(scope),
     except !== "status" && params.statuses.length ? inArray(order.status, params.statuses) : undefined,
     except !== "payment" && params.payments.length ? inArray(order.paymentStatus, params.payments) : undefined,
+    except !== "channel" && params.channels.length ? inArray(order.channel, params.channels) : undefined,
+    except !== "seller" && params.sellers.length ? inArray(order.createdByUserId, params.sellers) : undefined,
     // orders placed on those days in the range's timezone
     onLocalDays(order.createdAt, params.range),
     searchCondition(params.query),
@@ -84,8 +87,11 @@ export async function listOrders(scope: Scope, params: OrderListParams, { withPa
         fulfillmentType: order.fulfillmentType,
         currencyCode: order.currencyCode,
         totalMinor: order.totalMinor,
+        channel: order.channel,
+        seller: user.name,
       })
       .from(order)
+      .leftJoin(user, eq(user.id, order.createdByUserId))
       .where(where)
       .orderBy(...listOrderBy(params.sort))
       .limit(params.pageSize)
@@ -141,7 +147,7 @@ export async function listOrders(scope: Scope, params: OrderListParams, { withPa
  * follows every filter but its own, so it says what ticking that value would add.
  */
 export async function countOrderFacets(scope: Scope, params: OrderListParams) {
-  const [statuses, payments] = await Promise.all([
+  const [statuses, payments, channels, sellers] = await Promise.all([
     db
       .select({ value: order.status, total: count() })
       .from(order)
@@ -152,10 +158,35 @@ export async function countOrderFacets(scope: Scope, params: OrderListParams) {
       .from(order)
       .where(listCondition(scope, params, "payment"))
       .groupBy(order.paymentStatus),
+    db
+      .select({ value: order.channel, total: count() })
+      .from(order)
+      .where(listCondition(scope, params, "channel"))
+      .groupBy(order.channel),
+    db
+      .select({ value: order.createdByUserId, total: count() })
+      .from(order)
+      .where(and(listCondition(scope, params, "seller"), isNotNull(order.createdByUserId)))
+      .groupBy(order.createdByUserId),
   ]);
-  const byValue = (rows: { value: string; total: number }[]): Record<string, number> =>
-    Object.fromEntries(rows.map((row) => [row.value, row.total]));
-  return { status: byValue(statuses), payment: byValue(payments) };
+  const byValue = (rows: { value: string | null; total: number }[]): Record<string, number> =>
+    Object.fromEntries(rows.map((row) => [row.value ?? "", row.total]));
+  return { status: byValue(statuses), payment: byValue(payments), channel: byValue(channels), seller: byValue(sellers) };
+}
+
+/**
+ * Everyone who made a counter sale in the store (the seller filter's options), by name. A
+ * member who left keeps their name here, since their sales stay.
+ */
+export async function listOrderSellers(scope: Scope): Promise<{ id: string; name: string }[]> {
+  return db
+    .select({ id: user.id, name: user.name })
+    .from(order)
+    .innerJoin(user, eq(user.id, order.createdByUserId))
+    .where(inScope(scope))
+    // GROUP BY, not DISTINCT: DISTINCT cannot order by the collated name
+    .groupBy(user.id, user.name)
+    .orderBy(sql`${user.name} collate "und-x-icu"`, user.id);
 }
 
 /** One order with its items, status history, item edits and payments; null when not this store's. */

@@ -54,7 +54,13 @@
       "seePlans": "See plans",
       "soldTotal": "sold",
       "ordersLabel": "Orders",
-      "unitsLabel": "Units sold"
+      "unitsLabel": "Units sold",
+      "sellersTitle": "Sales by seller",
+      "sellersDescription": "Orders not cancelled, in {currency}: the online store and whoever sold at the counter.",
+      "seller": "Seller",
+      "onlineStore": "Online store",
+      "formerMember": "Former member",
+      "ordersCount": "{count, plural, one {# order} other {# orders}}"
     }
   },
   "Store": {
@@ -1720,7 +1726,8 @@
       "status": "Status",
       "payment": "Payment",
       "method": "Method",
-      "actions": "Actions"
+      "actions": "Actions",
+      "channel": "Channel"
     },
     "status": {
       "pending": "Pending",
@@ -1927,7 +1934,14 @@
       "call": "Call the customer",
       "whatsapp": "Message on WhatsApp"
     },
-    "walkIn": "Walk-in customer"
+    "walkIn": "Walk-in customer",
+    "channel": {
+      "online": "Online",
+      "pos": "Counter"
+    },
+    "filters": {
+      "seller": "Seller"
+    }
   },
   "Customers": {
     "title": "Customers",
@@ -3213,7 +3227,18 @@
       "receipt": "Print receipt",
       "viewOrder": "View order",
       "next": "New sale"
-    }
+    },
+    "park": "Park",
+    "parkedButton": "Parked ({count})",
+    "parkedToast": "Ticket parked. You can serve the next customer.",
+    "parkedFull": "There are already {max} parked tickets. Resume or discard one.",
+    "parkedTitle": "Parked tickets",
+    "parkedDescription": "Resume a ticket to go on with that sale.",
+    "parkedSwap": "Resuming one parks the current ticket in its place.",
+    "parkedEmpty": "No parked tickets.",
+    "parkedLine": "{time} · {count, plural, one {# unit} other {# units}}",
+    "resume": "Resume",
+    "discardParked": "Discard this ticket"
   },
   "Receipt": {
     "back": "Order",

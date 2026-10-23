@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MinusIcon, PackageIcon, PlusIcon, ReceiptTextIcon, SearchIcon, Trash2Icon } from "lucide-react";
+import { MinusIcon, PackageIcon, PauseIcon, PlayIcon, PlusIcon, ReceiptTextIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { CountryOption } from "@/components/country-select";
@@ -9,7 +9,7 @@ import { useStoreId } from "@/components/panel-scope";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,7 +17,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/money";
 import {
   addToTicket,
+  parseParked,
+  POS_MAX_PARKED,
   POS_MAX_QUANTITY,
+  type ParkedTicket,
   priceTicket,
   type PosCategory,
   type PosPrices,
@@ -48,6 +51,15 @@ type Props = {
 type Filter = "all" | "none" | string;
 
 const storageKey = (storeId: string) => `qvashop:pos:v1:${storeId}`;
+const parkedKey = (storeId: string) => `qvashop:pos:parked:v1:${storeId}`;
+
+function readParked(storeId: string): ParkedTicket[] {
+  try {
+    return parseParked(JSON.parse(localStorage.getItem(parkedKey(storeId)) ?? "null"));
+  } catch {
+    return [];
+  }
+}
 
 /**
  * The ticket and the chosen currency live in this browser (per store) so a reload keeps the
@@ -95,6 +107,8 @@ function PosScreen({ categories, products, prices, currencies, defaultCurrency, 
   const [charging, setCharging] = useState(false);
   const [ticketOpen, setTicketOpen] = useState(false);
   const [done, setDone] = useState<CompletedSale | null>(null);
+  const [parked, setParked] = useState<ParkedTicket[]>(() => readParked(storeId));
+  const [showParked, setShowParked] = useState(false);
   // one key per charge attempt of this ticket: a retried submit cannot create a second sale
   const [saleKey, setSaleKey] = useState(() => crypto.randomUUID());
 
@@ -116,6 +130,40 @@ function PosScreen({ categories, products, prices, currencies, defaultCurrency, 
     } catch {
       // private mode / storage full: the ticket still works, it just is not kept on reload
     }
+  }
+
+  function saveParked(next: ParkedTicket[]) {
+    setParked(next);
+    try {
+      localStorage.setItem(parkedKey(storeId), JSON.stringify(next));
+    } catch {
+      // see save()
+    }
+  }
+
+  const ticketOf = (): ParkedTicket => ({ id: crypto.randomUUID(), currency, items, parkedAt: new Date().toISOString() });
+
+  /** Sets the ticket aside (to serve the next customer) and starts an empty one. */
+  function park() {
+    if (items.length === 0) return;
+    if (parked.length >= POS_MAX_PARKED) {
+      toast.error(t("parkedFull", { max: POS_MAX_PARKED }));
+      return;
+    }
+    saveParked([...parked, ticketOf()]);
+    save({ items: [] });
+    setTicketOpen(false);
+    toast.success(t("parkedToast"));
+  }
+
+  /** Brings a parked ticket back; the current one (if any) takes its place in the list. */
+  function resume(id: string) {
+    const entry = parked.find((p) => p.id === id);
+    if (!entry) return;
+    const rest = parked.filter((p) => p.id !== id);
+    saveParked(items.length > 0 ? [...rest, ticketOf()] : rest);
+    save({ items: entry.items, currency: currencies.some((c) => c.code === entry.currency) ? entry.currency : currency });
+    setShowParked(false);
   }
 
   function add(variant: PosVariant) {
@@ -180,6 +228,12 @@ function PosScreen({ categories, products, prices, currencies, defaultCurrency, 
         })
       }
       onClear={() => save({ items: [] })}
+      onPark={park}
+      parkedCount={parked.length}
+      onShowParked={() => {
+        setTicketOpen(false);
+        setShowParked(true);
+      }}
       onCharge={() => {
         setTicketOpen(false);
         setCharging(true);
@@ -325,6 +379,53 @@ function PosScreen({ categories, products, prices, currencies, defaultCurrency, 
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showParked} onOpenChange={setShowParked}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("parkedTitle")}</DialogTitle>
+            <DialogDescription>{t(items.length > 0 ? "parkedSwap" : "parkedDescription")}</DialogDescription>
+          </DialogHeader>
+          {parked.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("parkedEmpty")}</p>
+          ) : (
+            <ul className="flex flex-col divide-y rounded-md border">
+              {parked.map((entry) => {
+                const priced = priceTicket(entry.items, products, prices[entry.currency] ?? {});
+                return (
+                  <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+                    <span className="flex flex-col">
+                      <span className="font-medium tabular-nums">{formatMoney(priced.totalMinor, entry.currency, locale)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t("parkedLine", {
+                          time: new Date(entry.parkedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
+                          count: entry.items.reduce((sum, i) => sum + i.quantity, 0),
+                        })}
+                        {" · "}
+                        {priced.lines.map((l) => l.productName).filter(Boolean).slice(0, 3).join(", ")}
+                      </span>
+                    </span>
+                    <span className="flex gap-1">
+                      <Button size="sm" onClick={() => resume(entry.id)}>
+                        <PlayIcon />
+                        {t("resume")}
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={t("discardParked")}
+                        onClick={() => saveParked(parked.filter((p) => p.id !== entry.id))}
+                      >
+                        <Trash2Icon />
+                      </Button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={done !== null} onOpenChange={(open) => !open && setDone(null)}>
         <DialogContent>{done && <SaleDone sale={done} currency={currency} onNext={() => setDone(null)} />}</DialogContent>
       </Dialog>
@@ -457,6 +558,9 @@ function TicketPanel({
   onQuantity,
   onClear,
   onCharge,
+  onPark,
+  parkedCount,
+  onShowParked,
 }: {
   lines: TicketLine[];
   totalMinor: number;
@@ -465,6 +569,9 @@ function TicketPanel({
   onQuantity: (variantId: string, quantity: number) => void;
   onClear: () => void;
   onCharge: () => void;
+  onPark: () => void;
+  parkedCount: number;
+  onShowParked: () => void;
 }) {
   const t = useTranslations("Pos");
   return (
@@ -536,6 +643,15 @@ function TicketPanel({
         )}
       </div>
       <div className="flex flex-col gap-3 border-t p-4">
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" disabled={lines.length === 0} onClick={onPark}>
+            <PauseIcon />
+            {t("park")}
+          </Button>
+          <Button variant="outline" size="sm" disabled={parkedCount === 0} onClick={onShowParked}>
+            {t("parkedButton", { count: parkedCount })}
+          </Button>
+        </div>
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-muted-foreground">{t("total")}</span>
           <span className="text-2xl font-semibold tabular-nums">{money(totalMinor)}</span>

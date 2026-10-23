@@ -31,11 +31,13 @@ import {
   type OrderSortColumn,
 } from "@/lib/order-list";
 import {
+  ORDER_CHANNELS,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   orderReference,
   orderStatusVariant,
   paymentStatusVariant,
+  type OrderChannel,
   type OrderStatus,
   type PaymentMethod,
   type PaymentStatus,
@@ -74,6 +76,9 @@ export type OrderRow = {
   currencyCode: string;
   totalMinor: number;
   units: number;
+  channel: OrderChannel;
+  /** who made a counter sale (null online, or an account that was deleted) */
+  seller: string | null;
 };
 
 // Filtering, sorting and pagination run on the server (see order-list.ts): the table only
@@ -100,6 +105,7 @@ export function OrdersTable({
   total,
   facets,
   params,
+  sellers,
   showMethods,
 }: {
   rows: OrderRow[];
@@ -108,8 +114,10 @@ export function OrdersTable({
   /** orders matching the filters, on every page */
   total: number;
   /** per value: orders the filter would show (see countOrderFacets) */
-  facets: { status: Record<string, number>; payment: Record<string, number> };
+  facets: { status: Record<string, number>; payment: Record<string, number>; channel: Record<string, number>; seller: Record<string, number> };
   params: OrderListParams;
+  /** everyone who made a counter sale in the store (the seller filter) */
+  sellers: { id: string; name: string }[];
 }) {
   const t = useTranslations("Orders");
   const panelPath = useStorePath();
@@ -190,6 +198,19 @@ export function OrdersTable({
               <div className="text-sm text-muted-foreground">{row.original.customerPhone}</div>
             </>
           ),
+        }),
+        helper.accessor("channel", {
+          header: () => t("columns.channel"),
+          enableSorting: false,
+          cell: ({ row }) =>
+            row.original.channel === "pos" ? (
+              <>
+                <div>{t("channel.pos")}</div>
+                {row.original.seller && <div className="text-sm text-muted-foreground">{row.original.seller}</div>}
+              </>
+            ) : (
+              <span className="text-muted-foreground">{t("channel.online")}</span>
+            ),
         }),
         helper.accessor("units", {
           header: () => t("columns.units"),
@@ -324,11 +345,25 @@ export function OrdersTable({
           selected={params.payments}
           onChange={(values) => paymentColumn?.setFilterValue(values.length ? values : undefined)}
         />
+        <FacetedFilter
+          title={t("columns.channel")}
+          options={ORDER_CHANNELS.map((value) => ({ value, label: t(`channel.${value}`), count: facets.channel[value] ?? 0 }))}
+          selected={params.channels}
+          onChange={(channels) => navigate({ ...params, channels, page: 1 })}
+        />
+        {sellers.length > 0 && (
+          <FacetedFilter
+            title={t("filters.seller")}
+            options={sellers.map((seller) => ({ value: seller.id, label: seller.name, count: facets.seller[seller.id] ?? 0 }))}
+            selected={params.sellers}
+            onChange={(ids) => navigate({ ...params, sellers: ids, page: 1 })}
+          />
+        )}
         <DateFilter value={params.range} onChange={(range) => dateColumn?.setFilterValue(range ?? undefined)} />
         {hasOrderFilters(params) && (
           <Button
             variant="ghost"
-            onClick={() => navigate({ ...params, statuses: [], payments: [], range: null, query: "", page: 1 })}
+            onClick={() => navigate({ ...params, statuses: [], payments: [], channels: [], sellers: [], range: null, query: "", page: 1 })}
           >
             {tTable("reset")}
             <XIcon data-icon="inline-end" />
@@ -340,7 +375,7 @@ export function OrdersTable({
             .filter((column) => column.getCanHide() && column.id !== "actions")
             .map((column) => ({
               id: column.id,
-              label: t(`columns.${column.id as "date" | "customer" | "units" | "total" | "status" | "payment" | "method"}`),
+              label: t(`columns.${column.id as "date" | "customer" | "channel" | "units" | "total" | "status" | "payment" | "method"}`),
               visible: column.getIsVisible(),
             }))}
           onToggle={(id, visible) => table.getColumn(id)?.toggleVisibility(visible)}

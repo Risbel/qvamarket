@@ -103,3 +103,27 @@ export function receiptText(input: {
     input.total,
   ].join("\n");
 }
+
+/** Tickets set aside to serve the next customer (kept in the browser, per store). */
+export const POS_MAX_PARKED = 10;
+export type ParkedTicket = { id: string; currency: string; items: TicketItem[]; parkedAt: string };
+
+/** Reads parked tickets back from storage, dropping anything malformed. */
+export function parseParked(value: unknown): ParkedTicket[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(
+      (t): t is ParkedTicket =>
+        Boolean(t) &&
+        typeof t.id === "string" &&
+        typeof t.currency === "string" &&
+        typeof t.parkedAt === "string" &&
+        Array.isArray(t.items) &&
+        t.items.length > 0 &&
+        t.items.every(
+          (i: TicketItem) =>
+            Boolean(i) && typeof i.variantId === "string" && Number.isInteger(i.quantity) && i.quantity >= 1 && i.quantity <= POS_MAX_QUANTITY,
+        ),
+    )
+    .slice(0, POS_MAX_PARKED);
+}

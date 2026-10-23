@@ -1,4 +1,5 @@
 import type {
+  ORDER_CHANNELS as DB_ORDER_CHANNELS,
   ORDER_STATUSES as DB_ORDER_STATUSES,
   PAYMENT_KINDS as DB_PAYMENT_KINDS,
   PAYMENT_METHODS as DB_PAYMENT_METHODS,
@@ -21,6 +22,10 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"] as const satisfies typeof DB_PAYMENT_STATUSES;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+/** online = storefront checkout, pos = counter sale */
+export const ORDER_CHANNELS = ["online", "pos"] as const satisfies typeof DB_ORDER_CHANNELS;
+export type OrderChannel = (typeof ORDER_CHANNELS)[number];
 
 export function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && (ORDER_STATUSES as readonly string[]).includes(value);

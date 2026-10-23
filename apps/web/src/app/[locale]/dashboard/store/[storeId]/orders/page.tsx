@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { hasOrderFilters, parseOrderListParams } from "@/lib/order-list";
-import type { OrderStatus, PaymentStatus } from "@/lib/orders";
-import { countOrderFacets, listOrders } from "@/server/orders";
+import type { OrderChannel, OrderStatus, PaymentStatus } from "@/lib/orders";
+import { countOrderFacets, listOrderSellers, listOrders } from "@/server/orders";
 import { requirePanelSection } from "@/server/tenant";
 import { OrdersTable, type OrderRow } from "./orders-table";
 
@@ -17,9 +17,10 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
   // unexpected is ignored. Dates are days in the timezone the URL names (see components/data-table/date-filter.tsx)
   const list = parseOrderListParams(await searchParams);
   const canSeePayments = merchant.can({ payment: ["read"] });
-  const [{ orders, total }, facets] = await Promise.all([
+  const [{ orders, total }, facets, sellers] = await Promise.all([
     listOrders(scope, list, { withPayments: canSeePayments }),
     countOrderFacets(scope, list),
+    listOrderSellers(scope),
   ]);
 
   const rows: OrderRow[] = orders.map((o) => ({
@@ -35,6 +36,8 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
     currencyCode: o.currencyCode,
     totalMinor: o.totalMinor,
     units: o.units,
+    channel: o.channel as OrderChannel,
+    seller: o.seller,
   }));
 
   return (
@@ -43,7 +46,7 @@ export default async function OrdersPage({ params, searchParams }: PageProps<"/[
       {total === 0 && !hasOrderFilters(list) ? (
         <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
-        <OrdersTable rows={rows} total={total} facets={facets} params={list} showMethods={canSeePayments} />
+        <OrdersTable rows={rows} total={total} facets={facets} params={list} sellers={sellers} showMethods={canSeePayments} />
       )}
     </div>
   );

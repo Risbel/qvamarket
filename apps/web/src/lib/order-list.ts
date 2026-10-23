@@ -3,7 +3,7 @@
 // and pagination run in the database (a store can have many orders), not in the browser.
 
 import { parseDateRange, type DateRange } from "@/lib/date-range";
-import { ORDER_STATUSES, PAYMENT_STATUSES, type OrderStatus, type PaymentStatus } from "@/lib/orders";
+import { ORDER_CHANNELS, ORDER_STATUSES, PAYMENT_STATUSES, type OrderChannel, type OrderStatus, type PaymentStatus } from "@/lib/orders";
 
 export const ORDER_SORT_COLUMNS = ["date", "customer", "total"] as const;
 export type OrderSortColumn = (typeof ORDER_SORT_COLUMNS)[number];
@@ -15,12 +15,18 @@ export const ORDER_PAGE_SIZES = [20, 50, 100] as const;
 export const DEFAULT_ORDER_PAGE_SIZE = 50;
 export const ORDER_QUERY_MAX = 100;
 const MAX_PAGE = 10_000;
+const MAX_SELLERS = 20;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export type OrderListParams = {
   /** empty = any */
   statuses: OrderStatus[];
   /** empty = any */
   payments: PaymentStatus[];
+  /** empty = any */
+  channels: OrderChannel[];
+  /** who made the counter sale (user ids); empty = anyone */
+  sellers: string[];
   /** days in the viewer's timezone; null = any date */
   range: DateRange | null;
   /** order number ("12" or "#12"), or part of the customer's name / phone */
@@ -49,6 +55,8 @@ export function parseOrderListParams(search: SearchParams): OrderListParams {
   return {
     statuses: pick(one(search.status), ORDER_STATUSES),
     payments: pick(one(search.payment), PAYMENT_STATUSES),
+    channels: pick(one(search.channel), ORDER_CHANNELS),
+    sellers: [...new Set(one(search.seller).toLowerCase().split(",").filter((id) => UUID.test(id)))].slice(0, MAX_SELLERS),
     range: parseDateRange(one(search.from), one(search.to), one(search.tz)),
     query: one(search.q).slice(0, ORDER_QUERY_MAX),
     sort: (ORDER_SORT_COLUMNS as readonly string[]).includes(sortId)
@@ -64,6 +72,8 @@ export function orderListQuery(params: OrderListParams): Record<string, string> 
   const query: Record<string, string> = {};
   if (params.statuses.length) query.status = params.statuses.join(",");
   if (params.payments.length) query.payment = params.payments.join(",");
+  if (params.channels.length) query.channel = params.channels.join(",");
+  if (params.sellers.length) query.seller = params.sellers.join(",");
   if (params.range) Object.assign(query, { from: params.range.from, to: params.range.to, tz: params.range.timeZone });
   if (params.query) query.q = params.query;
   const { id, desc } = params.sort;
@@ -75,5 +85,12 @@ export function orderListQuery(params: OrderListParams): Record<string, string> 
 
 /** True when the list is narrowed by a filter (not by sorting or paging). */
 export function hasOrderFilters(params: OrderListParams): boolean {
-  return params.statuses.length > 0 || params.payments.length > 0 || params.range !== null || params.query !== "";
+  return (
+    params.statuses.length > 0 ||
+    params.payments.length > 0 ||
+    params.channels.length > 0 ||
+    params.sellers.length > 0 ||
+    params.range !== null ||
+    params.query !== ""
+  );
 }

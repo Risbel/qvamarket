@@ -16,7 +16,8 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Separator } from "@/components/ui/separator";
-import { grossProfit, type CurrencyIncome, type IncomeSummary as Summary, type PeriodIncome } from "@/lib/income";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { grossProfit, type CurrencyIncome, type IncomeSummary as Summary, type PeriodIncome, type SellerSales } from "@/lib/income";
 import { currencyDigits, formatMoney } from "@/lib/money";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/orders";
 
@@ -47,12 +48,15 @@ export function IncomeSummary({
   profitLink,
   advanced,
   upgradeHref,
+  sellers,
 }: {
   summary: Summary;
   showProfit: boolean;
   profitLink: boolean;
   advanced: boolean;
   upgradeHref: string | null;
+  /** sales per seller (advanced plans only; null otherwise) */
+  sellers: SellerSales[] | null;
 }) {
   const t = useTranslations("Dashboard.income");
   const panelPath = useStorePath();
@@ -117,7 +121,10 @@ export function IncomeSummary({
       </div>
 
       {advanced ? (
-        <DailyChart income={current} />
+        <>
+          <DailyChart income={current} />
+          {sellers && <SellersCard sellers={sellers.filter((s) => s.currency === current.currency)} currency={current.currency} />}
+        </>
       ) : (
         <p className="text-sm text-muted-foreground">
           {t("basicHint")}{" "}
@@ -335,6 +342,50 @@ function DailyChart({ income }: { income: CurrencyIncome }) {
             ))}
           </BarChart>
         </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Sales of today and this month per seller: the online store and each team member who sold
+ * at the counter. Shown once the store has counter sales this month.
+ */
+function SellersCard({ sellers, currency }: { sellers: SellerSales[]; currency: string }) {
+  const t = useTranslations("Dashboard.income");
+  const locale = useLocale();
+  if (!sellers.some((s) => s.channel === "pos")) return null;
+  const amount = (sales: { orders: number; totalMinor: number }) => (
+    <>
+      <span className="block font-medium tabular-nums">{formatMoney(sales.totalMinor, currency, locale)}</span>
+      <span className="block text-xs text-muted-foreground">{t("ordersCount", { count: sales.orders })}</span>
+    </>
+  );
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("sellersTitle")}</CardTitle>
+        <CardDescription>{t("sellersDescription", { currency })}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("seller")}</TableHead>
+              <TableHead className="text-right">{t("today")}</TableHead>
+              <TableHead className="text-right">{t("month")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sellers.map((s) => (
+              <TableRow key={`${s.channel}-${s.sellerId ?? ""}`}>
+                <TableCell>{s.channel === "online" ? t("onlineStore") : (s.name ?? t("formerMember"))}</TableCell>
+                <TableCell className="text-right">{amount(s.today)}</TableCell>
+                <TableCell className="text-right">{amount(s.month)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

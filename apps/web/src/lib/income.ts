@@ -178,3 +178,43 @@ export function summarizeIncome({
 
   return { today, timeZone, currencies: order.map((currency) => byCurrency.get(currency)!) };
 }
+
+/** Sales (orders not cancelled) of one seller in one currency: today and this month. */
+export type SellerSales = {
+  /** null = the online store (checkout), else who made the counter sales */
+  sellerId: string | null;
+  /** the seller's name (null for online, or an account that was deleted) */
+  name: string | null;
+  channel: "online" | "pos";
+  currency: string;
+  today: { orders: number; totalMinor: number };
+  month: { orders: number; totalMinor: number };
+};
+
+/** Rows grouped in SQL (by today / earlier this month, channel, seller, currency) -> one row per seller and currency, best month first. */
+export function summarizeSellerSales(
+  rows: { isToday: boolean; channel: string; sellerId: string | null; name: string | null; currency: string; orders: number; totalMinor: number }[],
+): SellerSales[] {
+  const result = new Map<string, SellerSales>();
+  for (const row of rows) {
+    const channel = row.channel === "pos" ? "pos" : "online";
+    const sellerId = channel === "pos" ? row.sellerId : null;
+    const key = `${channel}|${sellerId ?? ""}|${row.currency}`;
+    const entry = result.get(key) ?? {
+      sellerId,
+      name: channel === "pos" ? row.name : null,
+      channel,
+      currency: row.currency,
+      today: { orders: 0, totalMinor: 0 },
+      month: { orders: 0, totalMinor: 0 },
+    };
+    entry.month.orders += row.orders;
+    entry.month.totalMinor += row.totalMinor;
+    if (row.isToday) {
+      entry.today.orders += row.orders;
+      entry.today.totalMinor += row.totalMinor;
+    }
+    result.set(key, entry);
+  }
+  return [...result.values()].sort((a, b) => b.month.totalMinor - a.month.totalMinor);
+}
