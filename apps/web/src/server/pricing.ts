@@ -2,9 +2,8 @@ import { cache } from "react";
 import { and, db, eq, inArray, isNull, or, priceList, sql, variantPrice } from "@qvashop/db";
 import { pricesIn } from "@/lib/exchange";
 import type { PriceRow } from "@/lib/pricing";
-import { planHas } from "@/lib/plans";
 import { getStoreCurrencies, type StoreCurrency } from "./currencies";
-import { storePlan } from "./subscriptions";
+import { storeFeatures } from "./subscriptions";
 
 /** The store's currencies (with base and rates), read once per request. */
 export const storeCurrencies = cache(
@@ -37,7 +36,7 @@ export async function loadPriceRows(
   const fx = await fxPair(storeId, currencyCode);
   if (!fx) return result;
   const codes = fx.target.rate !== null && fx.base.code !== fx.target.code ? [fx.target.code, fx.base.code] : [fx.target.code];
-  const promotions = planHas(await storePlan(storeId), "promotions");
+  const promotions = (await storeFeatures(storeId)).includes("promotions");
 
   const rows = await db
     .select({

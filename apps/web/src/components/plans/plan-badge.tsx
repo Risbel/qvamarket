@@ -2,9 +2,9 @@
 
 import { LockIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { minimumPlanFor, type PlanFeature } from "@/lib/plans";
+import type { PlanFeature } from "@/lib/plans";
 import { Badge } from "@/components/ui/badge";
-import { useHasFeature } from "./plan-provider";
+import { useFeatureLockedText, useHasFeature, useMinimumPlan } from "./plan-provider";
 
 /**
  * "Pro" next to a control the plan does not include (nothing when it does). The control itself
@@ -13,13 +13,14 @@ import { useHasFeature } from "./plan-provider";
 export function PlanBadge({ feature, className }: { feature: PlanFeature; className?: string }) {
   const t = useTranslations("Plans");
   const has = useHasFeature(feature);
+  const minimum = useMinimumPlan(feature);
+  const locked = useFeatureLockedText()(feature);
   if (has) return null;
-  const plan = t(`plans.${minimumPlanFor(feature)}.name`);
   return (
-    <Badge variant="outline" className={className} title={t("featureLocked", { plan })}>
+    <Badge variant="outline" className={className} title={locked}>
       <LockIcon aria-hidden />
-      {plan}
-      <span className="sr-only">{t("featureLocked", { plan })}</span>
+      {minimum ? t(`plans.${minimum}.name`) : t("unavailable")}
+      <span className="sr-only">{locked}</span>
     </Badge>
   );
 }

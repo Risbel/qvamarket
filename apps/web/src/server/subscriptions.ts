@@ -5,6 +5,7 @@ import {
   count,
   db,
   eq,
+  planSetting,
   product,
   store,
   storeBannerImage,
@@ -14,7 +15,7 @@ import {
   subscriptionEvent,
 } from "@qvashop/db";
 import { TRIAL_DAYS, TRIAL_PLAN, addDays, effectiveSubscription, type EffectiveSubscription } from "@/lib/billing";
-import { FALLBACK_PLAN, planLimit, type PlanKey } from "@/lib/plans";
+import { FALLBACK_PLAN, emptyPlanCatalog, isPlanFeature, isPlanKey, planLimit, type PlanCatalog, type PlanFeature, type PlanKey } from "@/lib/plans";
 import type { Tx } from "./company-roles";
 import { teamSeats } from "./team";
 
@@ -40,10 +41,37 @@ export const getCompanySubscription = cache(async (tenantId: string): Promise<Ef
   return effectiveSubscription(row ?? null);
 });
 
+/**
+ * What each plan includes and whether it is offered (`plan_setting`, edited in /admin/prices).
+ * Cached per request. Unknown features are dropped; a plan without a row (the migration seeds
+ * all of them) has no features and is offered.
+ */
+export const getPlanCatalog = cache(async (): Promise<PlanCatalog> => {
+  const rows = await db.select().from(planSetting);
+  const catalog = emptyPlanCatalog();
+  for (const row of rows) {
+    if (!isPlanKey(row.planKey)) continue;
+    catalog[row.planKey] = { features: row.features.filter(isPlanFeature), offered: row.isOffered };
+  }
+  return catalog;
+});
+
+/** The features of the plan that applies to the company now. Cached per request. */
+export const getCompanyFeatures = cache(async (tenantId: string): Promise<readonly PlanFeature[]> => {
+  const [{ plan }, catalog] = await Promise.all([getCompanySubscription(tenantId), getPlanCatalog()]);
+  return catalog[plan].features;
+});
+
 /** The plan of the company that owns `storeId` (storefront reads: prices, banner, badge). Cached per request. */
 export const storePlan = cache(async (storeId: string): Promise<PlanKey> => {
   const [row] = await db.select({ tenantId: store.tenantId }).from(store).where(eq(store.id, storeId)).limit(1);
   return row ? (await getCompanySubscription(row.tenantId)).plan : FALLBACK_PLAN;
+});
+
+/** The plan features of the company that owns `storeId`. Cached per request. */
+export const storeFeatures = cache(async (storeId: string): Promise<readonly PlanFeature[]> => {
+  const [plan, catalog] = await Promise.all([storePlan(storeId), getPlanCatalog()]);
+  return catalog[plan].features;
 });
 
 /**

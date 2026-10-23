@@ -9,6 +9,7 @@ import {
   or,
   organization,
   planPrice,
+  planSetting,
   subscription,
   subscriptionEvent,
   subscriptionInvoice,
@@ -32,7 +33,7 @@ import {
   type PlanChangeOutcome,
   type SubscriptionEventType,
 } from "@/lib/billing";
-import { FALLBACK_PLAN, isPlanKey, planRank, type PlanKey } from "@/lib/plans";
+import { FALLBACK_PLAN, isPlanKey, planRank, type PlanFeature, type PlanKey } from "@/lib/plans";
 import type { Tx } from "./company-roles";
 
 // Manual, recurring billing of the companies (superadmin; the renewal job in step 3 reuses
@@ -787,6 +788,25 @@ export async function setPlanPrice(
     }
     await logEvent(tx, null, "price_changed", actor, {
       before: before ? { amountMinor: before.amountMinor, isActive: before.isActive } : null,
+      after: input,
+    });
+    return { ok: true } as const;
+  });
+}
+
+/**
+ * What a plan includes and whether merchants can choose it. Applies right away to every
+ * company on the plan (nothing is deleted: like a downgrade, only using the feature stops).
+ */
+export async function setPlanSetting(input: { planKey: PlanKey; features: PlanFeature[]; offered: boolean }, actor: BillingActor) {
+  return db.transaction(async (tx) => {
+    const [before] = await tx.select().from(planSetting).where(eq(planSetting.planKey, input.planKey)).for("update");
+    await tx
+      .insert(planSetting)
+      .values({ planKey: input.planKey, features: input.features, isOffered: input.offered })
+      .onConflictDoUpdate({ target: planSetting.planKey, set: { features: input.features, isOffered: input.offered } });
+    await logEvent(tx, null, "plan_updated", actor, {
+      before: before ? { planKey: before.planKey, features: before.features, offered: before.isOffered } : null,
       after: input,
     });
     return { ok: true } as const;

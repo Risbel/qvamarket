@@ -2458,8 +2458,11 @@
         "storeAccess": "Elige qué tiendas puede abrir cada miembro.",
         "hideBadge": "Quita «Hecho con QvaShop» del pie de la tienda.",
         "dayClose": "Abre y cierra la caja, cuenta el efectivo y guarda un informe Z de cada día."
-      }
-    }
+      },
+      "unavailableTitle": "{feature} no está disponible por ahora"
+    },
+    "featureUnavailable": "Esta función no está disponible en ningún plan por ahora.",
+    "unavailable": "No disponible"
   },
   "Billing": {
     "title": "Facturación",
@@ -2578,7 +2581,8 @@
       "period_adjusted": "Fecha de pago corregida",
       "trial_adjusted": "Fin de la prueba cambiado",
       "change_requested": "Solicitud del dueño",
-      "request_closed": "Solicitud cerrada"
+      "request_closed": "Solicitud cerrada",
+      "plan_updated": "Plan modificado"
     },
     "actions": {
       "changePlan": "Cambiar plan",
@@ -2803,6 +2807,26 @@
         "done": "Solicitud marcada como hecha.",
         "dismissed": "Solicitud descartada."
       }
+    },
+    "plansSection": {
+      "title": "Planes",
+      "intro": "Qué incluye cada plan y si los comerciantes pueden elegirlo. Los cambios se aplican al momento a todas las empresas con ese plan; los límites (tiendas, productos...) no cambian aquí.",
+      "offered": "Ofrecido",
+      "notOffered": "No ofrecido",
+      "included": "Incluido",
+      "notIncluded": "No incluido",
+      "edit": "Editar",
+      "editTitle": "Plan {plan}",
+      "dialogDescription": "Las funciones que quites dejan de estar disponibles al momento para las empresas con este plan (sus datos se conservan).",
+      "offeredLabel": "Ofrecido a los comerciantes",
+      "offeredHelp": "Si no se ofrece, no aparece en la comparación de planes y no se puede pedir ni programar. Quien ya lo tiene lo conserva, y tú puedes seguir asignándolo.",
+      "offeredHelpFallback": "Si no se ofrece, no aparece en la comparación de planes y no se puede programar. Las empresas cuyo plan o prueba termina siguen pasando a Gratis.",
+      "features": "Funciones incluidas",
+      "featuresHelp": "Las que no marques aparecen tachadas en la tarjeta del plan.",
+      "save": "Guardar",
+      "toasts": {
+        "saved": "Plan {plan} guardado."
+      }
     }
   },
   "CompanyBilling": {
@@ -2889,7 +2913,8 @@
       "noChange": "No hay nada que cambiar.",
       "notAllowed": "Este cambio necesita un pago: pídelo y te contactamos.",
       "notActive": "No es posible con la suscripción en este estado.",
-      "noPeriod": "No hay un periodo pagado en curso."
+      "noPeriod": "No hay un periodo pagado en curso.",
+      "notOffered": "Ese plan no está disponible por ahora."
     },
     "toasts": {
       "requestWithdrawn": "Solicitud retirada.",

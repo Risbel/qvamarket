@@ -31,8 +31,10 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/[l
     sections.filter((s) => {
       if (merchant.can(PANEL_ACCESS[s])) return true;
       const feature = merchant.planLock(PANEL_ACCESS[s]);
-      if (feature) locked[s] = minimumPlanFor(feature);
-      return feature !== null;
+      // a feature no plan includes right now is left out (nothing to upgrade to)
+      const plan = feature && minimumPlanFor(merchant.planCatalog, feature);
+      if (plan) locked[s] = plan;
+      return Boolean(plan);
     });
   const groups = ([
     { items: ["home", ...allowed("orders", "customers")] },
@@ -65,7 +67,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/[l
       }
     >
       <PermissionsProvider permissions={merchant.effectivePermissions}>
-        <PlanProvider plan={merchant.subscription.plan}>{children}</PlanProvider>
+        <PlanProvider plan={merchant.subscription.plan} catalog={merchant.planCatalog}>{children}</PlanProvider>
       </PermissionsProvider>
     </PanelShell>
   );

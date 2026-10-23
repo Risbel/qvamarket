@@ -4,9 +4,8 @@ import { parseFooterLinks } from "@/lib/footer";
 import type { BannerDevice } from "@/lib/images";
 import { parseFooterSocial } from "@/lib/social";
 import { getStoreSlug } from "@/lib/tenancy";
-import { planHas } from "@/lib/plans";
 import { getStoreCurrencies } from "./currencies";
-import { getCompanySubscription, storeClosure } from "./subscriptions";
+import { getCompanyFeatures, storeClosure } from "./subscriptions";
 import { publicUrl } from "./storage";
 
 /**
@@ -59,11 +58,11 @@ export const getPublicStoreBySlug = cache(async (slug: string) => {
   // tenant_id and created_at never leave this file
   const { tenantId, createdAt, ...publicRow } = row;
   void createdAt;
-  const { plan } = await getCompanySubscription(tenantId);
+  const planFeatures = await getCompanyFeatures(tenantId);
   const features = {
-    theme: planHas(plan, "theme"),
-    secondaryBanner: planHas(plan, "secondaryBanner"),
-    hideBadge: planHas(plan, "hideBadge"),
+    theme: planFeatures.includes("theme"),
+    secondaryBanner: planFeatures.includes("secondaryBanner"),
+    hideBadge: planFeatures.includes("hideBadge"),
   };
   const currencies = (await getStoreCurrencies([row.id])).get(row.id) ?? [];
   const defaultCurrency = currencies.find((c) => c.isDefault) ?? currencies[0];

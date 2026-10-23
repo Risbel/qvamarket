@@ -110,7 +110,7 @@ export default async function CompanyBillingPage({ params }: PageProps<"/[locale
   const storeLimits: PlanLimit[] = ["activeProducts", "currencies", "pages", "bannerImages"];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-muted-foreground">{t("intro")}</p>
@@ -130,6 +130,7 @@ export default async function CompanyBillingPage({ params }: PageProps<"/[locale
           <StatusLine subscription={subscription} trialEndsAt={iso(row?.trialEndsAt)} graceEndsAt={iso(effective.graceEndsAt)} pauseResumesAt={iso(row?.pauseResumesAt)} locale={locale} />
           <BillingControls
             subscription={subscription}
+            catalog={company.planCatalog}
             prices={prices.filter((p) => p.isActive).map((p) => ({ planKey: p.planKey, cycle: p.cycle, currencyCode: p.currencyCode, amountMinor: p.amountMinor }))}
             request={
               request

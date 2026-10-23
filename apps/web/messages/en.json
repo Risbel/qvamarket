@@ -2458,8 +2458,11 @@
         "storeAccess": "Choose which stores each member can open.",
         "hideBadge": "Remove “Made with QvaShop” from the store footer.",
         "dayClose": "Open and close the register, count the cash and keep a Z report of every day."
-      }
-    }
+      },
+      "unavailableTitle": "{feature} is not available right now"
+    },
+    "featureUnavailable": "This feature is not available on any plan right now.",
+    "unavailable": "Unavailable"
   },
   "Billing": {
     "title": "Billing",
@@ -2578,7 +2581,8 @@
       "period_adjusted": "Paid-until date corrected",
       "trial_adjusted": "Trial end changed",
       "change_requested": "Request from the owner",
-      "request_closed": "Request closed"
+      "request_closed": "Request closed",
+      "plan_updated": "Plan changed"
     },
     "actions": {
       "changePlan": "Change plan",
@@ -2803,6 +2807,26 @@
         "done": "Request marked as done.",
         "dismissed": "Request dismissed."
       }
+    },
+    "plansSection": {
+      "title": "Plans",
+      "intro": "What each plan includes and whether merchants can choose it. Changes apply right away to every company on that plan; limits (stores, products...) are not changed here.",
+      "offered": "Offered",
+      "notOffered": "Not offered",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "edit": "Edit",
+      "editTitle": "{plan} plan",
+      "dialogDescription": "Features you remove stop working right away for companies on this plan (their data is kept).",
+      "offeredLabel": "Offered to merchants",
+      "offeredHelp": "When not offered, it is left out of the plan comparison and cannot be asked for or scheduled. Companies already on it keep it, and you can still assign it.",
+      "offeredHelpFallback": "When not offered, it is left out of the plan comparison and cannot be scheduled. Companies whose plan or trial ends still fall to Free.",
+      "features": "Included features",
+      "featuresHelp": "The ones you leave unticked are shown struck through on the plan's card.",
+      "save": "Save",
+      "toasts": {
+        "saved": "{plan} plan saved."
+      }
     }
   },
   "CompanyBilling": {
@@ -2889,7 +2913,8 @@
       "noChange": "There is nothing to change.",
       "notAllowed": "This change needs a payment: ask for it and we will contact you.",
       "notActive": "Not possible with the subscription in this state.",
-      "noPeriod": "There is no paid period running."
+      "noPeriod": "There is no paid period running.",
+      "notOffered": "That plan is not available right now."
     },
     "toasts": {
       "requestWithdrawn": "Request withdrawn.",

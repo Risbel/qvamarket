@@ -147,6 +147,7 @@ export const SUBSCRIPTION_EVENT_TYPES = [
   "became_past_due",
   "expired",
   "price_changed",
+  "plan_updated",
   "period_adjusted",
   "trial_adjusted",
   "change_requested",

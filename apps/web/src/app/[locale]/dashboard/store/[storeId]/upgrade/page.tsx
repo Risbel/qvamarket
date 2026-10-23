@@ -21,7 +21,7 @@ export default async function UpgradePage({ params, searchParams }: PageProps<"/
   const tf = await getTranslations("CompanyBilling.features");
   const raw = (await searchParams).feature;
   const feature = (PLAN_FEATURES as readonly string[]).includes(String(raw)) ? (raw as PlanFeature) : null;
-  const plan = feature ? minimumPlanFor(feature) : "pro";
+  const plan = feature && minimumPlanFor(merchant.planCatalog, feature);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col p-4">
@@ -30,19 +30,27 @@ export default async function UpgradePage({ params, searchParams }: PageProps<"/
           <EmptyMedia variant="icon">
             <LockIcon />
           </EmptyMedia>
-          <EmptyTitle>{feature ? t("title", { feature: tf(feature), plan: tp(`${plan}.name`) }) : t("genericTitle")}</EmptyTitle>
+          <EmptyTitle>
+            {!feature
+              ? t("genericTitle")
+              : plan
+                ? t("title", { feature: tf(feature), plan: tp(`${plan}.name`) })
+                : t("unavailableTitle", { feature: tf(feature) })}
+          </EmptyTitle>
           <EmptyDescription>
             {feature && t(`about.${feature}`)} {t("current", { plan: tp(`${merchant.subscription.plan}.name`) })}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          {merchant.isOwner ? (
-            <Link href={orgPath(merchant.tenantId, "/billing")} className={buttonVariants()}>
-              {t("seePlans")}
-            </Link>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("askOwner")}</p>
-          )}
+          {/* nothing to upgrade to when no plan includes the feature right now */}
+          {(!feature || plan) &&
+            (merchant.isOwner ? (
+              <Link href={orgPath(merchant.tenantId, "/billing")} className={buttonVariants()}>
+                {t("seePlans")}
+              </Link>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("askOwner")}</p>
+            ))}
           <Link href={storePath(merchant.store.id)} className={buttonVariants({ variant: "ghost" })}>
             {t("back")}
           </Link>

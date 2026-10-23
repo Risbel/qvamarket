@@ -14,6 +14,7 @@ import {
   createNoteSchema,
   createPauseSchema,
   createPlanPriceSchema,
+  createPlanSettingSchema,
   createVoidInvoiceSchema,
   planPriceMinor,
 } from "@/lib/validation/billing";
@@ -33,6 +34,7 @@ import {
   resumeSubscription,
   setPaidUntil,
   setPlanPrice,
+  setPlanSetting,
   setTrialEnd,
   voidInvoice,
   type BillingActor,
@@ -219,6 +221,15 @@ export async function setPlanPriceAction(values: unknown, locale: string): Promi
       actor,
     ),
   );
+}
+
+export async function setPlanSettingAction(values: unknown): Promise<BillingActionResult> {
+  const actor = await adminActor();
+  if (!actor) return { ok: false, error: "forbidden" };
+  const parsed = createPlanSettingSchema().safeParse(values);
+  if (!parsed.success) return invalid(parsed.error);
+  const data = parsed.data;
+  return run("setPlanSetting", () => setPlanSetting(data, actor));
 }
 
 // ---- renewal job and owner requests

@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { routing } from "@/i18n/routing";
 import { BILLING_CYCLES } from "@/lib/billing";
-import { PLAN_KEYS } from "@/lib/plans";
+import { PLAN_KEYS, type PlanCatalog } from "@/lib/plans";
 import { createBillingRequestSchema } from "@/lib/validation/billing";
 import {
   cancelScheduledChange,
@@ -21,14 +21,15 @@ import { getCompanyOrNull } from "./tenant";
 // The company's own Billing page (/dashboard/org/<id>/billing). Only owners (like creating
 // stores: not a permission). There is no payment gateway, so an owner can only do what costs
 // nothing: schedule a downgrade or a cancellation for the end of the paid period (and withdraw
-// them). Anything that needs a payment or a person (a paid plan, a pause) is a request.
+// them). Anything that needs a payment or a person (a paid plan, a pause) is a request. A plan
+// the platform does not offer (plan_setting.is_offered) can be neither scheduled nor asked for.
 
 export type CompanyBillingResult = { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
-async function ownerOf(orgId: unknown): Promise<{ tenantId: string; actor: BillingActor } | null> {
+async function ownerOf(orgId: unknown): Promise<{ tenantId: string; actor: BillingActor; catalog: PlanCatalog } | null> {
   const company = await getCompanyOrNull(orgId);
   if (!company || !company.isOwner) return null;
-  return { tenantId: company.tenantId, actor: { kind: "owner", userId: company.session.user.id } };
+  return { tenantId: company.tenantId, actor: { kind: "owner", userId: company.session.user.id }, catalog: company.planCatalog };
 }
 
 async function run(name: string, fn: () => Promise<CompanyBillingResult>): Promise<CompanyBillingResult> {
@@ -48,6 +49,7 @@ export async function scheduleDowngradeAction(orgId: unknown, values: unknown): 
   if (!owner) return { ok: false, error: "forbidden" };
   const parsed = scheduleSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "invalid" };
+  if (!owner.catalog[parsed.data.planKey].offered) return { ok: false, error: "notOffered" };
   return run("scheduleDowngrade", () =>
     changePlan(
       owner.tenantId,
@@ -91,6 +93,7 @@ export async function requestBillingChangeAction(orgId: unknown, values: unknown
   if (!parsed.success) {
     return { ok: false, error: "invalid", fieldErrors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]> };
   }
+  if (parsed.data.kind === "plan" && parsed.data.planKey && !owner.catalog[parsed.data.planKey].offered) return { ok: false, error: "notOffered" };
   return run("requestBillingChange", () => createBillingRequest(owner.tenantId, parsed.data, owner.actor));
 }
 

@@ -8,7 +8,7 @@ import {
   MAX_PAUSE_DAYS,
 } from "@/lib/billing";
 import { currencyDigits, parsePriceToMinor } from "@/lib/money";
-import { PLAN_KEYS } from "@/lib/plans";
+import { PLAN_FEATURES, PLAN_KEYS } from "@/lib/plans";
 import type { Translator } from "./types";
 
 // Superadmin billing forms. Dates come from <DateTimePicker> (the browser's local
@@ -160,6 +160,16 @@ export function createPlanPriceSchema(t: Translator) {
     });
 }
 export type PlanPriceValues = z.infer<ReturnType<typeof createPlanPriceSchema>>;
+
+/** What a plan includes and whether merchants can choose it (/admin/prices, any plan incl. Gratis). */
+export function createPlanSettingSchema() {
+  return z.object({
+    planKey: z.enum(PLAN_KEYS),
+    features: z.array(z.enum(PLAN_FEATURES)).transform((list) => PLAN_FEATURES.filter((feature) => list.includes(feature))),
+    offered: z.boolean(),
+  });
+}
+export type PlanSettingValues = z.input<ReturnType<typeof createPlanSettingSchema>>;
 
 /** Validated price form -> minor units (0 for a free price). */
 export function planPriceMinor(values: PlanPriceValues): number {

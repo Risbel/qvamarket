@@ -51,7 +51,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps<"/
       }
     >
       <PermissionsProvider permissions={company.effectivePermissions}>
-        <PlanProvider plan={company.subscription.plan}>{children}</PlanProvider>
+        <PlanProvider plan={company.subscription.plan} catalog={company.planCatalog}>{children}</PlanProvider>
       </PermissionsProvider>
     </PanelShell>
   );

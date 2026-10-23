@@ -10,7 +10,7 @@ import { useOrgId } from "@/components/panel-scope";
 import { useRouter } from "@/i18n/navigation";
 import { BILLING_CYCLES, planChangeOutcome, type BillingCycle, type BillingRequestKind, type SubscriptionStatus } from "@/lib/billing";
 import { formatMoney } from "@/lib/money";
-import { FALLBACK_PLAN, PLANS, PLAN_FEATURES, PLAN_KEYS, planHas, type PlanKey, type PlanLimit } from "@/lib/plans";
+import { FALLBACK_PLAN, PLANS, PLAN_FEATURES, PLAN_KEYS, catalogHas, type PlanCatalog, type PlanKey, type PlanLimit } from "@/lib/plans";
 import { useHydrated } from "@/lib/use-hydrated";
 import { createBillingRequestSchema, type BillingRequestValues } from "@/lib/validation/billing";
 import {
@@ -56,12 +56,14 @@ const LIMIT_ROWS: PlanLimit[] = ["stores", "activeProducts", "imagesPerProduct",
  */
 export function BillingControls({
   subscription: s,
+  catalog,
   prices,
   request,
   whatsapp,
   companyName,
 }: {
   subscription: OwnerSubscriptionView;
+  catalog: PlanCatalog;
   prices: Price[];
   request: Request | null;
   whatsapp: string | null;
@@ -199,9 +201,10 @@ export function BillingControls({
           </ButtonGroup>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {PLAN_KEYS.map((plan) => {
+          {/* plans the platform does not offer are left out, unless the company is on it */}
+          {PLAN_KEYS.filter((plan) => catalog[plan].offered || plan === s.effectivePlan || plan === s.planKey).map((plan) => {
             const price = plan === FALLBACK_PLAN ? null : priceOf(plan);
-            const choice = choiceOf(plan);
+            const choice = catalog[plan].offered ? choiceOf(plan) : "current";
             const isCurrent = plan === s.effectivePlan;
             return (
               <div key={plan} className={cn("flex flex-col gap-3 rounded-lg border p-4", isCurrent && "border-primary ring-1 ring-primary")}>
@@ -230,7 +233,7 @@ export function BillingControls({
                 </ul>
                 <ul className="flex flex-col gap-1 text-sm">
                   {PLAN_FEATURES.map((feature) => {
-                    const has = planHas(plan, feature);
+                    const has = catalogHas(catalog, plan, feature);
                     return (
                       <li key={feature} className={cn("flex items-center gap-1.5", !has && "text-muted-foreground")}>
                         {has ? <CheckIcon className="size-4 text-primary" aria-hidden /> : <MinusIcon className="size-4" aria-hidden />}

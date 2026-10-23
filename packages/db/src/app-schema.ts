@@ -1643,11 +1643,28 @@ export const registerMovement = pgTable(
 // Plans and billing (platform data: what a company pays QvaShop)
 // ---------------------------------------------------------------------------------------
 // No payment gateway: the merchant pays outside the platform and the superadmin records it.
-// Features and limits of each plan are defined in the app (src/lib/plans.ts); only prices,
-// subscriptions and their money live here. Invoices, payments and events are never deleted
-// (mistakes are voided or refunded) and survive the company (tenant_id SET NULL + snapshot).
+// Limits of each plan are defined in the app (src/lib/plans.ts); which features each plan
+// includes (plan_setting), prices, subscriptions and their money live here. Invoices,
+// payments and events are never deleted (mistakes are voided or refunded) and survive the
+// company (tenant_id SET NULL + snapshot).
 
 export const PLAN_KEYS = ["free", "basic", "pro", "business"] as const;
+/** Every plan feature the app knows (src/lib/plans.ts); plan_setting.features holds a subset. */
+export const PLAN_FEATURES = [
+  "customers",
+  "promotions",
+  "inventory",
+  "expenses",
+  "advancedReports",
+  "theme",
+  "secondaryBanner",
+  "distanceFees",
+  "bulkPrices",
+  "customRoles",
+  "storeAccess",
+  "hideBadge",
+  "dayClose",
+] as const;
 export const BILLING_CYCLES = ["monthly", "quarterly", "yearly"] as const;
 export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "paused", "cancelled", "expired"] as const;
 /** `overdue` is not stored: an open or partial invoice past `due_at` (derived on read). */
@@ -1677,6 +1694,8 @@ export const SUBSCRIPTION_EVENT_TYPES = [
   "became_past_due",
   "expired",
   "price_changed",
+  // the superadmin changed a plan's features or whether it is offered (plan_setting)
+  "plan_updated",
   // the superadmin corrected the paid-until date or the trial end by hand
   "period_adjusted",
   "trial_adjusted",
@@ -1689,6 +1708,28 @@ const quoted = (values: readonly string[]) => values.map((v) => `'${v}'`).join("
 const inList = (column: string, values: readonly string[]) => sql.raw(`${column} in (${quoted(values)})`);
 const inListOrNull = (column: string, values: readonly string[]) =>
   sql.raw(`${column} is null or ${column} in (${quoted(values)})`);
+
+/**
+ * What each plan includes (edited by the superadmin in /admin/prices, applied right away to
+ * every company on the plan) and whether merchants can choose it. One row per plan, seeded
+ * by the migration.
+ */
+export const planSetting = pgTable(
+  "plan_setting",
+  {
+    planKey: text("plan_key").primaryKey(),
+    features: text("features").array().default(sql`'{}'::text[]`).notNull(),
+    isOffered: boolean("is_offered").default(true).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  () => [
+    check("plan_setting_plan", inList("plan_key", PLAN_KEYS)),
+    check("plan_setting_features", sql.raw(`features <@ array[${quoted(PLAN_FEATURES)}]::text[]`)),
+  ],
+);
 
 /** Price of a paid plan per billing cycle and currency (edited by the superadmin). */
 export const planPrice = pgTable(

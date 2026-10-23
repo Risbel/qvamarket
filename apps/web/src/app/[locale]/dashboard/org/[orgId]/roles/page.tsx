@@ -16,6 +16,7 @@ export default async function RolesPage({ params }: PageProps<"/[locale]/dashboa
   setRequestLocale(locale);
 
   const merchant = await requireCompanySection(locale, orgId, "roles");
+  const minimumCustomRoles = minimumPlanFor(merchant.planCatalog, "customRoles");
   // Companies created before roles existed get the presets the first time
   await ensureCompanyRoles(merchant.tenantId, locale);
   const [t, tPlans, roles, owners] = await Promise.all([
@@ -47,7 +48,7 @@ export default async function RolesPage({ params }: PageProps<"/[locale]/dashboa
         {merchant.planLock({ role: ["create"] }) && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <LockKeyhole className="size-4" aria-hidden />
-            {tPlans("featureLocked", { plan: tPlans(`plans.${minimumPlanFor("customRoles")}.name`) })}
+            {minimumCustomRoles ? tPlans("featureLocked", { plan: tPlans(`plans.${minimumCustomRoles}.name`) }) : tPlans("featureUnavailable")}
           </p>
         )}
       </div>
